@@ -1,0 +1,18 @@
+pub mod grust {
+    pub use grust::init::init;
+    pub use grust::gstr::GStr;
+
+    pub mod init;
+    pub mod types;
+    pub mod gstr;
+    pub mod plumbing;
+}
+pub mod glib;
+pub mod gobject;
+pub mod gio;
+
+fn main() {
+    grust::init();
+    let f = &gio::File::new_for_path("/dev/null") as &gio::File;
+    io::println(f.get_path().to_str());
+}
