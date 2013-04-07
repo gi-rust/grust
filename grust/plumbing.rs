@@ -13,7 +13,7 @@ impl<R> Object<R> {
     pub unsafe fn unwrap(&self) -> *R { self.wrapped }
 
     pub unsafe fn get_g_object(&self) -> *GObject {
-        cast::transmute(self.wrapped)
+        self.wrapped as *GObject
     }
 }
 

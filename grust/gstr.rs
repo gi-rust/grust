@@ -12,7 +12,7 @@ impl GStr {
 impl Drop for GStr {
     fn finalize(&self) {
         unsafe {
-            g_free(cast::transmute(self.data));
+            g_free(self.data as *());
         }
     }
 }
