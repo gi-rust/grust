@@ -18,12 +18,11 @@
  * 02110-1301  USA
  */
 
-pub mod raw {
-    use grust::types::*;
+extern mod grust (name="grust", vers="0.1");
+extern mod gio (name="grust-Gio", vers="2.0");
 
-    #[link_name="glib-2.0"]
-    pub extern mod symbols {
-        pub fn g_free(mem: *());
-        pub fn g_strdup(str: *gchar) -> *gchar;
-    }
+fn main() {
+    grust::init();
+    let f = &gio::File::new_for_path("/dev/null") as &gio::File;
+    io::println(f.get_path().to_str());
 }

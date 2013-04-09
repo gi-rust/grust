@@ -18,59 +18,48 @@
  * 02110-1301  USA
  */
 
-use types::*;
-use glib::{g_free, g_strdup};
+#[link(name = "grust-Gio", vers = "2.0",
+       uuid = "1a020b19-8587-44fe-9b04-c529c27f3c33")];
 
-pub struct GStr {
-    priv data: *gchar,
+#[crate_type = "lib"];
+
+extern mod grust (name="grust", vers="0.1");
+extern mod glib (name="grust-GLib", vers="2.0");
+extern mod gobject (name="grust-GObject", vers="2.0");
+
+use grust::plumbing;
+use grust::gstr;
+
+pub mod raw {
+    use grust::types::*;
+
+    pub trait GFile { }
+
+    #[link_name="gio-2.0"]
+    pub extern mod symbols {
+        fn g_file_new_for_path(path: *gchar) -> *GFile;
+        fn g_file_get_path(file: *GFile) -> *gchar;
+    }
 }
 
-impl GStr {
-    pub unsafe fn wrap(data: *gchar) -> GStr { GStr{ data: data } }
+pub trait File {
+    fn get_path(&self) -> gstr::GStr;
 }
 
-impl Drop for GStr {
-    fn finalize(&self) {
+impl File {
+    pub fn new_for_path(path: &str) -> plumbing::Object<raw::GFile> {
         unsafe {
-            g_free(self.data as *());
+            plumbing::wrap_object(str::as_c_str(path,
+                    raw::symbols::g_file_new_for_path))
         }
     }
 }
 
-impl Clone for GStr {
-    fn clone(&self) -> GStr {
+impl File for plumbing::Object<raw::GFile> {
+    fn get_path(&self) -> gstr::GStr {
         unsafe {
-            GStr::wrap(g_strdup(self.data))
-        }
-    }
-}
-
-impl ToStr for GStr {
-    fn to_str(&self) -> ~str {
-        unsafe {
-            str::raw::from_c_str(self.data)
-        }
-    }
-}
-
-impl Eq for GStr {
-    fn eq(&self, other: &GStr) -> bool {
-        unsafe {
-            libc::strcmp(self.data, other.data) == 0
-        }
-    }
-
-    fn ne(&self, other: &GStr) -> bool {
-        unsafe {
-            libc::strcmp(self.data, other.data) != 0
-        }
-    }
-}
-
-impl TotalEq for GStr {
-    fn equals(&self, other: &GStr) -> bool {
-        unsafe {
-            libc::strcmp(self.data, other.data) == 0
+            let ret = raw::symbols::g_file_get_path(self.unwrap());
+            gstr::GStr::wrap(ret)
         }
     }
 }

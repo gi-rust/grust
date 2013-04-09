@@ -18,21 +18,40 @@
  * 02110-1301  USA
  */
 
-pub mod grust {
-    pub use grust::init::init;
-    pub use grust::gstr::GStr;
+#[link(name = "grust", vers = "0.1",
+       uuid="e274cf32-7985-40e3-aa18-2dff719ab31d")];
 
-    pub mod init;
-    pub mod types;
-    pub mod gstr;
-    pub mod plumbing;
-}
-pub mod glib;
-pub mod gobject;
-pub mod gio;
+#[crate_type = "lib"];
 
-fn main() {
-    grust::init();
-    let f = &gio::File::new_for_path("/dev/null") as &gio::File;
-    io::println(f.get_path().to_str());
+#[desc = "GObject introspection bindings"];
+#[license = "LGPL 2.1"];
+#[author = "Mikhail Zabaluev"];
+
+use types::*;
+
+pub mod types;
+
+#[link_name="glib-2.0"]
+pub extern mod glib {
+    pub fn g_free(mem: *());
+    pub fn g_strdup(str: *gchar) -> *gchar;
 }
+
+#[link_name="gobject-2.0"]
+pub extern mod gobject {
+    fn g_type_init();
+    fn g_object_ref(obj: *()) -> *();
+    fn g_object_unref(obj: *()) -> *();
+}
+
+pub mod gstr;
+pub mod plumbing;
+mod init;
+
+// Reexports into the top level do not work outside of a crate
+// due to https://github.com/mozilla/rust/issues/4202
+pub type GStr = gstr::GStr;
+
+// For the same reason as above, init has to be proxied by a function below
+#[inline]
+pub fn init() { init::init(); }

@@ -18,7 +18,7 @@
  * 02110-1301  USA
  */
 
-use gobject::raw::symbols::g_type_init;
+use gobject::g_type_init;
 
 pub fn init() {
     unsafe {

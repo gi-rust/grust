@@ -18,39 +18,19 @@
  * 02110-1301  USA
  */
 
-use grust;
-use grust::plumbing;
+#[link(name = "grust-GLib", vers = "2.0",
+       uuid="30112a42-d710-4e13-845c-b2d23d73facd")];
+
+#[crate_type = "lib"];
+
+extern mod grust (name="grust", vers="0.1");
 
 pub mod raw {
     use grust::types::*;
 
-    pub trait GFile { }
-
-    #[link_name="gio-2.0"]
+    #[link_name="glib-2.0"]
     pub extern mod symbols {
-        fn g_file_new_for_path(path: *gchar) -> *GFile;
-        fn g_file_get_path(file: *GFile) -> *gchar;
-    }
-}
-
-pub trait File {
-    fn get_path(&self) -> grust::GStr;
-}
-
-impl File {
-    pub fn new_for_path(path: &str) -> plumbing::Object<raw::GFile> {
-        unsafe {
-            plumbing::wrap_object(str::as_c_str(path,
-                    raw::symbols::g_file_new_for_path))
-        }
-    }
-}
-
-impl File for plumbing::Object<raw::GFile> {
-    fn get_path(&self) -> grust::GStr {
-        unsafe {
-            let ret = raw::symbols::g_file_get_path(self.unwrap());
-            grust::GStr::wrap(ret)
-        }
+        pub fn g_free(mem: *());
+        pub fn g_strdup(str: *gchar) -> *gchar;
     }
 }

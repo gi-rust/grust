@@ -18,6 +18,14 @@
  * 02110-1301  USA
  */
 
+#[link(name = "grust-GObject", vers = "2.0",
+       uuid="252902cd-7b58-41da-9478-c9488841c225")];
+
+#[crate_type = "lib"];
+
+extern mod grust (name="grust", vers="0.1");
+extern mod glib (name="grust-GLib", vers="2.0");
+
 pub mod raw {
     use grust::types::*;
 
