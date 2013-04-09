@@ -21,8 +21,9 @@
 extern mod grust (name="grust", vers="0.1");
 extern mod gio (name="grust-Gio", vers="2.0");
 
+#[test]
 fn main() {
     grust::init();
     let f = &gio::File::new_for_path("/dev/null") as &gio::File;
-    io::println(f.get_path().to_str());
+    assert!(f.get_path().to_str() == ~"/dev/null");
 }
