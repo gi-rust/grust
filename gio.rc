@@ -43,7 +43,7 @@ pub mod raw {
 }
 
 pub trait File {
-    fn get_path(&self) -> gstr::GStr;
+    fn get_path(&self) -> gstr::utf8;
 }
 
 impl File {
@@ -56,10 +56,10 @@ impl File {
 }
 
 impl File for plumbing::Object<raw::GFile> {
-    fn get_path(&self) -> gstr::GStr {
+    fn get_path(&self) -> gstr::utf8 {
         unsafe {
             let ret = raw::symbols::g_file_get_path(self.unwrap());
-            gstr::GStr::wrap(ret)
+            gstr::utf8::wrap(ret)
         }
     }
 }

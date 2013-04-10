@@ -21,15 +21,17 @@
 use types::*;
 use glib::{g_free, g_strdup};
 
-pub struct GStr {
+pub struct utf8 {
     priv data: *gchar,
 }
 
-impl GStr {
-    pub unsafe fn wrap(data: *gchar) -> GStr { GStr{ data: data } }
+impl utf8 {
+    pub unsafe fn wrap(data: *gchar) -> utf8 {
+        utf8 { data: data }
+    }
 }
 
-impl Drop for GStr {
+impl Drop for utf8 {
     fn finalize(&self) {
         unsafe {
             g_free(self.data as *());
@@ -37,15 +39,15 @@ impl Drop for GStr {
     }
 }
 
-impl Clone for GStr {
-    fn clone(&self) -> GStr {
+impl Clone for utf8 {
+    fn clone(&self) -> utf8 {
         unsafe {
-            GStr::wrap(g_strdup(self.data))
+            utf8::wrap(g_strdup(self.data))
         }
     }
 }
 
-impl ToStr for GStr {
+impl ToStr for utf8 {
     fn to_str(&self) -> ~str {
         unsafe {
             str::raw::from_c_str(self.data)
@@ -53,22 +55,22 @@ impl ToStr for GStr {
     }
 }
 
-impl Eq for GStr {
-    fn eq(&self, other: &GStr) -> bool {
+impl Eq for utf8 {
+    fn eq(&self, other: &utf8) -> bool {
         unsafe {
             libc::strcmp(self.data, other.data) == 0
         }
     }
 
-    fn ne(&self, other: &GStr) -> bool {
+    fn ne(&self, other: &utf8) -> bool {
         unsafe {
             libc::strcmp(self.data, other.data) != 0
         }
     }
 }
 
-impl TotalEq for GStr {
-    fn equals(&self, other: &GStr) -> bool {
+impl TotalEq for utf8 {
+    fn equals(&self, other: &utf8) -> bool {
         unsafe {
             libc::strcmp(self.data, other.data) == 0
         }
