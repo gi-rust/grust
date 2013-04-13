@@ -27,13 +27,20 @@
 
 typedef void (*RustFunc) (gpointer param, GMainContext *context);
 
+typedef enum
+{
+  RUST_CALL_PENDING,
+  RUST_CALL_RETURNED,
+  RUST_CALL_ABORTED
+} RustCallStatus;
+
 typedef struct _RustCallData RustCallData;
 struct _RustCallData
 {
   RustFunc func;
   gpointer param;
   GCond return_cond;
-  volatile gboolean returned;
+  volatile RustCallStatus status;
 };
 
 /* This could be a per-call mutex, but the callers are going to wait on
@@ -54,19 +61,35 @@ static gboolean loop_callback (gpointer data)
   call_data->func (call_data->param, context);
 
   g_mutex_lock (&call_mutex);
-  call_data->returned = TRUE;
+  call_data->status = RUST_CALL_RETURNED;
   g_cond_signal (&call_data->return_cond);
   g_mutex_unlock (&call_mutex);
 
   return FALSE;
 }
 
-void
+static void call_source_destroyed (gpointer data)
+{
+  RustCallData *call_data = data;
+
+  if (G_LIKELY (call_data->status != RUST_CALL_PENDING))
+    return;
+
+  g_critical ("loop context has been destroyed before a cross-thread call"
+              " could be made");
+
+  g_mutex_lock (&call_mutex);
+  call_data->status = RUST_CALL_ABORTED;
+  g_cond_signal (&call_data->return_cond);
+  g_mutex_unlock (&call_mutex);
+}
+
+gboolean
 grustna_call (RustFunc func, gpointer data, GMainContext *context)
 {
   GMainContext *thread_context;
 
-  g_return_if_fail (func != NULL);
+  g_return_val_if_fail (func != NULL, FALSE);
 
   /* This code is largely copied from g_main_context_invoke_full() */
 
@@ -78,7 +101,7 @@ grustna_call (RustFunc func, gpointer data, GMainContext *context)
       /* Fastest path: the caller is in the same thread where some code
        * is supposedly driving the loop context affine to this call. */
       func (data, context);
-      return;
+      return TRUE;
     }
 
   thread_context = g_main_context_get_thread_default ();
@@ -95,6 +118,7 @@ grustna_call (RustFunc func, gpointer data, GMainContext *context)
        * in order to complete. */
       func (data, context);
       g_main_context_release (context);
+      return TRUE;
     }
   else
     {
@@ -106,20 +130,24 @@ grustna_call (RustFunc func, gpointer data, GMainContext *context)
 
       call_data.func = func;
       call_data.param = data;
+      call_data.status = RUST_CALL_PENDING;
 
       g_cond_init (&call_data.return_cond);
 
       idle = g_idle_source_new ();
       g_source_set_priority (idle, G_PRIORITY_DEFAULT);
-      g_source_set_callback (idle, loop_callback, &call_data, NULL);
+      g_source_set_callback (idle, loop_callback, &call_data,
+                             call_source_destroyed);
       g_source_attach (idle, context);
       g_source_unref (idle);
 
       g_mutex_lock (&call_mutex);
-      while (!call_data.returned)
+      while (call_data.status == RUST_CALL_PENDING)
         g_cond_wait (&call_data.return_cond, &call_mutex);
       g_mutex_unlock (&call_mutex);
 
       g_cond_clear (&call_data.return_cond);
+
+      return call_data.status == RUST_CALL_RETURNED;
     }
 }
