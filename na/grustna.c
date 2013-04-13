@@ -2,6 +2,9 @@
  *
  * Copyright (C) 2013  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
  *
+ * Parts based on code from GLib authored by Ryan Lortie
+ * (commit 92974b80fc10f494b33ed6760b5417bbbbb83473)
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -22,77 +25,33 @@
 
 #include <glib.h>
 
-typedef gpointer (*RustFunc) (gpointer user_data);
+typedef void (*RustFunc) (gpointer param, GMainContext *context);
 
 typedef struct _RustCallData RustCallData;
 struct _RustCallData
 {
   RustFunc func;
   gpointer param;
-  gpointer retval;
   GCond return_cond;
   volatile gboolean returned;
 };
 
-static gpointer
-grustna_run (gpointer thread_data)
-{
-  GMainContext *context = thread_data;
-  GMainLoop *event_loop;
-  gboolean warned_once = FALSE;
-
-  g_main_context_push_thread_default (context);
-
-  for (;;)
-    {
-      event_loop = g_main_loop_new (context, FALSE);
-      g_main_loop_run (event_loop);
-      if (!warned_once)
-        {
-          g_warning ("The grust event loop quit somehow, will be recreated. "
-                     "This warning will not be repeated.");
-          warned_once = TRUE;
-        }
-      g_main_loop_unref (event_loop);
-    }
-
-  return NULL;
-}
-
-static gpointer
-init_context ()
-{
-  GMainContext *context;
-  GThread *thread;
-
-  context = g_main_context_new ();
-
-  thread = g_thread_new ("grustna", grustna_run, context);
-
-  g_thread_unref (thread);
-
-  return context;
-}
-
-static GMainContext *
-get_event_thread_context ()
-{
-  static GOnce init_once = G_ONCE_INIT;
-
-  g_once (&init_once, init_context, NULL);
-
-  return init_once.retval;
-}
-
-/* Could be a per-call mutex, but the callers are going to wait on
- * the global event thread anyway */
+/* This could be a per-call mutex, but the callers are going to wait on
+ * the likely single main loop thread anyway.
+ * The balance of reduced contention vs. extra init/cleanup calls
+ * would need to be profiled. */
 static GMutex call_mutex;
 
 static gboolean loop_callback (gpointer data)
 {
   RustCallData *call_data = data;
+  GMainContext *context;
 
-  call_data->retval = call_data->func (call_data->param);
+  context = g_main_context_get_thread_default ();
+  if (context == NULL)
+    context = g_main_context_default ();
+
+  call_data->func (call_data->param, context);
 
   g_mutex_lock (&call_mutex);
   call_data->returned = TRUE;
@@ -102,30 +61,65 @@ static gboolean loop_callback (gpointer data)
   return FALSE;
 }
 
-gpointer
-grustna_call (RustFunc func, gpointer param)
+void
+grustna_call (RustFunc func, gpointer data, GMainContext *context)
 {
-  RustCallData call_data;
-  GSource *idle;
+  GMainContext *thread_context;
 
-  call_data.func = func;
-  call_data.param = param;
-  call_data.retval = NULL;
+  g_return_if_fail (func != NULL);
 
-  g_cond_init (&call_data.return_cond);
+  /* This code is largely copied from g_main_context_invoke_full() */
 
-  idle = g_idle_source_new ();
-  g_source_set_priority (idle, G_PRIORITY_DEFAULT);
-  g_source_set_callback (idle, loop_callback, &call_data, NULL);
-  g_source_attach (idle, get_event_thread_context ());
-  g_source_unref (idle);
+  if (context == NULL)
+    context = g_main_context_default ();
 
-  g_mutex_lock (&call_mutex);
-  while (!call_data.returned)
-    g_cond_wait (&call_data.return_cond, &call_mutex);
-  g_mutex_unlock (&call_mutex);
+  if (g_main_context_is_owner (context))
+    {
+      /* Fastest path: the caller is in the same thread where some code
+       * is supposedly driving the loop context affine to this call. */
+      func (data, context);
+      return;
+    }
 
-  g_cond_clear (&call_data.return_cond);
+  thread_context = g_main_context_get_thread_default ();
+  if (thread_context == NULL)
+    thread_context = g_main_context_default ();
 
-  return call_data.retval;
+  if (context == thread_context && g_main_context_acquire (context))
+    {
+      /* Here, we get to exclusively use the thread's default context
+       * that is not (yet) driven by an event loop.
+       * This is perfectly OK for non-async functions on objects affine
+       * to this context, and matches the behavior of GIO-style async calls
+       * that rely on the thread-default context to be eventually driven
+       * in order to complete. */
+      func (data, context);
+      g_main_context_release (context);
+    }
+  else
+    {
+      /* We are out of fast options. Shunt the call to the loop thread
+       * and wait for it to complete. */
+
+      RustCallData call_data;
+      GSource *idle;
+
+      call_data.func = func;
+      call_data.param = data;
+
+      g_cond_init (&call_data.return_cond);
+
+      idle = g_idle_source_new ();
+      g_source_set_priority (idle, G_PRIORITY_DEFAULT);
+      g_source_set_callback (idle, loop_callback, &call_data, NULL);
+      g_source_attach (idle, context);
+      g_source_unref (idle);
+
+      g_mutex_lock (&call_mutex);
+      while (!call_data.returned)
+        g_cond_wait (&call_data.return_cond, &call_mutex);
+      g_mutex_unlock (&call_mutex);
+
+      g_cond_clear (&call_data.return_cond);
+    }
 }
