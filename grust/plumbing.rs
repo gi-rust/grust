@@ -30,6 +30,8 @@ pub struct Object<R> {
 }
 
 pub unsafe fn take_object<R>(obj: *R, ctx: *GMainContext) -> Object<R> {
+    debug!("task %d: taking object %? (ref context %?)",
+           *task::get_task(), obj, ctx);
     Object { wrapped: obj, context: g_main_context_ref(ctx) }
 }
 
@@ -73,6 +75,8 @@ pub unsafe fn call_off_stack(ctx: *GMainContext, func: ~fn(*GMainContext)) {
 impl<R> Drop for Object<R> {
     fn finalize(&self) {
         unsafe {
+            debug!("task %d: finalize (unref context %?) unref object %?",
+                   *task::get_task(), self.context, self.wrapped);
             g_main_context_unref(self.context);
             g_object_unref(self.wrapped as *());
         }
@@ -82,6 +86,7 @@ impl<R> Drop for Object<R> {
 impl<R> Clone for Object<R> {
     fn clone(&self) -> Object<R> {
         unsafe {
+            debug!("task %d: clone ref object %?", *task::get_task(), self.wrapped);
             g_object_ref(self.wrapped as *());
             take_object(self.wrapped, self.context)
         }
