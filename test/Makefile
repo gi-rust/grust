@@ -2,7 +2,7 @@ top_srcdir = ..
 
 include $(top_srcdir)/build/params.mk
 
-RUSTCFLAGS = -L ../na -L ../grust/$(OUT_DIR) -L ../$(OUT_DIR) --test
+RUSTCFLAGS += -L ../na -L ../grust/$(OUT_DIR) -L ../$(OUT_DIR) --test
 
 $(OUT_DIR)/grust-proof: grust-proof.rs | $(OUT_DIR)
 	$(RUSTC) $(RUSTCFLAGS) -o $@ $<

@@ -2,7 +2,7 @@ top_srcdir = .
 
 include $(top_srcdir)/build/params.mk
 
-RUSTCFLAGS = -L grust/$(OUT_DIR) -L $(OUT_DIR)
+RUSTCFLAGS += -L grust/$(OUT_DIR) -L $(OUT_DIR)
 
 SUBDIRS = grust test
 

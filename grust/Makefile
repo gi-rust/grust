@@ -2,7 +2,7 @@ top_srcdir = ..
 
 include $(top_srcdir)/build/params.mk
 
-RUSTCFLAGS = -L ../na
+RUSTCFLAGS += -L ../na
 
 all: $(OUT_DIR)/.built.grust
 
