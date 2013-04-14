@@ -37,9 +37,12 @@ mod init;
 
 #[link_name="grustna"]
 pub extern mod na {
-    fn grustna_call(func: *u8,
-                    data: *(),
-                    context: *GMainContext) -> gboolean;
+    fn grustna_call_on_stack (func: *u8,
+                              data: *(),
+                              context: *GMainContext) -> gboolean;
+    fn grustna_call_off_stack(func: *u8,
+                              data: *(),
+                              context: *GMainContext) -> gboolean;
 }
 
 #[link_name="glib-2.0"]

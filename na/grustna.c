@@ -85,13 +85,55 @@ static void call_source_destroyed (gpointer data)
 }
 
 gboolean
-grustna_call (RustFunc func, gpointer data, GMainContext *context)
+grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
+{
+  RustCallData call_data;
+  GSource *idle;
+
+  g_return_val_if_fail (func != NULL, FALSE);
+
+  if (context == NULL)
+    context = g_main_context_default ();
+
+  /* Avoid deadlocking ourselves */
+  g_return_val_if_fail (!g_main_context_is_owner (context), FALSE);
+
+  /* Shunt the call to the loop thread
+   * and wait for it to complete. */
+
+  call_data.func = func;
+  call_data.param = data;
+  call_data.status = RUST_CALL_PENDING;
+
+  g_cond_init (&call_data.return_cond);
+
+  idle = g_idle_source_new ();
+  g_source_set_priority (idle, G_PRIORITY_DEFAULT);
+  g_source_set_callback (idle, loop_callback, &call_data,
+                         call_source_destroyed);
+  g_source_attach (idle, context);
+  g_source_unref (idle);
+
+  g_mutex_lock (&call_mutex);
+  while (call_data.status == RUST_CALL_PENDING)
+    g_cond_wait (&call_data.return_cond, &call_mutex);
+  g_mutex_unlock (&call_mutex);
+
+  g_cond_clear (&call_data.return_cond);
+
+  return call_data.status == RUST_CALL_RETURNED;
+}
+
+gboolean
+grustna_call_on_stack (RustFunc      func,
+                       gpointer      data,
+                       GMainContext *context)
 {
   GMainContext *thread_context;
 
   g_return_val_if_fail (func != NULL, FALSE);
 
-  /* This code is largely copied from g_main_context_invoke_full() */
+  /* This code is largely based on g_main_context_invoke_full() */
 
   if (context == NULL)
     context = g_main_context_default ();
@@ -120,34 +162,7 @@ grustna_call (RustFunc func, gpointer data, GMainContext *context)
       g_main_context_release (context);
       return TRUE;
     }
-  else
-    {
-      /* We are out of fast options. Shunt the call to the loop thread
-       * and wait for it to complete. */
 
-      RustCallData call_data;
-      GSource *idle;
-
-      call_data.func = func;
-      call_data.param = data;
-      call_data.status = RUST_CALL_PENDING;
-
-      g_cond_init (&call_data.return_cond);
-
-      idle = g_idle_source_new ();
-      g_source_set_priority (idle, G_PRIORITY_DEFAULT);
-      g_source_set_callback (idle, loop_callback, &call_data,
-                             call_source_destroyed);
-      g_source_attach (idle, context);
-      g_source_unref (idle);
-
-      g_mutex_lock (&call_mutex);
-      while (call_data.status == RUST_CALL_PENDING)
-        g_cond_wait (&call_data.return_cond, &call_mutex);
-      g_mutex_unlock (&call_mutex);
-
-      g_cond_clear (&call_data.return_cond);
-
-      return call_data.status == RUST_CALL_RETURNED;
-    }
+  /* No can do, try the function next door */
+  return FALSE;
 }

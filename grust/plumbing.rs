@@ -18,9 +18,9 @@
  * 02110-1301  USA
  */
 
-use na::grustna_call;
-use gobject::{g_object_ref,g_object_unref};
+use na::{grustna_call_on_stack,grustna_call_off_stack};
 use glib::{g_main_context_ref, g_main_context_unref};
+use gobject::{g_object_ref,g_object_unref};
 
 pub trait GMainContext { }
 
@@ -38,15 +38,33 @@ impl<R> Object<R> {
     pub unsafe fn context(&self) -> *GMainContext { self.context }
 }
 
-extern fn call_cb(data: *(), ctx: *GMainContext) {
+extern fn call_on_stack_cb(data: *(), ctx: *GMainContext) {
+    unsafe {
+        let func = *(data as *&fn(*GMainContext));
+        func(ctx);
+    } 
+}
+
+extern fn call_off_stack_cb(data: *(), ctx: *GMainContext) {
     unsafe {
         let func = *(data as *~fn(*GMainContext));
         func(ctx);
     } 
 }
 
-pub unsafe fn call(ctx: *GMainContext, func: ~fn(*GMainContext)) {
-    if !(grustna_call(call_cb, ptr::to_unsafe_ptr(&func) as *(), ctx) as bool) {
+pub unsafe fn call_on_stack(ctx: *GMainContext, func: &fn(*GMainContext))
+        -> bool {
+    return grustna_call_on_stack(call_on_stack_cb,
+                                 ptr::to_unsafe_ptr(&func) as *(),
+                                 ctx)
+           as bool;
+}
+
+pub unsafe fn call_off_stack(ctx: *GMainContext, func: ~fn(*GMainContext)) {
+    if !(grustna_call_off_stack(call_off_stack_cb,
+                                ptr::to_unsafe_ptr(&func) as *(),
+                                ctx)
+         as bool) {
         fail!();
     }
 }
