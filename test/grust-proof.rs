@@ -27,8 +27,20 @@ pub extern mod grustna {
 }
 
 #[test]
-fn main() {
+fn simple() {
     grust::init();
     let f = &gio::File::new_for_path("/dev/null") as &gio::File;
     assert!(f.get_path().to_str() == ~"/dev/null");
+}
+
+// Crashes due to https://github.com/mozilla/rust/issues/5882
+#[test]
+#[ignore]
+fn off_stack() {
+    grust::init();
+    let f = ~gio::File::new_for_path("/dev/null") as ~gio::File;
+    do task::try {
+        let p = f.get_path();
+        assert!(p.to_str() == ~"/dev/null");
+    };
 }
