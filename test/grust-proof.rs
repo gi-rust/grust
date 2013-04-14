@@ -21,6 +21,11 @@
 extern mod grust (name="grust", vers="0.1");
 extern mod gio (name="grust-Gio", vers="2.0");
 
+// We have to do this because of an rpath problem with crates linking to
+// foreign libraries
+pub extern mod grustna {
+}
+
 #[test]
 fn main() {
     grust::init();

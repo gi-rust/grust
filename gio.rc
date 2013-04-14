@@ -28,6 +28,7 @@ extern mod glib (name="grust-GLib", vers="2.0");
 extern mod gobject (name="grust-GObject", vers="2.0");
 
 use grust::plumbing;
+use grust::types::*;
 use grust::gstr;
 
 pub mod raw {
@@ -48,9 +49,20 @@ pub trait File {
 
 impl File {
     pub fn new_for_path(path: &str) -> plumbing::Object<raw::GFile> {
+        let in = path.to_owned();
         unsafe {
-            plumbing::wrap_object(str::as_c_str(path,
-                    raw::symbols::g_file_new_for_path))
+            let mut out: ~(*plumbing::GMainContext, *raw::GFile)
+                         = ~(ptr::null(), ptr::null());
+            let po = ptr::to_mut_unsafe_ptr(out);
+            plumbing::call(ptr::null(),
+                |_ctx| unsafe {
+                    *po = (_ctx,
+                           str::as_c_str(in,
+                                raw::symbols::g_file_new_for_path));
+                });
+            match (*out) {
+                (ctx, obj) => plumbing::take_object(obj, ctx)
+            }
         }
     }
 }
@@ -58,8 +70,14 @@ impl File {
 impl File for plumbing::Object<raw::GFile> {
     fn get_path(&self) -> gstr::utf8 {
         unsafe {
-            let ret = raw::symbols::g_file_get_path(self.unwrap());
-            gstr::utf8::wrap(ret)
+            let self_ptr = self.raw();
+            let mut out: ~*gchar = ~ptr::null();
+            let po = ptr::to_mut_unsafe_ptr(out);
+            plumbing::call(self.context(),
+                |_ctx| unsafe {
+                    *po = raw::symbols::g_file_get_path(self_ptr);
+                });
+            gstr::utf8::wrap(*out)
         }
     }
 }

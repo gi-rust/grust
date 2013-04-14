@@ -18,24 +18,44 @@
  * 02110-1301  USA
  */
 
+use na::grustna_call;
 use gobject::{g_object_ref,g_object_unref};
+use glib::{g_main_context_ref, g_main_context_unref};
+
+pub trait GMainContext { }
 
 pub struct Object<R> {
-    priv wrapped: *R
+    priv wrapped: *R,
+    priv context: *GMainContext
 }
 
-pub unsafe fn wrap_object<R>(obj: *R) -> Object<R> {
-    Object { wrapped: obj }
+pub unsafe fn take_object<R>(obj: *R, ctx: *GMainContext) -> Object<R> {
+    Object { wrapped: obj, context: g_main_context_ref(ctx) }
 }
 
 impl<R> Object<R> {
-    pub unsafe fn unwrap(&self) -> *R { self.wrapped }
+    pub unsafe fn raw(&self) -> *R { self.wrapped }
+    pub unsafe fn context(&self) -> *GMainContext { self.context }
+}
+
+extern fn call_cb(data: *(), ctx: *GMainContext) {
+    unsafe {
+        let func = *(data as *~fn(*GMainContext));
+        func(ctx);
+    } 
+}
+
+pub unsafe fn call(ctx: *GMainContext, func: ~fn(*GMainContext)) {
+    if !(grustna_call(call_cb, ptr::to_unsafe_ptr(&func) as *(), ctx) as bool) {
+        fail!();
+    }
 }
 
 #[unsafe_destructor]
 impl<R> Drop for Object<R> {
     fn finalize(&self) {
         unsafe {
+            g_main_context_unref(self.context);
             g_object_unref(self.wrapped as *());
         }
     }
@@ -45,7 +65,7 @@ impl<R> Clone for Object<R> {
     fn clone(&self) -> Object<R> {
         unsafe {
             g_object_ref(self.wrapped as *());
-            wrap_object(self.wrapped)
+            take_object(self.wrapped, self.context)
         }
     }
 }
