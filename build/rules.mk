@@ -1,22 +1,6 @@
-.PHONY: all
-.PHONY: check
-.PHONY: clean clean-libs clean-recursive
+.libs/.built.%: %.rc | .libs
+	$(RUSTC) $(LOCAL_RUSTCFLAGS) $(RUSTCFLAGS) --out-dir .libs $< \
+	  && touch $@
 
-RECURSIVE_TARGETS = clean-recursive
-
-$(RECURSIVE_TARGETS): %-recursive:
-	for dir in $(SUBDIRS); do \
-	  $(MAKE) -C $$dir $*; \
-	done
-
-clean: clean-libs
-
-clean-libs:
-	rm -f $(OUT_DIR)/.built.*
-	rm -f $(OUT_DIR)/*.so
-
-$(OUT_DIR)/.built.%: %.rc | $(OUT_DIR)
-	$(RUSTC) $(RUSTCFLAGS) --out-dir $(OUT_DIR) $< && touch $@
-
-$(OUT_DIR):
-	mkdir -p $(OUT_DIR)
+.libs:
+	mkdir -p .libs
