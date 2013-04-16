@@ -96,7 +96,20 @@ grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
     context = g_main_context_default ();
 
   /* Avoid deadlocking ourselves */
-  g_return_val_if_fail (!g_main_context_is_owner (context), FALSE);
+  if (g_main_context_acquire (context))
+    {
+      /* Temporarily assume the other thread's main context
+       * to run the call on the local stack */
+
+      g_main_context_push_thread_default (context);
+
+      func (data, context);
+
+      g_main_context_pop_thread_default (context);
+
+      g_main_context_release (context);
+      return TRUE;
+    }
 
   /* Shunt the call to the loop thread
    * and wait for it to complete. */
@@ -129,8 +142,6 @@ grustna_call_on_stack (RustFunc      func,
                        gpointer      data,
                        GMainContext *context)
 {
-  GMainContext *thread_context;
-
   g_return_val_if_fail (func != NULL, FALSE);
 
   /* This code is largely based on g_main_context_invoke_full() */
@@ -146,19 +157,21 @@ grustna_call_on_stack (RustFunc      func,
       return TRUE;
     }
 
-  thread_context = g_main_context_get_thread_default ();
-  if (thread_context == NULL)
-    thread_context = g_main_context_default ();
-
-  if (context == thread_context && g_main_context_acquire (context))
+  if (g_main_context_acquire (context))
     {
-      /* Here, we get to exclusively use the thread's default context
+      /* Here, we get to exclusively use the desired loop context
        * that is not (yet) driven by an event loop.
        * This is perfectly OK for non-async functions on objects affine
        * to this context, and matches the behavior of GIO-style async calls
        * that rely on the thread-default context to be eventually driven
        * in order to complete. */
+
+      g_main_context_push_thread_default (context);
+
       func (data, context);
+
+      g_main_context_pop_thread_default (context);
+
       g_main_context_release (context);
       return TRUE;
     }
