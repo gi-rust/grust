@@ -4,4 +4,8 @@ all-local: .libs/.built.grust
 
 include $(top_srcdir)/build/rules.mk
 
-.libs/.built.grust: grust.rc *.rs
+DEPS = $(top_builddir)/na/libgrustna.la
+
+.libs/.built.grust: grust.rc *.rs $(DEPS)
+
+$(DEPS):
