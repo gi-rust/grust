@@ -26,39 +26,48 @@ extern mod gio (name="grust-Gio", vers="2.0");
 pub extern mod grustna {
 }
 
+fn tcase(test: &fn()) {
+    grust::init();
+    test();
+}
+
 #[test]
 fn simple() {
-    grust::init();
-    let f = &gio::File::new_for_path("/dev/null") as &gio::File;
-    assert!(f.get_path().to_str() == ~"/dev/null");
+    do tcase {
+        let f = &gio::File::new_for_path("/dev/null") as &gio::File;
+        assert!(f.get_path().to_str() == ~"/dev/null");
+    }
 }
 
 #[test]
 fn clone() {
-    grust::init();
-    let f = &gio::File::new_for_path("/dev/null").clone() as &gio::File;
-    assert!(f.get_path().to_str() == ~"/dev/null");
+    do tcase {
+        let f = &gio::File::new_for_path("/dev/null").clone() as &gio::File;
+        assert!(f.get_path().to_str() == ~"/dev/null");
+    }
 }
 
 // Crashes due to https://github.com/mozilla/rust/issues/5882
 #[test]
 #[ignore]
 fn off_stack() {
-    grust::init();
-    let f = ~gio::File::new_for_path("/dev/null") as ~gio::File;
-    do spawn {
-        let p = f.get_path();
-        assert!(p.to_str() == ~"/dev/null");
+    do tcase {
+        let f = ~gio::File::new_for_path("/dev/null") as ~gio::File;
+        do spawn {
+            let p = f.get_path();
+            assert!(p.to_str() == ~"/dev/null");
+        }
     }
 }
 
 #[test]
 fn off_stack_borrow() {
-    grust::init();
-    let f = ~gio::File::new_for_path("/dev/null");
-    do spawn {
-        let g = &*f as &gio::File;
-        let p = g.get_path();
-        assert!(p.to_str() == ~"/dev/null");
+    do tcase {
+        let f = ~gio::File::new_for_path("/dev/null");
+        do spawn {
+            let g = &*f as &gio::File;
+            let p = g.get_path();
+            assert!(p.to_str() == ~"/dev/null");
+        }
     }
 }
