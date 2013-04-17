@@ -64,8 +64,7 @@ call_data_unref (RustCallData *call_data)
     }
 }
 
-/* This could be a per-call mutex, but the callers are going to wait on
- * the likely single main loop thread anyway.
+/* This could be a per-call mutex.
  * The balance of reduced contention vs. extra init/cleanup calls
  * would need to be profiled. */
 static GMutex call_mutex;
@@ -179,13 +178,40 @@ add_call_minder (RustCallData *call_data)
   g_thread_pool_push (pool, call_data, NULL);
 }
 
+static GMainContext *
+get_rust_thread_context ()
+{
+  static GMutex mutex;
+
+  GMainContext *context;
+
+  g_mutex_lock (&mutex);
+
+  context = g_main_context_get_thread_default ();
+  if (context == NULL)
+    {
+      context = g_main_context_new ();
+      g_main_context_push_thread_default (context);
+      g_main_context_release (context);
+    }
+
+  g_mutex_unlock (&mutex);
+
+  return context;
+}
+
 gboolean
 grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
 {
+  gboolean thread_default_context = FALSE;
+
   g_return_val_if_fail (func != NULL, FALSE);
 
   if (context == NULL)
-    context = g_main_context_default ();
+    {
+      context = get_rust_thread_context ();
+      thread_default_context = TRUE;
+    }
 
   /* Avoid deadlocking ourselves */
   if (g_main_context_acquire (context))
@@ -193,11 +219,13 @@ grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
       /* Temporarily assume the other thread's main context
        * to run the call on the local stack */
 
-      g_main_context_push_thread_default (context);
+      if (!thread_default_context)
+        g_main_context_push_thread_default (context);
 
       func (data, context);
 
-      g_main_context_pop_thread_default (context);
+      if (!thread_default_context)
+        g_main_context_pop_thread_default (context);
 
       g_main_context_release (context);
       return TRUE;
@@ -245,12 +273,17 @@ grustna_call_on_stack (RustFunc      func,
                        gpointer      data,
                        GMainContext *context)
 {
+  gboolean thread_default_context = FALSE;
+
   g_return_val_if_fail (func != NULL, FALSE);
 
-  /* This code is largely based on g_main_context_invoke_full() */
-
   if (context == NULL)
-    context = g_main_context_default ();
+    {
+      context = get_rust_thread_context ();
+      thread_default_context = TRUE;
+    }
+
+  /* This code is based on g_main_context_invoke_full() */
 
   if (g_main_context_is_owner (context))
     {
@@ -269,11 +302,13 @@ grustna_call_on_stack (RustFunc      func,
        * that rely on the thread-default context to be eventually driven
        * in order to complete. */
 
-      g_main_context_push_thread_default (context);
+      if (!thread_default_context)
+        g_main_context_push_thread_default (context);
 
       func (data, context);
 
-      g_main_context_pop_thread_default (context);
+      if (!thread_default_context)
+        g_main_context_pop_thread_default (context);
 
       g_main_context_release (context);
       return TRUE;
