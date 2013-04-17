@@ -1,8 +1,16 @@
 TESTS_ENVIRONMENT = \
-  export G_DEBUG=fatal-criticals; \
-  export GIO_USE_VFS=local; \
-  export LD_LIBRARY_PATH=$(top_builddir)/na/.libs; \
+  export G_DEBUG=fatal-criticals;			\
+  export GIO_USE_VFS=local;				\
+  export LD_LIBRARY_PATH=$(top_builddir)/na/.libs; 	\
   #
+
+TESTS_ENVIRONMENT_SERIAL = \
+  $(TESTS_ENVIRONMENT)		\
+  export G_SLICE=debug-blocks;	\
+  export RUST_THREADS=1;
+
+TESTS_ENVIRONMENT_PARALLEL = \
+  $(TESTS_ENVIRONMENT)
 
 LOCAL_RUSTCFLAGS := \
   -L $(top_builddir)/na/.libs \
@@ -12,11 +20,11 @@ LOCAL_RUSTCFLAGS := \
 check-local: grust-proof
 if TEST_RUN_SERIAL
 	@echo Running tests serially
-	@$(TESTS_ENVIRONMENT) RUST_THREADS=1 ./grust-proof
+	@$(TESTS_ENVIRONMENT_SERIAL) ./grust-proof
 endif
 if TEST_RUN_PARALLEL
 	@echo Running tests in parallel
-	@$(TESTS_ENVIRONMENT) ./grust-proof
+	@$(TESTS_ENVIRONMENT_PARALLEL) ./grust-proof
 endif
 if !TEST_RUN_SERIAL
 if !TEST_RUN_PARALLEL
