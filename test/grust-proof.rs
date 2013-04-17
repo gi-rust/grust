@@ -21,6 +21,8 @@
 extern mod grust (name="grust", vers="0.1");
 extern mod gio (name="grust-Gio", vers="2.0");
 
+use core::result::{Result,Ok};
+
 // We have to do this because of an rpath problem with crates linking to
 // foreign libraries
 pub extern mod grustna {
@@ -29,6 +31,12 @@ pub extern mod grustna {
 fn tcase(test: &fn()) {
     grust::init();
     test();
+}
+
+fn tcase_result(test: &fn() -> Result<(),()>) {
+    grust::init();
+    let result = test();
+    assert!(result == Ok(()));
 }
 
 #[test]
@@ -51,9 +59,9 @@ fn clone() {
 #[test]
 #[ignore]
 fn off_stack() {
-    do tcase {
+    do tcase_result {
         let f = ~gio::File::new_for_path("/dev/null") as ~gio::File;
-        do spawn {
+        do task::try {
             let p = f.get_path();
             assert!(p.to_str() == ~"/dev/null");
         }
@@ -62,9 +70,9 @@ fn off_stack() {
 
 #[test]
 fn off_stack_borrow() {
-    do tcase {
+    do tcase_result {
         let f = ~gio::File::new_for_path("/dev/null");
-        do spawn {
+        do task::try {
             let g = &*f as &gio::File;
             let p = g.get_path();
             assert!(p.to_str() == ~"/dev/null");
