@@ -1,4 +1,5 @@
 TESTS_ENVIRONMENT = \
+  export G_DEBUG=fatal-criticals; \
   export GIO_USE_VFS=local; \
   export LD_LIBRARY_PATH=$(top_builddir)/na/.libs; \
   #
