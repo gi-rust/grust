@@ -7,7 +7,7 @@ LT_INIT([disable-static])
 
 AC_CHECK_TOOL([RUSTC], [rustc], [rustc])
 
-PKG_CHECK_MODULES([GLIB], [glib-2.0 gobject-2.0])
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.32 gobject-2.0])
 
 GLIB_L_FLAGS=$($PKG_CONFIG --libs-only-L glib-2.0 gobject-2.0 gio-2.0)
 AC_SUBST([GLIB_L_FLAGS])

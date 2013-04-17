@@ -21,9 +21,14 @@
  * 02110-1301  USA
  */
 
+#define GLIB_VERSION_MIN_REQUIRED GLIB_VERSION_2_32
+#define GLIB_VERSION_MAX_ALLOWED  GLIB_VERSION_2_36
+
 #define G_LOG_DOMAIN "Grust"
 
 #include <glib.h>
+
+#define CALL_MINDER_TIMEOUT (500 * G_TIME_SPAN_MILLISECOND)
 
 typedef void (*RustFunc) (gpointer param, GMainContext *context);
 
@@ -31,7 +36,7 @@ typedef enum
 {
   RUST_CALL_PENDING,
   RUST_CALL_RETURNED,
-  RUST_CALL_ABORTED
+  RUST_CALL_TIMED_OUT
 } RustCallStatus;
 
 typedef struct _RustCallData RustCallData;
@@ -39,9 +44,25 @@ struct _RustCallData
 {
   RustFunc func;
   gpointer param;
+  GMainContext *context;
+  GSource *source;
+  gint64 minder_backoff;
   GCond return_cond;
+  gint ref_count;
   volatile RustCallStatus status;
 };
+
+static void
+call_data_unref (RustCallData *call_data)
+{
+  if (g_atomic_int_dec_and_test (&call_data->ref_count))
+    {
+      g_cond_clear (&call_data->return_cond);
+      g_source_unref (call_data->source);
+      g_main_context_unref (call_data->context);
+      g_slice_free (RustCallData, call_data);
+    }
+}
 
 /* This could be a per-call mutex, but the callers are going to wait on
  * the likely single main loop thread anyway.
@@ -49,47 +70,118 @@ struct _RustCallData
  * would need to be profiled. */
 static GMutex call_mutex;
 
-static gboolean loop_callback (gpointer data)
+static gboolean
+loop_callback (gpointer data)
 {
   RustCallData *call_data = data;
-  GMainContext *context;
 
-  context = g_main_context_get_thread_default ();
-  if (context == NULL)
-    context = g_main_context_default ();
-
-  call_data->func (call_data->param, context);
+  call_data->func (call_data->param, call_data->context);
 
   g_mutex_lock (&call_mutex);
   call_data->status = RUST_CALL_RETURNED;
-  g_cond_signal (&call_data->return_cond);
+  g_cond_broadcast (&call_data->return_cond);
   g_mutex_unlock (&call_mutex);
 
   return FALSE;
 }
 
-static void call_source_destroyed (gpointer data)
+static void
+call_minder (gpointer data, G_GNUC_UNUSED gpointer pool_data)
 {
   RustCallData *call_data = data;
+  GMainContext *context = call_data->context;
+  RustCallStatus status = RUST_CALL_PENDING;
+  gint64 end_time;
 
-  if (G_LIKELY (call_data->status != RUST_CALL_PENDING))
-    return;
+  end_time = g_get_monotonic_time() + CALL_MINDER_TIMEOUT;
 
-  g_critical ("loop context has been destroyed before a cross-thread call"
-              " could be made");
+  do
+    {
+      if (g_main_context_acquire (context))
+        {
+          status = call_data->status;  /* No locking needed */
 
-  g_mutex_lock (&call_mutex);
-  call_data->status = RUST_CALL_ABORTED;
-  g_cond_signal (&call_data->return_cond);
-  g_mutex_unlock (&call_mutex);
+          if (status == RUST_CALL_PENDING)
+            {
+              /* Nothing has been there to drive our call, let's do it now */
+
+              g_source_destroy (call_data->source);
+
+              g_main_context_push_thread_default (context);
+
+              call_data->func (call_data->param, context);
+
+              g_main_context_pop_thread_default (context);
+
+              g_mutex_lock (&call_mutex);
+              status = RUST_CALL_RETURNED;
+              call_data->status = status;
+              g_cond_signal (&call_data->return_cond);
+              g_mutex_unlock (&call_mutex);
+            }
+
+          g_main_context_release (context);
+        }
+      else
+        {
+          gint64 wakeup_time;
+
+          g_mutex_lock (&call_mutex);
+
+          wakeup_time = g_get_monotonic_time () + call_data->minder_backoff;
+          if (wakeup_time > end_time)
+            {
+              g_critical ("call timed out waiting on context %p", call_data->context);
+              status = RUST_CALL_TIMED_OUT;
+              call_data->status = status;
+              g_cond_signal (&call_data->return_cond);
+            }
+          else if (!g_cond_wait_until (&call_data->return_cond, &call_mutex,
+                                       wakeup_time))
+            call_data->minder_backoff *= 2;
+
+          status = call_data->status;
+
+          g_mutex_unlock (&call_mutex);
+        }
+    }
+  while (status == RUST_CALL_PENDING);
+
+  call_data_unref (call_data);
+}
+
+static gpointer
+create_call_minder_pool ()
+{
+  g_message ("Taking an inefficient, lock-prone call path"
+             " -- consider against migrating object references between tasks");
+
+  return g_thread_pool_new (call_minder, NULL,
+#if GLIB_CHECK_VERSION(2, 36, 0)
+                            g_get_num_processors (),
+#else
+                            12,
+#endif
+                            FALSE,
+                            NULL);
+}
+
+static void
+add_call_minder (RustCallData *call_data)
+{
+  static GOnce pool_once = G_ONCE_INIT;
+
+  GThreadPool *pool;
+
+  g_once (&pool_once, create_call_minder_pool, NULL);
+  pool = pool_once.retval;
+
+  g_thread_pool_push (pool, call_data, NULL);
 }
 
 gboolean
 grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
 {
-  RustCallData call_data;
-  GSource *idle;
-
   g_return_val_if_fail (func != NULL, FALSE);
 
   if (context == NULL)
@@ -110,31 +202,42 @@ grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
       g_main_context_release (context);
       return TRUE;
     }
+  else
+    {
+      /* Shunt the call to the loop thread
+       * and wait for it to complete. */
 
-  /* Shunt the call to the loop thread
-   * and wait for it to complete. */
+      RustCallData *call_data;
+      RustCallStatus status;
+      GSource *idle;
 
-  call_data.func = func;
-  call_data.param = data;
-  call_data.status = RUST_CALL_PENDING;
+      call_data = g_slice_new0 (RustCallData);
+      call_data->func = func;
+      call_data->param = data;
+      call_data->context = g_main_context_ref (context);
+      call_data->ref_count = 2;
+      call_data->minder_backoff = 1 * G_TIME_SPAN_MILLISECOND;
+      call_data->status = RUST_CALL_PENDING;
 
-  g_cond_init (&call_data.return_cond);
+      idle = g_idle_source_new ();
+      g_source_set_priority (idle, G_PRIORITY_DEFAULT);
+      g_source_set_callback (idle, loop_callback, &call_data, NULL);
+      g_source_attach (idle, context);
+      call_data->source = idle;
 
-  idle = g_idle_source_new ();
-  g_source_set_priority (idle, G_PRIORITY_DEFAULT);
-  g_source_set_callback (idle, loop_callback, &call_data,
-                         call_source_destroyed);
-  g_source_attach (idle, context);
-  g_source_unref (idle);
+      g_cond_init (&call_data->return_cond);
 
-  g_mutex_lock (&call_mutex);
-  while (call_data.status == RUST_CALL_PENDING)
-    g_cond_wait (&call_data.return_cond, &call_mutex);
-  g_mutex_unlock (&call_mutex);
+      add_call_minder (call_data);
 
-  g_cond_clear (&call_data.return_cond);
+      g_mutex_lock (&call_mutex);
+      while ((status = call_data->status) == RUST_CALL_PENDING)
+        g_cond_wait (&call_data->return_cond, &call_mutex);
+      g_mutex_unlock (&call_mutex);
 
-  return call_data.status == RUST_CALL_RETURNED;
+      call_data_unref (call_data);
+
+      return status == RUST_CALL_RETURNED;
+    }
 }
 
 gboolean
