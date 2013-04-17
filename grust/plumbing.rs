@@ -67,7 +67,7 @@ pub unsafe fn call_off_stack(ctx: *GMainContext, func: ~fn(*GMainContext)) {
                                 ptr::to_unsafe_ptr(&func) as *(),
                                 ctx)
          as bool) {
-        fail!();
+        fail!(~"off-stack call failure");
     }
 }
 
