@@ -23,6 +23,7 @@ use glib::{g_main_context_ref, g_main_context_unref};
 use gobject::{g_object_ref,g_object_unref};
 
 pub trait GMainContext { }
+pub trait GMainLoop { }
 
 pub struct Object<R> {
     priv wrapped: *R,

@@ -317,3 +317,9 @@ grustna_call_on_stack (RustFunc      func,
   /* No can do, try the function next door */
   return FALSE;
 }
+
+GMainLoop *
+grustna_main_loop_new_thread_local ()
+{
+  return g_main_loop_new (get_rust_thread_context (), FALSE);
+}
