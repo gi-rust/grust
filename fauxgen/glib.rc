@@ -28,9 +28,18 @@ extern mod grust (name="grust", vers="0.1");
 pub mod raw {
     use grust::types::*;
 
+    pub type GQuark = u32;
+
+    pub struct GError {
+        domain: GQuark,
+        code: gint,
+        message: *gchar
+    }
+
     #[link_name="glib-2.0"]
     pub extern mod symbols {
         pub fn g_free(mem: *());
         pub fn g_strdup(str: *gchar) -> *gchar;
+        pub fn g_error_free(err: *GError);
     }
 }

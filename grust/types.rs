@@ -18,10 +18,11 @@
  * 02110-1301  USA
  */
 
-pub type gchar = libc::c_char;
-pub type guint = libc::c_uint;
-pub type gsize = libc::size_t;
-pub type gboolean = libc::c_int;
+pub type gboolean       = libc::c_int;
+pub type gchar          = libc::c_char;
+pub type gint           = libc::c_int;
+pub type guint          = libc::c_uint;
+pub type gsize          = libc::size_t;
 
 pub static FALSE: gboolean = 0;
 pub static TRUE:  gboolean = !FALSE;
