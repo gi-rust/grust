@@ -22,10 +22,11 @@ extern mod grust (name="grust", vers="0.1");
 extern mod gio (name="grust-Gio", vers="2.0");
 
 use core::result::{Result,Ok};
+use grust::eventloop::EventLoop;
 
 // We have to do this because of an rpath problem with crates linking to
 // foreign libraries
-pub extern mod grustna {
+extern mod grustna {
 }
 
 fn tcase(test: &fn()) {
@@ -34,34 +35,47 @@ fn tcase(test: &fn()) {
 }
 
 fn tcase_result(test: &fn() -> Result<(),()>) {
-    grust::init();
-    let result = test();
-    assert!(result == Ok(()));
+    do tcase {
+        let result = test();
+        assert!(result == Ok(()));
+    }
 }
 
 #[test]
 fn simple() {
     do tcase {
-        let f = &gio::File::new_for_path("/dev/null") as &gio::File;
+        let fobj = gio::File::new_for_path("/dev/null");
+        let f = fobj.interface() as &gio::File;
         assert!(f.get_path().to_str() == ~"/dev/null");
+    }
+}
+
+#[test]
+fn new_ref() {
+    do tcase {
+        let fobj = gio::File::new_for_path("/dev/null");
+        let gobj = fobj.interface().new_ref();
+        let g = gobj.interface() as &gio::File;
+        assert!(g.get_path().to_str() == ~"/dev/null");
     }
 }
 
 #[test]
 fn clone() {
     do tcase {
-        let f = &gio::File::new_for_path("/dev/null").clone() as &gio::File;
-        assert!(f.get_path().to_str() == ~"/dev/null");
+        let fobj = gio::File::new_for_path("/dev/null");
+        let gobj = fobj.clone();
+        let g = gobj.interface() as &gio::File;
+        assert!(g.get_path().to_str() == ~"/dev/null");
     }
 }
 
-// Crashes due to https://github.com/mozilla/rust/issues/5882
 #[test]
-#[ignore]
 fn off_stack() {
     do tcase_result {
-        let f = ~gio::File::new_for_path("/dev/null") as ~gio::File;
+        let f = ~gio::File::new_for_path("/dev/null");
         do task::try {
+            let f = f.interface() as &gio::File;
             let p = f.get_path();
             assert!(p.to_str() == ~"/dev/null");
         }
@@ -69,13 +83,19 @@ fn off_stack() {
 }
 
 #[test]
-fn off_stack_borrow() {
-    do tcase_result {
-        let f = ~gio::File::new_for_path("/dev/null");
-        do task::try {
-            let g = &*f as &gio::File;
-            let p = g.get_path();
-            assert!(p.to_str() == ~"/dev/null");
-        }
+fn async() {
+    do tcase {
+        let fobj = gio::File::new_for_path("/dev/null");
+        let f = fobj.interface() as &gio::File;
+        let el = EventLoop::new();
+        let elo = ~el.clone();
+        f.read_async(0, None,
+                |obj, res| {
+                    let f: &gio::File = obj.cast::<gio::raw::GFile>()
+                                        as &gio::File;
+                    let in = f.read_finish(res);
+                    elo.quit();
+                });
+        el.run();
     }
 }

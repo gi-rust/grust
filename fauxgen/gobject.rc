@@ -26,10 +26,11 @@
 extern mod grust (name="grust", vers="0.1");
 extern mod glib (name="grust-GLib", vers="2.0");
 
+use grust::object;
+
 pub mod raw {
     use grust::types::*;
-
-    struct GType(gsize);
+    use grust::object::GType;
 
     struct GTypeInstance {
         g_class: *(),
@@ -43,8 +44,21 @@ pub mod raw {
 
     #[link_name="gobject-2.0"]
     pub extern mod symbols {
-        fn g_type_init();
-        fn g_object_ref(obj: *GObject) -> *();
-        fn g_object_unref(obj: *GObject) -> *();
+        fn g_object_get_type() -> GType;
+    }
+}
+
+pub mod classes {
+    use grust::object;
+    use raw;
+
+    pub type Object = object::Interface<raw::GObject>;
+}
+
+impl object::ObjectType for classes::Object {
+    fn get_type() -> object::GType {
+        unsafe {
+            raw::symbols::g_object_get_type()
+        }
     }
 }

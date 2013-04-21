@@ -28,27 +28,117 @@ extern mod glib (name="grust-GLib", vers="2.0");
 extern mod gobject (name="grust-GObject", vers="2.0");
 
 use grust::plumbing;
+use grust::object;
 use grust::types::*;
 use grust::gstr;
 
 pub mod raw {
     use grust::types::*;
+    use grust::object::GType;
+    use glib;
+    use gobject;
 
-    pub trait GFile { }
+    pub struct GAsyncResult;
+    pub struct GFile;
+
+    pub struct GCancellable {
+        parent_instance: gobject::raw::GObject,
+        priv _priv: *()
+    }
+
+    pub struct GInputStream {
+        parent_instance: gobject::raw::GObject,
+        priv _priv: *()
+    }
+
+    pub struct GFileInputStream {
+        parent_instance: GInputStream,
+        priv _priv: *()
+    }
 
     #[link_name="gio-2.0"]
     pub extern mod symbols {
+        fn g_async_result_get_type() -> GType;
+        fn g_file_get_type() -> GType;
         fn g_file_new_for_path(path: *gchar) -> *GFile;
         fn g_file_get_path(file: *GFile) -> *gchar;
+        fn g_file_read_async(file       : *GFile,
+                             io_priority: libc::c_int,
+                             cancellable: *GCancellable,
+                             callback   : *u8,
+                             user_data  : *());
+    }
+}
+
+pub mod classes {
+    use grust::object;
+    use raw;
+
+    pub type Cancellable = object::Interface<raw::GCancellable>;
+    pub type InputStream = object::Interface<raw::GInputStream>;
+    pub type FileInputStream = object::Interface<raw::GFileInputStream>;
+}
+
+pub mod interfaces {
+    use grust::object;
+    use raw;
+
+    pub type AsyncResult = object::Interface<raw::GAsyncResult>;
+    pub type File = object::Interface<raw::GFile>;
+}
+
+pub type AsyncReadyCallback = ~fn(source_object : &gobject::classes::Object,
+                                  res           : &interfaces::AsyncResult);
+
+impl object::ObjectType for raw::GAsyncResult {
+    fn get_type() -> object::GType {
+        unsafe {
+            raw::symbols::g_async_result_get_type()
+        }
+    }
+}
+
+impl object::ObjectType for raw::GFile {
+    fn get_type() -> object::GType {
+        unsafe {
+            raw::symbols::g_file_get_type()
+        }
+    }
+}
+
+mod callbacks {
+    use grust::plumbing;
+    use grust::object;
+    use raw;
+    use gobject;
+
+    pub extern fn async_ready_callback(source_object: *gobject::raw::GObject,
+                                       res          : *raw::GAsyncResult,
+                                       user_data    : *()) {
+        unsafe {
+            assert!(ptr::is_not_null(user_data));
+            let cd: ~plumbing::CallbackData
+                    = cast::transmute(user_data as *plumbing::CallbackData);
+            assert!(ptr::is_not_null(cd.callback));
+            let callback: ~::AsyncReadyCallback
+                          = cast::transmute(cd.callback as *::AsyncReadyCallback);
+            let arg1 = object::make_interface(source_object, cd.context);
+            let arg2 = object::make_interface(res, cd.context);
+            (*callback)(&arg1, &arg2);
+        }
     }
 }
 
 pub trait File {
     fn get_path(&self) -> gstr::utf8;
+    fn read_async(&self,
+                  io_priority: int,
+                  cancellable: Option<&classes::Cancellable>,
+                  callback: AsyncReadyCallback);
 }
 
 impl File {
-    pub fn new_for_path(path: &str) -> plumbing::Object<raw::GFile> {
+    pub fn new_for_path(path: &str) -> object::Reference<raw::GFile> {
         unsafe {
             let mut stack_out: (*plumbing::GMainContext, *raw::GFile)
                                = (ptr::null(), ptr::null());
@@ -72,13 +162,13 @@ impl File {
                 out = ptr::to_unsafe_ptr(owned_out);
             }
             match (*out) {
-                (ctx, obj) => plumbing::take_object(obj, ctx)
+                (ctx, obj) => object::take_object(obj, ctx)
             }
         }
     }
 }
 
-impl File for plumbing::Object<raw::GFile> {
+impl File for interfaces::File {
     fn get_path(&self) -> gstr::utf8 {
         unsafe {
             let self_ptr = self.raw();
@@ -99,6 +189,46 @@ impl File for plumbing::Object<raw::GFile> {
                 out = ptr::to_unsafe_ptr(owned_out);
             }
             gstr::utf8::wrap(*out)
+        }
+    }
+
+    fn read_async(&self,
+                  io_priority: int,
+                  cancellable: Option<&classes::Cancellable>,
+                  callback: AsyncReadyCallback) {
+        unsafe {
+            let self_ptr = self.raw();
+            let self_ctx = self.context();
+            let raw_cancellable: *raw::GCancellable = match (cancellable) {
+                Some(c) => c.raw(),
+                None    => ptr::null()
+            };
+            let mut cb_data = ~plumbing::CallbackData {
+                        callback: cast::transmute(~callback),
+                        context: ptr::null()
+                    };
+            let cb_data_raw: *mut plumbing::CallbackData
+                             = cast::transmute(cb_data);
+            if !plumbing::call_on_stack(self_ctx,
+                    |_ctx| unsafe {
+                        (*cb_data_raw).context = _ctx;
+                        raw::symbols::g_file_read_async(self_ptr,
+                                io_priority as libc::c_int,
+                                raw_cancellable,
+                                callbacks::async_ready_callback,
+                                cb_data_raw as *());
+                    }) {
+                let in = ~io_priority;
+                plumbing::call_off_stack(self_ctx,
+                    |_ctx| unsafe {
+                        (*cb_data_raw).context = _ctx;
+                        raw::symbols::g_file_read_async(self_ptr,
+                                *in as libc::c_int,
+                                raw_cancellable,
+                                callbacks::async_ready_callback,
+                                cb_data_raw as *());
+                    });
+            }
         }
     }
 }

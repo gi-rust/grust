@@ -22,23 +22,59 @@ use na::{grustna_call_on_stack,grustna_call_off_stack};
 use glib::{g_main_context_ref, g_main_context_unref};
 use gobject::{g_object_ref,g_object_unref};
 
-pub trait GMainContext { }
-pub trait GMainLoop { }
+pub struct GMainContext;
+pub struct GMainLoop;
+pub struct GObject;
+pub struct GTypeInstance;
 
-pub struct Object<R> {
-    priv wrapped: *R,
+pub struct Object {
+    priv raw_obj: *GObject,
     priv context: *GMainContext
 }
 
-pub unsafe fn take_object<R>(obj: *R, ctx: *GMainContext) -> Object<R> {
-    debug!("task %d: taking object %? (ref context %?)",
-           *task::get_task(), obj, ctx);
-    Object { wrapped: obj, context: g_main_context_ref(ctx) }
+pub unsafe fn get_object(obj: *GObject, ctx: *GMainContext) -> Object {
+    Object { raw_obj: obj, context: ctx }
 }
 
-impl<R> Object<R> {
-    pub unsafe fn raw(&self) -> *R { self.wrapped }
+pub unsafe fn ref_object(obj: *GObject, ctx: *GMainContext) -> Object {
+    let res = Object { raw_obj: obj, context: ctx };
+    res.inc_ref();
+    res
+}
+
+pub unsafe fn take_object(obj: *GObject, ctx: *GMainContext) -> Object {
+    debug!("task %d: taking object %? (ref context %?)",
+           *task::get_task(), obj, ctx);
+    Object { raw_obj: obj, context: g_main_context_ref(ctx) }
+}
+
+impl Object {
+    pub unsafe fn raw(&self) -> *GObject { self.raw_obj }
+
+    pub unsafe fn type_instance(&self) -> *GTypeInstance {
+        self.raw_obj as *GTypeInstance
+    }
+
     pub unsafe fn context(&self) -> *GMainContext { self.context }
+
+    pub unsafe fn inc_ref(&self) {
+        debug!("task %d: ref object %? (ref context %?)",
+               *task::get_task(), self.raw_obj, self.context);
+        g_object_ref(self.raw_obj as *());
+        g_main_context_ref(self.context);
+    }
+
+    pub unsafe fn dec_ref(&self) {
+        debug!("task %d: unref object %? (unref context %?)",
+               *task::get_task(), self.raw_obj, self.context);
+        g_object_unref(self.raw_obj as *());
+        g_main_context_unref(self.context);
+    }
+}
+
+struct CallbackData {
+    callback: *(),
+    context: *GMainContext
 }
 
 extern fn call_on_stack_cb(data: *(), ctx: *GMainContext) {
@@ -69,27 +105,5 @@ pub unsafe fn call_off_stack(ctx: *GMainContext, func: ~fn(*GMainContext)) {
                                 ctx)
          as bool) {
         fail!(~"off-stack call failure");
-    }
-}
-
-#[unsafe_destructor]
-impl<R> Drop for Object<R> {
-    fn finalize(&self) {
-        unsafe {
-            debug!("task %d: finalize (unref context %?) unref object %?",
-                   *task::get_task(), self.context, self.wrapped);
-            g_main_context_unref(self.context);
-            g_object_unref(self.wrapped as *());
-        }
-    }
-}
-
-impl<R> Clone for Object<R> {
-    fn clone(&self) -> Object<R> {
-        unsafe {
-            debug!("task %d: clone ref object %?", *task::get_task(), self.wrapped);
-            g_object_ref(self.wrapped as *());
-            take_object(self.wrapped, self.context)
-        }
     }
 }

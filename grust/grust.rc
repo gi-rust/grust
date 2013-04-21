@@ -30,11 +30,14 @@
 use types::*;
 use plumbing::GMainContext;
 use plumbing::GMainLoop;
+use plumbing::GTypeInstance;
+use object::GType;
 
-pub mod types;
-pub mod gstr;
 pub mod eventloop;
+pub mod gstr;
+pub mod object;
 pub mod plumbing;
+pub mod types;
 mod init;
 
 #[link_name="grustna"]
@@ -65,6 +68,9 @@ pub extern mod gobject {
     fn g_type_init();
     fn g_object_ref(obj: *()) -> *();
     fn g_object_unref(obj: *()) -> *();
+    fn g_type_check_instance_is_a(instance   : *GTypeInstance,
+                                  iface_type : GType) -> gboolean;
+    fn g_type_name(t: GType) -> *gchar;
 }
 
 // Reexports into the top level do not work outside of a crate
