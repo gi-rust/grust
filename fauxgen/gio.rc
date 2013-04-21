@@ -85,7 +85,7 @@ impl File for plumbing::Object<raw::GFile> {
             let self_ctx = self.context();
             let mut stack_out: *gchar = ptr::null();
             let mut owned_out: ~*gchar;
-            let out = ptr::to_unsafe_ptr(&stack_out);
+            let mut out = ptr::to_unsafe_ptr(&stack_out);
             if !plumbing::call_on_stack(self_ctx,
                     |_ctx| unsafe {
                         stack_out = raw::symbols::g_file_get_path(self_ptr);
@@ -96,6 +96,7 @@ impl File for plumbing::Object<raw::GFile> {
                     |_ctx| unsafe {
                         *po = raw::symbols::g_file_get_path(self_ptr);
                     });
+                out = ptr::to_unsafe_ptr(owned_out);
             }
             gstr::utf8::wrap(*out)
         }
