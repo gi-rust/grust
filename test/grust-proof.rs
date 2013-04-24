@@ -51,6 +51,16 @@ fn simple() {
 }
 
 #[test]
+fn as_interface() {
+    do tcase {
+        gio::File::new_for_path("/dev/null").as_interface(|fobj| {
+                let f = fobj as &gio::File;
+                assert!(f.get_path().to_str() == ~"/dev/null");
+            });
+    }
+}
+
+#[test]
 fn new_ref() {
     do tcase {
         let fobj = gio::File::new_for_path("/dev/null");
@@ -64,14 +74,27 @@ fn new_ref() {
 fn clone() {
     do tcase {
         let fobj = gio::File::new_for_path("/dev/null");
-        let gobj = fobj.clone();
-        let g = gobj.interface() as &gio::File;
-        assert!(g.get_path().to_str() == ~"/dev/null");
+        fobj.clone().as_interface(|gobj| {
+                let g = gobj as &gio::File;
+                assert!(g.get_path().to_str() == ~"/dev/null");
+            });
     }
 }
 
 #[test]
 fn off_stack() {
+    do tcase_result {
+        let f = ~gio::File::new_for_path("/dev/null");
+        do task::try {
+            let f = f.interface() as &gio::File;
+            let p = f.get_path();
+            assert!(p.to_str() == ~"/dev/null");
+        }
+    }
+}
+
+#[test]
+fn off_stack_as_interface() {
     do tcase_result {
         let f = ~gio::File::new_for_path("/dev/null");
         do task::try {

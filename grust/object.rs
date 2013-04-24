@@ -53,6 +53,9 @@ impl<T> Interface<T> {
 
 impl<T> Reference<T> {
     pub fn interface(&self) -> &'self Interface<T> { &self.iface }
+    pub fn as_interface<U>(&self, f: &fn(&Interface<T>) -> U) -> U {
+        f(&self.iface)
+    }
 }
 
 #[unsafe_destructor]
