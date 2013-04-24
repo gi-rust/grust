@@ -36,12 +36,6 @@ pub unsafe fn get_object(obj: *GObject, ctx: *GMainContext) -> Object {
     Object { raw_obj: obj, context: ctx }
 }
 
-pub unsafe fn ref_object(obj: *GObject, ctx: *GMainContext) -> Object {
-    let res = Object { raw_obj: obj, context: ctx };
-    res.inc_ref();
-    res
-}
-
 pub unsafe fn take_object(obj: *GObject, ctx: *GMainContext) -> Object {
     debug!("task %d: taking object %? (ref context %?)",
            *task::get_task(), obj, ctx);
