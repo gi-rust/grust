@@ -249,7 +249,7 @@ grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
 
       idle = g_idle_source_new ();
       g_source_set_priority (idle, G_PRIORITY_DEFAULT);
-      g_source_set_callback (idle, loop_callback, &call_data, NULL);
+      g_source_set_callback (idle, loop_callback, call_data, NULL);
       g_source_attach (idle, context);
       call_data->source = idle;
 
