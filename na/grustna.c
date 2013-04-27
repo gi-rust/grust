@@ -64,6 +64,9 @@ call_data_unref (RustCallData *call_data)
     }
 }
 
+static GPrivate rust_thread_context =
+    G_PRIVATE_INIT((GDestroyNotify) g_main_context_unref);
+
 /* This could be a per-call mutex.
  * The balance of reduced contention vs. extra init/cleanup calls
  * would need to be profiled. */
@@ -194,23 +197,25 @@ add_call_minder (RustCallData *call_data)
 }
 
 static GMainContext *
-get_rust_thread_context ()
+get_rust_thread_context (gboolean *thread_default)
 {
-  static GMutex mutex;
-
   GMainContext *context;
-
-  g_mutex_lock (&mutex);
 
   context = g_main_context_get_thread_default ();
   if (context == NULL)
     {
-      context = g_main_context_new ();
-      g_main_context_push_thread_default (context);
-      g_main_context_release (context);
+      context = g_private_get (&rust_thread_context);
+      if (context == NULL)
+        {
+          context = g_main_context_new ();
+          g_private_set (&rust_thread_context, context);
+        }
+      *thread_default = FALSE;
     }
-
-  g_mutex_unlock (&mutex);
+  else
+    {
+      *thread_default = TRUE;
+    }
 
   return context;
 }
@@ -223,15 +228,12 @@ grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
   g_return_val_if_fail (func != NULL, FALSE);
 
   if (context == NULL)
-    {
-      context = get_rust_thread_context ();
-      thread_default_context = TRUE;
-    }
+    context = get_rust_thread_context (&thread_default_context);
 
   /* Avoid deadlocking ourselves */
   if (g_main_context_acquire (context))
     {
-      /* Temporarily assume the other thread's main context
+      /* Temporarily acquired the context
        * to run the call on the local stack */
 
       if (!thread_default_context)
@@ -293,10 +295,7 @@ grustna_call_on_stack (RustFunc      func,
   g_return_val_if_fail (func != NULL, FALSE);
 
   if (context == NULL)
-    {
-      context = get_rust_thread_context ();
-      thread_default_context = TRUE;
-    }
+    context = get_rust_thread_context (&thread_default_context);
 
   /* This code is based on g_main_context_invoke_full() */
 
@@ -336,5 +335,17 @@ grustna_call_on_stack (RustFunc      func,
 GMainLoop *
 grustna_main_loop_new_thread_local ()
 {
-  return g_main_loop_new (get_rust_thread_context (), FALSE);
+  gboolean thread_default;
+  return g_main_loop_new (get_rust_thread_context (&thread_default), FALSE);
+}
+
+void
+grustna_main_loop_run_thread_local (GMainLoop *loop)
+{
+  GMainContext *context;
+
+  context = g_main_loop_get_context (loop);
+  g_main_context_push_thread_default (context);
+  g_main_loop_run (loop);
+  g_main_context_pop_thread_default (context);
 }

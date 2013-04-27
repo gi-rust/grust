@@ -20,7 +20,7 @@
 
 use plumbing::GMainLoop;
 
-use na::grustna_main_loop_new_thread_local;
+use na;
 use glib;
 
 pub struct EventLoop {
@@ -30,13 +30,13 @@ pub struct EventLoop {
 impl EventLoop {
     pub fn new() -> EventLoop {
         unsafe {
-            EventLoop { raw: grustna_main_loop_new_thread_local() }
+            EventLoop { raw: na::grustna_main_loop_new_thread_local() }
         }
     }
 
     pub fn run(&self) {
         unsafe {
-            glib::g_main_loop_run(self.raw);
+            na::grustna_main_loop_run_thread_local(self.raw);
         }
     }
 
