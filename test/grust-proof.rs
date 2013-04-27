@@ -21,7 +21,15 @@
 extern mod grust (name="grust", vers="0.1");
 extern mod gio (name="grust-Gio", vers="2.0");
 
+extern mod std;
+
 use core::result::{Result,Ok};
+use core::comm::stream;
+use core::task::TaskResult;
+use core::util;
+use std::timer::sleep;
+// use std::timer::recv_timeout;
+use std::uv_global_loop;
 use grust::eventloop::EventLoop;
 
 // We have to do this because of an rpath problem with crates linking to
@@ -29,12 +37,32 @@ use grust::eventloop::EventLoop;
 extern mod grustna {
 }
 
-fn tcase(test: &fn()) {
+// Test timeout in milliseconds
+static TEST_TIMEOUT: uint = 3000u;
+
+fn tcase(test: ~fn()) {
     grust::init();
-    test();
+
+    let mut (port, _) = stream::<TaskResult>();
+    task::task().future_result(|p| {
+            port = p;
+        }).spawn(|| {
+            test();
+            debug!("test completed");
+        });
+    match Some(port.recv()) /* recv_timeout(&uv_global_loop::get(), TEST_TIMEOUT, &port) */ {
+        Some(task::Success) => {}
+        Some(task::Failure) => {
+            fail!(~"test failed");
+        }
+        None => {
+            error!("test timed out");
+            unsafe { libc::abort(); }
+        }
+    }
 }
 
-fn tcase_result(test: &fn() -> Result<(),()>) {
+fn tcase_result(test: ~fn() -> Result<(),()>) {
     do tcase {
         let result = test();
         assert!(result == Ok(()));
@@ -117,8 +145,33 @@ fn async() {
                     let f: &gio::File = obj.cast::<gio::raw::GFile>()
                                         as &gio::File;
                     let in = f.read_finish(res);
+                    util::ignore(in);
                     elo.quit();
                 });
+        el.run();
+    }
+}
+
+#[test]
+fn async_off_stack() {
+    do tcase {
+        let fobj = ~gio::File::new_for_path("/dev/null");
+        let el = EventLoop::new();
+        let elo = ~el.clone();
+        task::spawn_sched(task::ThreadPerCore, || {
+            let f = fobj.interface() as &gio::File;
+
+            // Give the event loop time to start
+            sleep(&uv_global_loop::get(), 100);
+
+            let elo2 = ~elo.clone();
+            f.read_async(0, None, |obj, res| {
+                    let f: &gio::File = obj.cast::<gio::raw::GFile>()
+                                        as &gio::File;
+                    f.read_finish(res);
+                    elo2.quit();
+                });
+        });
         el.run();
     }
 }
