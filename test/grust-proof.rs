@@ -44,9 +44,11 @@ fn tcase(test: ~fn()) {
     grust::init();
 
     let mut (port, _) = stream::<TaskResult>();
-    task::task().future_result(|p| {
+    task::task()
+        .future_result(|p| {
             port = p;
-        }).spawn(|| {
+        })
+        .spawn(|| {
             test();
             debug!("test completed");
         });
