@@ -148,11 +148,13 @@ call_minder (gpointer data, G_GNUC_UNUSED gpointer pool_data)
               call_data->status = status;
               g_cond_signal (&call_data->return_cond);
             }
-          else if (!g_cond_wait_until (&call_data->return_cond, &call_mutex,
-                                       wakeup_time))
-            call_data->minder_backoff *= 2;
-
-          status = call_data->status;
+          else
+            {
+              if (!g_cond_wait_until (&call_data->return_cond, &call_mutex,
+                                         wakeup_time))
+                call_data->minder_backoff *= 2;
+              status = call_data->status;
+            }
 
           g_mutex_unlock (&call_mutex);
         }
