@@ -74,12 +74,25 @@ loop_callback (gpointer data)
 {
   RustCallData *call_data = data;
 
-  call_data->func (call_data->param, call_data->context);
-
   g_mutex_lock (&call_mutex);
-  call_data->status = RUST_CALL_RETURNED;
-  g_cond_broadcast (&call_data->return_cond);
+  if (G_LIKELY (call_data->status == RUST_CALL_PENDING))
+    {
+      g_mutex_unlock (&call_mutex);
+
+      call_data->func (call_data->param, call_data->context);
+
+      g_mutex_lock (&call_mutex);
+      call_data->status = RUST_CALL_RETURNED;
+      g_cond_broadcast (&call_data->return_cond);
+    }
+  else
+    {
+      g_debug ("off-stack call dispatch on an expired call (status=%d)",
+               (int) call_data->status);
+    }
   g_mutex_unlock (&call_mutex);
+
+  call_data_unref (call_data);
 
   return FALSE;
 }
@@ -243,7 +256,7 @@ grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
       call_data->func = func;
       call_data->param = data;
       call_data->context = g_main_context_ref (context);
-      call_data->ref_count = 2;
+      call_data->ref_count = 3;
       call_data->minder_backoff = 1 * G_TIME_SPAN_MILLISECOND;
       call_data->status = RUST_CALL_PENDING;
 
