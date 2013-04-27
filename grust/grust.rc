@@ -42,12 +42,9 @@ mod init;
 
 #[link_name="grustna"]
 pub extern mod na {
-    fn grustna_call_on_stack (func: *u8,
-                              data: *(),
-                              context: *GMainContext) -> gboolean;
-    fn grustna_call_off_stack(func: *u8,
-                              data: *(),
-                              context: *GMainContext) -> gboolean;
+    fn grustna_call(func: *u8,
+                    data: *(),
+                    context: *GMainContext) -> gboolean;
     fn grustna_main_loop_new_thread_local() -> *GMainLoop;
     fn grustna_main_loop_run_thread_local(l: *GMainLoop);
 }

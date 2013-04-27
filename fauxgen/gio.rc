@@ -146,28 +146,15 @@ pub trait File {
 impl File {
     pub fn new_for_path(path: &str) -> object::Reference<raw::GFile> {
         unsafe {
-            let mut stack_out: (*plumbing::GMainContext, *raw::GFile)
-                               = (ptr::null(), ptr::null());
-            let mut owned_out: ~(*plumbing::GMainContext, *raw::GFile);
-            let mut out = ptr::to_unsafe_ptr(&stack_out);
-            if !plumbing::call_on_stack(ptr::null(),
+            let mut out: (*plumbing::GMainContext, *raw::GFile)
+                         = (ptr::null(), ptr::null());
+            plumbing::call(ptr::null(),
                     |_ctx| unsafe {
-                        stack_out = (_ctx,
-                                     str::as_c_str(path,
-                                        raw::symbols::g_file_new_for_path));
-                    }) {
-                let in = path.to_owned();
-                owned_out = ~(ptr::null(), ptr::null());
-                let po = ptr::to_mut_unsafe_ptr(owned_out);
-                plumbing::call_off_stack(ptr::null(),
-                    |_ctx| unsafe {
-                        *po = (_ctx,
-                               str::as_c_str(in,
-                                    raw::symbols::g_file_new_for_path));
+                        let ret = str::as_c_str(path,
+                                        raw::symbols::g_file_new_for_path);
+                        out = (_ctx, ret);
                     });
-                out = ptr::to_unsafe_ptr(owned_out);
-            }
-            match (*out) {
+            match (out) {
                 (ctx, obj) => object::take_object(obj, ctx)
             }
         }
@@ -177,24 +164,12 @@ impl File {
 impl File for interfaces::File {
     fn get_path(&self) -> gstr::utf8 {
         unsafe {
-            let self_ptr = self.raw();
-            let self_ctx = self.context();
-            let mut stack_out: *gchar = ptr::null();
-            let mut owned_out: ~*gchar;
-            let mut out = ptr::to_unsafe_ptr(&stack_out);
-            if !plumbing::call_on_stack(self_ctx,
+            let mut out: *gchar = ptr::null();
+            plumbing::call(self.context(),
                     |_ctx| unsafe {
-                        stack_out = raw::symbols::g_file_get_path(self_ptr);
-                    }) {
-                owned_out = ~ptr::null();
-                let po = ptr::to_mut_unsafe_ptr(owned_out);
-                plumbing::call_off_stack(self_ctx,
-                    |_ctx| unsafe {
-                        *po = raw::symbols::g_file_get_path(self_ptr);
+                        out = raw::symbols::g_file_get_path(self.raw());
                     });
-                out = ptr::to_unsafe_ptr(owned_out);
-            }
-            gstr::utf8::wrap(*out)
+            gstr::utf8::wrap(out)
         }
     }
 
@@ -203,74 +178,43 @@ impl File for interfaces::File {
                   cancellable: Option<&classes::Cancellable>,
                   callback: AsyncReadyCallback) {
         unsafe {
-            let self_ptr = self.raw();
-            let self_ctx = self.context();
             let raw_cancellable: *raw::GCancellable = match (cancellable) {
                 Some(c) => c.raw(),
                 None    => ptr::null()
             };
-            let mut cb_data = ~plumbing::CallbackData {
-                        callback: cast::transmute(~callback),
-                        context: ptr::null()
-                    };
+            let cb_data = ~plumbing::CallbackData {
+                    callback: cast::transmute(~callback),
+                    context: ptr::null()
+                };
             let cb_data_raw: *mut plumbing::CallbackData
                              = cast::transmute(cb_data);
-            if !plumbing::call_on_stack(self_ctx,
+            plumbing::call(self.context(),
                     |_ctx| unsafe {
                         (*cb_data_raw).context = _ctx;
-                        raw::symbols::g_file_read_async(self_ptr,
+                        raw::symbols::g_file_read_async(self.raw(),
                                 io_priority as libc::c_int,
                                 raw_cancellable,
                                 callbacks::async_ready_callback,
                                 cb_data_raw as *());
-                    }) {
-                let in = ~io_priority;
-                plumbing::call_off_stack(self_ctx,
-                    |_ctx| unsafe {
-                        (*cb_data_raw).context = _ctx;
-                        raw::symbols::g_file_read_async(self_ptr,
-                                *in as libc::c_int,
-                                raw_cancellable,
-                                callbacks::async_ready_callback,
-                                cb_data_raw as *());
                     });
-            }
         }
     }
 
     fn read_finish(&self, res: &interfaces::AsyncResult)
                   -> object::Reference<raw::GFileInputStream> {
         unsafe {
-            let self_ptr = self.raw();
-            let self_ctx = self.context();
-            let res_raw = res.raw();
-            let mut stack_out: (*plumbing::GMainContext,
-                                *raw::GFileInputStream,
-                                *glib::raw::GError)
-                               = (ptr::null(), ptr::null(), ptr::null());
-            let mut owned_out: ~(*plumbing::GMainContext,
-                                 *raw::GFileInputStream,
-                                 *glib::raw::GError);
-            let mut out = ptr::to_unsafe_ptr(&stack_out);
-            if !plumbing::call_on_stack(self_ctx,
+            let mut out: (*plumbing::GMainContext,
+                          *raw::GFileInputStream,
+                          *glib::raw::GError)
+                         = (ptr::null(), ptr::null(), ptr::null());
+            plumbing::call(self.context(),
                     |_ctx| unsafe {
                         let error: *glib::raw::GError = ptr::null();
-                        let ret = raw::symbols::g_file_read_finish(self_ptr,
-                                res_raw, ptr::to_unsafe_ptr(&error));
-                        stack_out = (_ctx, ret, error);
-                    }) {
-                owned_out = ~(ptr::null(), ptr::null(), ptr::null());
-                let po = ptr::to_mut_unsafe_ptr(owned_out);
-                plumbing::call_off_stack(self_ctx,
-                    |_ctx| unsafe {
-                        let error: *glib::raw::GError = ptr::null();
-                        let ret = raw::symbols::g_file_read_finish(self_ptr,
-                                res_raw, ptr::to_unsafe_ptr(&error));
-                        *po = (_ctx, ret, error);
+                        let ret = raw::symbols::g_file_read_finish(self.raw(),
+                                res.raw(), ptr::to_unsafe_ptr(&error));
+                        out = (_ctx, ret, error);
                     });
-                out = ptr::to_unsafe_ptr(owned_out);
-            }
-            match (*out) {
+            match (out) {
                 (ctx, obj, error) => {
                     if ptr::is_not_null(error) {
                         let msg = str::raw::from_c_str((*error).message);

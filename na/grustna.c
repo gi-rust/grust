@@ -221,7 +221,7 @@ get_rust_thread_context (gboolean *thread_default)
 }
 
 gboolean
-grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
+grustna_call (RustFunc func, gpointer data, GMainContext *context)
 {
   gboolean thread_default_context = FALSE;
 
@@ -230,11 +230,24 @@ grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
   if (context == NULL)
     context = get_rust_thread_context (&thread_default_context);
 
-  /* Avoid deadlocking ourselves */
+  /* This code is based on g_main_context_invoke_full() */
+
+  if (g_main_context_is_owner (context))
+    {
+      /* Fastest path: the caller is in the same thread where some code
+       * is supposedly driving the loop context affine to this call. */
+      func (data, context);
+      return TRUE;
+    }
+
   if (g_main_context_acquire (context))
     {
-      /* Temporarily acquired the context
-       * to run the call on the local stack */
+      /* Here, we get to exclusively use the desired loop context
+       * that is not (yet) driven by an event loop.
+       * This is perfectly OK for non-async functions on objects affine
+       * to this context, and matches the behavior of GIO-style async calls
+       * that rely on the thread-default context to be eventually driven
+       * in order to complete. */
 
       if (!thread_default_context)
         g_main_context_push_thread_default (context);
@@ -283,53 +296,6 @@ grustna_call_off_stack (RustFunc func, gpointer data, GMainContext *context)
 
       return status == RUST_CALL_RETURNED;
     }
-}
-
-gboolean
-grustna_call_on_stack (RustFunc      func,
-                       gpointer      data,
-                       GMainContext *context)
-{
-  gboolean thread_default_context = FALSE;
-
-  g_return_val_if_fail (func != NULL, FALSE);
-
-  if (context == NULL)
-    context = get_rust_thread_context (&thread_default_context);
-
-  /* This code is based on g_main_context_invoke_full() */
-
-  if (g_main_context_is_owner (context))
-    {
-      /* Fastest path: the caller is in the same thread where some code
-       * is supposedly driving the loop context affine to this call. */
-      func (data, context);
-      return TRUE;
-    }
-
-  if (g_main_context_acquire (context))
-    {
-      /* Here, we get to exclusively use the desired loop context
-       * that is not (yet) driven by an event loop.
-       * This is perfectly OK for non-async functions on objects affine
-       * to this context, and matches the behavior of GIO-style async calls
-       * that rely on the thread-default context to be eventually driven
-       * in order to complete. */
-
-      if (!thread_default_context)
-        g_main_context_push_thread_default (context);
-
-      func (data, context);
-
-      if (!thread_default_context)
-        g_main_context_pop_thread_default (context);
-
-      g_main_context_release (context);
-      return TRUE;
-    }
-
-  /* No can do, try the function next door */
-  return FALSE;
 }
 
 GMainLoop *
