@@ -27,9 +27,8 @@ use core::result::{Result,Ok};
 use core::comm::{Port,stream};
 use core::task::TaskResult;
 use core::util;
-use std::timer::sleep;
 // use std::timer::recv_timeout;
-use std::uv_global_loop;
+// use std::uv_global_loop;
 use grust::eventloop::EventLoop;
 
 // We have to do this because of an rpath problem with crates linking to
@@ -168,10 +167,6 @@ fn async_off_stack() {
         let elo = ~el.clone();
         task::spawn_sched(task::ThreadPerCore, || {
             let f = fobj.interface() as &gio::File;
-
-            // Give the event loop time to start
-            sleep(&uv_global_loop::get(), 100);
-
             let elo2 = ~elo.clone();
             f.read_async(0, None, |obj, res| {
                     let f = obj.cast::<gio::raw::GFile>() as &gio::File;
