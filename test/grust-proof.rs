@@ -55,6 +55,7 @@ fn tcase(test: ~fn()) {
 
     let port = spawn_with_future(test);
 
+    // recv_timeout is broken, see https://github.com/mozilla/rust/issues/6089
     match Some(port.recv()) /* recv_timeout(&uv_global_loop::get(), TEST_TIMEOUT, &port) */ {
         Some(task::Success) => {}
         Some(task::Failure) => {
