@@ -24,7 +24,7 @@ extern mod gio (name="grust-Gio", vers="2.0");
 extern mod std;
 
 use core::result::{Result,Ok};
-use core::comm::stream;
+use core::comm::{Port,stream};
 use core::task::TaskResult;
 use core::util;
 use std::timer::sleep;
@@ -40,18 +40,21 @@ extern mod grustna {
 // Test timeout in milliseconds
 static TEST_TIMEOUT: uint = 3000u;
 
-fn tcase(test: ~fn()) {
-    grust::init();
-
+fn spawn_with_future(func: ~fn()) -> Port<TaskResult> {
     let mut (port, _) = stream::<TaskResult>();
     task::task()
         .future_result(|p| {
             port = p;
         })
-        .spawn(|| {
-            test();
-            debug!("test completed");
-        });
+        .spawn(func);
+    port
+}
+
+fn tcase(test: ~fn()) {
+    grust::init();
+
+    let port = spawn_with_future(test);
+
     match Some(port.recv()) /* recv_timeout(&uv_global_loop::get(), TEST_TIMEOUT, &port) */ {
         Some(task::Success) => {}
         Some(task::Failure) => {
@@ -112,7 +115,7 @@ fn clone() {
 }
 
 #[test]
-fn off_stack() {
+fn off_task() {
     do tcase_result {
         let f = ~gio::File::new_for_path("/dev/null");
         do task::try {
@@ -124,13 +127,15 @@ fn off_stack() {
 }
 
 #[test]
-fn off_stack_as_interface() {
+fn off_task_as_interface() {
     do tcase_result {
-        let f = ~gio::File::new_for_path("/dev/null");
+        let fobj = ~gio::File::new_for_path("/dev/null");
         do task::try {
-            let f = f.interface() as &gio::File;
-            let p = f.get_path();
-            assert!(p.to_str() == ~"/dev/null");
+            fobj.as_interface(|fifa| {
+                    let f = fifa as &gio::File;
+                    let p = f.get_path();
+                    assert!(p.to_str() == ~"/dev/null");
+                });
         }
     }
 }
@@ -168,8 +173,7 @@ fn async_off_stack() {
 
             let elo2 = ~elo.clone();
             f.read_async(0, None, |obj, res| {
-                    let f: &gio::File = obj.cast::<gio::raw::GFile>()
-                                        as &gio::File;
+                    let f = obj.cast::<gio::raw::GFile>() as &gio::File;
                     f.read_finish(res);
                     elo2.quit();
                 });
