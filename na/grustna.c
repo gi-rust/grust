@@ -67,10 +67,13 @@ call_data_unref (RustCallData *call_data)
 static GPrivate rust_thread_context =
     G_PRIVATE_INIT((GDestroyNotify) g_main_context_unref);
 
-/* This could be a per-call mutex.
- * The balance of reduced contention vs. extra init/cleanup calls
+/* These could be per-call and per-context mutexes.
+ * The balance of reduced contention vs. extra init/cleanup calls,
+ * as well as bookkeeping of the extra context data,
  * would need to be profiled. */
 static GMutex call_mutex;
+static GMutex rust_context_mutex;
+static GCond  rust_context_released_cond;
 
 static gboolean
 loop_callback (gpointer data)
@@ -136,6 +139,10 @@ call_minder (gpointer data, G_GNUC_UNUSED gpointer pool_data)
             }
 
           g_main_context_release (context);
+
+          /* Unblock a potentially waiting
+           * grustna_main_loop_run_thread_local() */
+          g_cond_broadcast (&rust_context_released_cond);
         }
       else
         {
@@ -197,26 +204,16 @@ add_call_minder (RustCallData *call_data)
 }
 
 static GMainContext *
-get_rust_thread_context (gboolean *thread_default)
+get_rust_thread_context ()
 {
   GMainContext *context;
 
-  context = g_main_context_get_thread_default ();
+  context = g_private_get (&rust_thread_context);
   if (context == NULL)
     {
-      context = g_private_get (&rust_thread_context);
-      if (context == NULL)
-        {
-          context = g_main_context_new ();
-          g_private_set (&rust_thread_context, context);
-        }
-      *thread_default = FALSE;
+      context = g_main_context_new ();
+      g_private_set (&rust_thread_context, context);
     }
-  else
-    {
-      *thread_default = TRUE;
-    }
-
   return context;
 }
 
@@ -228,7 +225,13 @@ grustna_call (RustFunc func, gpointer data, GMainContext *context)
   g_return_val_if_fail (func != NULL, FALSE);
 
   if (context == NULL)
-    context = get_rust_thread_context (&thread_default_context);
+    {
+      context = g_main_context_get_thread_default ();
+      if (context == NULL)
+        context = get_rust_thread_context ();
+      else
+        thread_default_context = TRUE;
+    }
 
   /* This code is based on g_main_context_invoke_full() */
 
@@ -258,6 +261,11 @@ grustna_call (RustFunc func, gpointer data, GMainContext *context)
         g_main_context_pop_thread_default (context);
 
       g_main_context_release (context);
+
+      /* Unblock a potentially waiting
+       * grustna_main_loop_run_thread_local() */
+      g_cond_broadcast (&rust_context_released_cond);
+
       return TRUE;
     }
   else
@@ -301,17 +309,26 @@ grustna_call (RustFunc func, gpointer data, GMainContext *context)
 GMainLoop *
 grustna_main_loop_new_thread_local ()
 {
-  gboolean thread_default;
-  return g_main_loop_new (get_rust_thread_context (&thread_default), FALSE);
+  return g_main_loop_new (get_rust_thread_context (), FALSE);
 }
 
 void
 grustna_main_loop_run_thread_local (GMainLoop *loop)
 {
   GMainContext *context;
+  gboolean context_acquired;
 
   context = g_main_loop_get_context (loop);
+
+  context_acquired = g_main_context_acquire (context);
+  while (!context_acquired)
+    context_acquired = g_main_context_wait (context,
+                                            &rust_context_released_cond,
+                                            &rust_context_mutex);
+
   g_main_context_push_thread_default (context);
   g_main_loop_run (loop);
   g_main_context_pop_thread_default (context);
+
+  g_main_context_release (context);
 }
