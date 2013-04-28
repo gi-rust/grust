@@ -87,7 +87,7 @@ pub fn cast<'r, T, U: ObjectType>(t: &'r Interface<T>) -> &'r Interface<U> {
             fail!(fmt!("invalid cast to type `%s'",
                        str::raw::from_c_str(gobject::g_type_name(dest_type))));
         }
-        cast::transmute(t)
+        cast::reinterpret_cast(&t)
     }
 }
 
