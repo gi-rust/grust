@@ -124,8 +124,9 @@ mod callbacks {
             let cd: ~plumbing::CallbackData
                     = cast::transmute(user_data as *plumbing::CallbackData);
             assert!(ptr::is_not_null(cd.callback));
-            let callback: ~::AsyncReadyCallback
-                          = cast::transmute(cd.callback as *::AsyncReadyCallback);
+            let callback: ~super::AsyncReadyCallback
+                          = cast::transmute(cd.callback
+                                as *super::AsyncReadyCallback);
             let arg1 = object::make_interface(source_object, cd.context);
             let arg2 = object::make_interface(res, cd.context);
             (*callback)(&arg1, &arg2);
