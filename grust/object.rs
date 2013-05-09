@@ -39,20 +39,18 @@ pub struct Reference<T> {
 
 impl<T> Interface<T> {
     pub fn new_ref(&self) -> Reference<T> {
-        unsafe {
-            self.bare.inc_ref();
-        }
+        self.bare.inc_ref();
         Reference { iface: Interface { bare: self.bare } }
     }
 
-    pub fn cast<U: ObjectType>(&self) -> &'self Interface<U> { cast(self) }
+    pub fn cast<'r, U: ObjectType>(&'r self) -> &'r Interface<U> { cast(self) }
 
     pub unsafe fn raw(&self) -> *T { self.bare.raw() as *T }
     pub unsafe fn context(&self) -> *GMainContext { self.bare.context() }
 }
 
 impl<T> Reference<T> {
-    pub fn interface(&self) -> &'self Interface<T> { &self.iface }
+    pub fn interface<'r>(&'r self) -> &'r Interface<T> { &'r self.iface }
     pub fn as_interface<U>(&self, f: &fn(&Interface<T>) -> U) -> U {
         f(&self.iface)
     }
@@ -67,9 +65,7 @@ impl<T> Drop for Interface<T> {
 #[unsafe_destructor]
 impl<T> Drop for Reference<T> {
     fn finalize(&self) {
-        unsafe {
-            self.iface.bare.dec_ref();
-        }
+        self.iface.bare.dec_ref();
     }
 }
 

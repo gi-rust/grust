@@ -144,20 +144,18 @@ pub trait File {
                   -> object::Reference<raw::GFileInputStream>;
 }
 
-impl File {
-    pub fn new_for_path(path: &str) -> object::Reference<raw::GFile> {
-        unsafe {
-            let mut out: (*plumbing::GMainContext, *raw::GFile)
-                         = (ptr::null(), ptr::null());
-            plumbing::call(ptr::null(),
-                    |_ctx| unsafe {
-                        let ret = str::as_c_str(path,
-                                        raw::symbols::g_file_new_for_path);
-                        out = (_ctx, ret);
-                    });
-            match (out) {
-                (ctx, obj) => object::take_object(obj, ctx)
-            }
+pub fn file_new_for_path(path: &str) -> object::Reference<raw::GFile> {
+    unsafe {
+        let mut out: (*plumbing::GMainContext, *raw::GFile)
+                     = (ptr::null(), ptr::null());
+        do plumbing::call(ptr::null()) |_ctx| {
+            let ret = do str::as_c_str(path) |p| {
+                    raw::symbols::g_file_new_for_path(p)
+               };
+            out = (_ctx, ret);
+        };
+        match (out) {
+            (ctx, obj) => object::take_object(obj, ctx)
         }
     }
 }
@@ -166,10 +164,9 @@ impl File for interfaces::File {
     fn get_path(&self) -> gstr::utf8 {
         unsafe {
             let mut out: *gchar = ptr::null();
-            plumbing::call(self.context(),
-                    |_ctx| unsafe {
-                        out = raw::symbols::g_file_get_path(self.raw());
-                    });
+            do plumbing::call(self.context()) |_ctx| {
+                out = raw::symbols::g_file_get_path(self.raw());
+            };
             gstr::utf8::wrap(out)
         }
     }
@@ -189,15 +186,14 @@ impl File for interfaces::File {
                 };
             let cb_data_raw: *mut plumbing::CallbackData
                              = cast::transmute(cb_data);
-            plumbing::call(self.context(),
-                    |_ctx| unsafe {
-                        (*cb_data_raw).context = _ctx;
-                        raw::symbols::g_file_read_async(self.raw(),
-                                io_priority as libc::c_int,
-                                raw_cancellable,
-                                callbacks::async_ready_callback,
-                                cb_data_raw as *());
-                    });
+            do plumbing::call(self.context()) |_ctx| {
+                (*cb_data_raw).context = _ctx;
+                raw::symbols::g_file_read_async(self.raw(),
+                        io_priority as libc::c_int,
+                        raw_cancellable,
+                        callbacks::async_ready_callback,
+                        cb_data_raw as *());
+            };
         }
     }
 
@@ -208,13 +204,12 @@ impl File for interfaces::File {
                           *raw::GFileInputStream,
                           *glib::raw::GError)
                          = (ptr::null(), ptr::null(), ptr::null());
-            plumbing::call(self.context(),
-                    |_ctx| unsafe {
-                        let error: *glib::raw::GError = ptr::null();
-                        let ret = raw::symbols::g_file_read_finish(self.raw(),
-                                res.raw(), ptr::to_unsafe_ptr(&error));
-                        out = (_ctx, ret, error);
-                    });
+            do plumbing::call(self.context()) |_ctx| {
+                let error: *glib::raw::GError = ptr::null();
+                let ret = raw::symbols::g_file_read_finish(self.raw(),
+                        res.raw(), ptr::to_unsafe_ptr(&error));
+                out = (_ctx, ret, error);
+            };
             match (out) {
                 (ctx, obj, error) => {
                     if ptr::is_not_null(error) {
