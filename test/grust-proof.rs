@@ -107,10 +107,10 @@ fn new_ref() {
 fn clone() {
     do tcase {
         let fobj = gio::File::new_for_path("/dev/null");
-        fobj.clone().as_interface(|gobj| {
-                let g = gobj as &gio::File;
-                assert!(g.get_path().to_str() == ~"/dev/null");
-            });
+        do fobj.clone().as_interface |gobj| {
+            let g = gobj as &gio::File;
+            assert!(g.get_path().to_str() == ~"/dev/null");
+        };
     }
 }
 
@@ -131,11 +131,11 @@ fn off_task_as_interface() {
     do tcase_result {
         let fobj = ~gio::File::new_for_path("/dev/null");
         do task::try {
-            fobj.as_interface(|fifa| {
-                    let f = fifa as &gio::File;
-                    let p = f.get_path();
-                    assert!(p.to_str() == ~"/dev/null");
-                });
+            do fobj.as_interface |fifa| {
+                let f = fifa as &gio::File;
+                let p = f.get_path();
+                assert!(p.to_str() == ~"/dev/null");
+            };
         }
     }
 }
@@ -147,14 +147,13 @@ fn async() {
         let f = fobj.interface() as &gio::File;
         let el = EventLoop::new();
         let elo = ~el.clone();
-        f.read_async(0, None,
-                |obj, res| {
-                    let f: &gio::File = obj.cast::<gio::raw::GFile>()
-                                        as &gio::File;
-                    let in = f.read_finish(res);
-                    util::ignore(in);
-                    elo.quit();
-                });
+        do f.read_async(0, None) |obj, res| {
+            let f: &gio::File = obj.cast::<gio::raw::GFile>()
+                                as &gio::File;
+            let in = f.read_finish(res);
+            util::ignore(in);
+            elo.quit();
+        };
         el.run();
     }
 }
@@ -169,12 +168,12 @@ fn async_off_task() {
         do spawn {
             let f = fobj.interface() as &gio::File;
             let elo2 = ~elo.clone();
-            f.read_async(0, None, |obj, res| {
-                    let fifa: &gio::interfaces::File = obj.cast();
-                    let f = fifa as &gio::File;
-                    f.read_finish(res);
-                    elo2.quit();
-                });
+            do f.read_async(0, None) |obj, res| {
+                let fifa: &gio::interfaces::File = obj.cast();
+                let f = fifa as &gio::File;
+                f.read_finish(res);
+                elo2.quit();
+            };
         }
         el.run();
     }
@@ -186,15 +185,15 @@ fn async_off_stack() {
         let fobj = ~gio::File::new_for_path("/dev/null");
         let el = EventLoop::new();
         let elo = ~el.clone();
-        task::spawn_sched(task::ThreadPerCore, || {
+        do task::spawn_sched(task::ThreadPerCore) {
             let f = fobj.interface() as &gio::File;
             let elo2 = ~elo.clone();
-            f.read_async(0, None, |obj, res| {
-                    let f = obj.cast::<gio::raw::GFile>() as &gio::File;
-                    f.read_finish(res);
-                    elo2.quit();
-                });
-        });
+            do f.read_async(0, None) |obj, res| {
+                let f = obj.cast::<gio::raw::GFile>() as &gio::File;
+                f.read_finish(res);
+                elo2.quit();
+            };
+        };
         el.run();
     }
 }
