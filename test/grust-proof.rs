@@ -21,31 +21,28 @@
 extern mod grust (name="grust", vers="0.1");
 extern mod gio (name="grust-Gio", vers="2.0");
 
-extern mod std;
-
-use core::result::{Result,Ok};
-use core::comm::{Port,stream};
-use core::task::TaskResult;
-use core::util;
+use std::result::{Result,Ok};
+use std::comm::{Port,stream};
+use std::task::TaskResult;
+use std::util;
 // use std::timer::recv_timeout;
 // use std::uv_global_loop;
 use grust::eventloop::EventLoop;
 
 // We have to do this because of an rpath problem with crates linking to
 // foreign libraries
-extern mod grustna {
-}
+mod grustna { extern { } }
 
 // Test timeout in milliseconds
 static TEST_TIMEOUT: uint = 3000u;
 
 fn spawn_with_future(func: ~fn()) -> Port<TaskResult> {
     let mut (port, _) = stream::<TaskResult>();
-    task::task()
-        .future_result(|p| {
-            port = p;
-        })
-        .spawn(func);
+    let mut task = task::task();
+    task.future_result(|p| {
+        port = p
+    });
+    task.spawn(func);
     port
 }
 
@@ -77,7 +74,7 @@ fn tcase_result(test: ~fn() -> Result<(),()>) {
 #[test]
 fn simple() {
     do tcase {
-        let fobj = gio::File::new_for_path("/dev/null");
+        let fobj = gio::GFile::new_for_path("/dev/null");
         let f = fobj.interface() as &gio::File;
         assert!(f.get_path().to_str() == ~"/dev/null");
     }
@@ -86,7 +83,7 @@ fn simple() {
 #[test]
 fn as_interface() {
     do tcase {
-        gio::File::new_for_path("/dev/null").as_interface(|fobj| {
+        gio::GFile::new_for_path("/dev/null").as_interface(|fobj| {
                 let f = fobj as &gio::File;
                 assert!(f.get_path().to_str() == ~"/dev/null");
             });
@@ -96,7 +93,7 @@ fn as_interface() {
 #[test]
 fn new_ref() {
     do tcase {
-        let fobj = gio::File::new_for_path("/dev/null");
+        let fobj = gio::GFile::new_for_path("/dev/null");
         let gobj = fobj.interface().new_ref();
         let g = gobj.interface() as &gio::File;
         assert!(g.get_path().to_str() == ~"/dev/null");
@@ -106,7 +103,7 @@ fn new_ref() {
 #[test]
 fn clone() {
     do tcase {
-        let fobj = gio::File::new_for_path("/dev/null");
+        let fobj = gio::GFile::new_for_path("/dev/null");
         do fobj.clone().as_interface |gobj| {
             let g = gobj as &gio::File;
             assert!(g.get_path().to_str() == ~"/dev/null");
@@ -117,7 +114,7 @@ fn clone() {
 #[test]
 fn off_task() {
     do tcase_result {
-        let f = ~gio::File::new_for_path("/dev/null");
+        let f = ~gio::GFile::new_for_path("/dev/null");
         do task::try {
             let f = f.interface() as &gio::File;
             let p = f.get_path();
@@ -129,7 +126,7 @@ fn off_task() {
 #[test]
 fn off_task_as_interface() {
     do tcase_result {
-        let fobj = ~gio::File::new_for_path("/dev/null");
+        let fobj = ~gio::GFile::new_for_path("/dev/null");
         do task::try {
             do fobj.as_interface |fifa| {
                 let f = fifa as &gio::File;
@@ -143,12 +140,12 @@ fn off_task_as_interface() {
 #[test]
 fn async() {
     do tcase {
-        let fobj = gio::File::new_for_path("/dev/null");
+        let fobj = gio::GFile::new_for_path("/dev/null");
         let f = fobj.interface() as &gio::File;
         let el = EventLoop::new();
         let elo = ~el.clone();
         do f.read_async(0, None) |obj, res| {
-            let f: &gio::File = obj.cast::<gio::raw::GFile>()
+            let f: &gio::File = obj.cast::<gio::GFile>()
                                 as &gio::File;
             let in = f.read_finish(res);
             util::ignore(in);
@@ -162,7 +159,7 @@ fn async() {
 #[ignore]  // See https://github.com/mzabaluev/grust/issues/4
 fn async_off_task() {
     do tcase {
-        let fobj = ~gio::File::new_for_path("/dev/null");
+        let fobj = ~gio::GFile::new_for_path("/dev/null");
         let el = EventLoop::new();
         let elo = ~el.clone();
         do spawn {
@@ -182,14 +179,14 @@ fn async_off_task() {
 #[test]
 fn async_off_stack() {
     do tcase {
-        let fobj = ~gio::File::new_for_path("/dev/null");
+        let fobj = ~gio::GFile::new_for_path("/dev/null");
         let el = EventLoop::new();
         let elo = ~el.clone();
         do task::spawn_sched(task::ThreadPerCore) {
             let f = fobj.interface() as &gio::File;
             let elo2 = ~elo.clone();
             do f.read_async(0, None) |obj, res| {
-                let f = obj.cast::<gio::raw::GFile>() as &gio::File;
+                let f = obj.cast::<gio::GFile>() as &gio::File;
                 f.read_finish(res);
                 elo2.quit();
             };
