@@ -57,7 +57,7 @@ pub mod raw {
     }
 
     #[link_name="gio-2.0"]
-    pub extern mod symbols {
+    pub extern {
         fn g_async_result_get_type() -> GType;
         fn g_file_get_type() -> GType;
         fn g_file_new_for_path(path: *gchar) -> *GFile;
@@ -97,7 +97,7 @@ pub type AsyncReadyCallback = ~fn(source_object : &gobject::classes::Object,
 impl object::ObjectType for raw::GAsyncResult {
     fn get_type() -> object::GType {
         unsafe {
-            raw::symbols::g_async_result_get_type()
+            raw::g_async_result_get_type()
         }
     }
 }
@@ -105,7 +105,7 @@ impl object::ObjectType for raw::GAsyncResult {
 impl object::ObjectType for raw::GFile {
     fn get_type() -> object::GType {
         unsafe {
-            raw::symbols::g_file_get_type()
+            raw::g_file_get_type()
         }
     }
 }
@@ -152,7 +152,7 @@ impl File {
             plumbing::call(ptr::null(),
                     |_ctx| unsafe {
                         let ret = str::as_c_str(path,
-                                        raw::symbols::g_file_new_for_path);
+                                        raw::g_file_new_for_path);
                         out = (_ctx, ret);
                     });
             match (out) {
@@ -168,7 +168,7 @@ impl File for interfaces::File {
             let mut out: *gchar = ptr::null();
             plumbing::call(self.context(),
                     |_ctx| unsafe {
-                        out = raw::symbols::g_file_get_path(self.raw());
+                        out = raw::g_file_get_path(self.raw());
                     });
             gstr::utf8::wrap(out)
         }
@@ -192,7 +192,7 @@ impl File for interfaces::File {
             plumbing::call(self.context(),
                     |_ctx| unsafe {
                         (*cb_data_raw).context = _ctx;
-                        raw::symbols::g_file_read_async(self.raw(),
+                        raw::g_file_read_async(self.raw(),
                                 io_priority as libc::c_int,
                                 raw_cancellable,
                                 callbacks::async_ready_callback,
@@ -211,7 +211,7 @@ impl File for interfaces::File {
             plumbing::call(self.context(),
                     |_ctx| unsafe {
                         let error: *glib::raw::GError = ptr::null();
-                        let ret = raw::symbols::g_file_read_finish(self.raw(),
+                        let ret = raw::g_file_read_finish(self.raw(),
                                 res.raw(), ptr::to_unsafe_ptr(&error));
                         out = (_ctx, ret, error);
                     });
@@ -219,7 +219,7 @@ impl File for interfaces::File {
                 (ctx, obj, error) => {
                     if ptr::is_not_null(error) {
                         let msg = str::raw::from_c_str((*error).message);
-                        glib::raw::symbols::g_error_free(error);
+                        glib::raw::g_error_free(error);
                         fail!(msg);
                     }
                     object::take_object(obj, ctx)

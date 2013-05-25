@@ -17,15 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301  USA
  */
-
-use na::grustna_call;
-use glib::{g_main_context_ref, g_main_context_unref};
-use gobject::{g_object_ref,g_object_unref};
-
-pub struct GMainContext;
-pub struct GMainLoop;
-pub struct GObject;
-pub struct GTypeInstance;
+use ll::*;
+pub use types::{GMainContext, GMainLoop, GObject, GTypeInstance};
 
 pub struct Object {
     priv raw_obj: *GObject,

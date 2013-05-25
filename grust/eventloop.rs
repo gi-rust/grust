@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301  USA
  */
-
+use ll::*;
 use plumbing::GMainLoop;
-
-use na;
-use glib;
 
 pub struct EventLoop {
     priv raw: *GMainLoop
@@ -30,19 +27,19 @@ pub struct EventLoop {
 impl EventLoop {
     pub fn new() -> EventLoop {
         unsafe {
-            EventLoop { raw: na::grustna_main_loop_new_thread_local() }
+            EventLoop { raw: grustna_main_loop_new_thread_local() }
         }
     }
 
     pub fn run(&self) {
         unsafe {
-            na::grustna_main_loop_run_thread_local(self.raw);
+            grustna_main_loop_run_thread_local(self.raw);
         }
     }
 
     pub fn quit(&self) {
         unsafe {
-            glib::g_main_loop_quit(self.raw);
+            g_main_loop_quit(self.raw);
         }
     }
 }
@@ -51,7 +48,7 @@ impl EventLoop {
 impl Drop for EventLoop {
     fn finalize(&self) {
         unsafe {
-            glib::g_main_loop_unref(self.raw);
+            g_main_loop_unref(self.raw);
         }
     }
 }
@@ -59,7 +56,7 @@ impl Drop for EventLoop {
 impl Clone for EventLoop {
     fn clone(&self) -> EventLoop {
         unsafe {
-            glib::g_main_loop_ref(self.raw);
+            g_main_loop_ref(self.raw);
             EventLoop { raw: self.raw }
         }
     }

@@ -26,3 +26,9 @@ pub type gsize          = libc::size_t;
 
 pub static FALSE: gboolean = 0;
 pub static TRUE:  gboolean = !FALSE;
+
+pub struct GMainContext;
+pub struct GMainLoop;
+pub struct GObject;
+pub struct GTypeInstance;
+pub type GType = gsize;

@@ -43,7 +43,7 @@ pub mod raw {
     }
 
     #[link_name="gobject-2.0"]
-    pub extern mod symbols {
+    pub extern {
         fn g_object_get_type() -> GType;
     }
 }
@@ -58,7 +58,7 @@ pub mod classes {
 impl object::ObjectType for classes::Object {
     fn get_type() -> object::GType {
         unsafe {
-            raw::symbols::g_object_get_type()
+            raw::g_object_get_type()
         }
     }
 }

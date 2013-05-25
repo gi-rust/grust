@@ -17,13 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301  USA
  */
-
+use ll::*;
 use plumbing;
 use plumbing::{GObject,GMainContext};
 use types::*;
-use gobject;
 
-pub type GType = gsize;
+pub use types::{GType};
 
 trait ObjectType {
     fn get_type() -> GType;
@@ -45,14 +44,14 @@ impl<T> Interface<T> {
         Reference { iface: Interface { bare: self.bare } }
     }
 
-    pub fn cast<U: ObjectType>(&self) -> &'self Interface<U> { cast(self) }
+    pub fn cast<'r, U: ObjectType>(&'r self) -> &'r Interface<U> { cast(self) }
 
     pub unsafe fn raw(&self) -> *T { self.bare.raw() as *T }
     pub unsafe fn context(&self) -> *GMainContext { self.bare.context() }
 }
 
 impl<T> Reference<T> {
-    pub fn interface(&self) -> &'self Interface<T> { &self.iface }
+    pub fn interface<'r>(&'r self) -> &'r Interface<T> { &self.iface }
     pub fn as_interface<U>(&self, f: &fn(&Interface<T>) -> U) -> U {
         f(&self.iface)
     }
@@ -83,9 +82,9 @@ pub fn cast<'r, T, U: ObjectType>(t: &'r Interface<T>) -> &'r Interface<U> {
     unsafe {
         let inst = t.bare.type_instance();
         let dest_type = ObjectType::get_type::<U>();
-        if !(gobject::g_type_check_instance_is_a(inst, dest_type) as bool) {
+        if !(g_type_check_instance_is_a(inst, dest_type) as bool) {
             fail!(fmt!("invalid cast to type `%s'",
-                       str::raw::from_c_str(gobject::g_type_name(dest_type))));
+                       str::raw::from_c_str(g_type_name(dest_type))));
         }
         cast::transmute(t)
     }
