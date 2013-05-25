@@ -32,14 +32,16 @@ use grust::object;
 use grust::types::*;
 use grust::gstr;
 
+pub enum GFile { }
+
 pub mod raw {
     use grust::types::*;
     use grust::object::GType;
     use glib;
     use gobject;
+    use super::GFile;
 
     pub struct GAsyncResult;
-    pub struct GFile;
 
     pub struct GCancellable {
         parent_instance: gobject::raw::GObject,
@@ -86,9 +88,10 @@ pub mod classes {
 pub mod interfaces {
     use grust::object;
     use raw;
+    use super::GFile;
 
     pub type AsyncResult = object::Interface<raw::GAsyncResult>;
-    pub type File = object::Interface<raw::GFile>;
+    pub type File = object::Interface<GFile>;
 }
 
 pub type AsyncReadyCallback = ~fn(source_object : &gobject::classes::Object,
@@ -102,7 +105,7 @@ impl object::ObjectType for raw::GAsyncResult {
     }
 }
 
-impl object::ObjectType for raw::GFile {
+impl object::ObjectType for GFile {
     fn get_type() -> object::GType {
         unsafe {
             raw::g_file_get_type()
@@ -144,17 +147,18 @@ pub trait File {
                   -> object::Reference<raw::GFileInputStream>;
 }
 
-impl File {
-    pub fn new_for_path(path: &str) -> object::Reference<raw::GFile> {
+impl GFile {
+    pub fn new_for_path(path: &str) -> object::Reference<GFile> {
         unsafe {
-            let mut out: (*plumbing::GMainContext, *raw::GFile)
-                         = (ptr::null(), ptr::null());
+            let mut out: (*plumbing::GMainContext, *GFile)
+                = (ptr::null(), ptr::null());
             plumbing::call(ptr::null(),
-                    |_ctx| unsafe {
-                        let ret = str::as_c_str(path,
-                                        raw::g_file_new_for_path);
-                        out = (_ctx, ret);
-                    });
+                           |_ctx| unsafe {
+                               let ret = do str::as_c_str(path) |c_str_path| {
+                                   raw::g_file_new_for_path(c_str_path)
+                               };
+                               out = (_ctx, ret);
+                           });
             match (out) {
                 (ctx, obj) => object::take_object(obj, ctx)
             }
