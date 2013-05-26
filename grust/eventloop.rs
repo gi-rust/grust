@@ -18,7 +18,7 @@
  * 02110-1301  USA
  */
 
-use ll;
+use ffi;
 use plumbing::GMainLoop;
 
 pub struct EventLoop {
@@ -28,19 +28,19 @@ pub struct EventLoop {
 impl EventLoop {
     pub fn new() -> EventLoop {
         unsafe {
-            EventLoop { raw: ll::grustna_main_loop_new_thread_local() }
+            EventLoop { raw: ffi::grustna_main_loop_new_thread_local() }
         }
     }
 
     pub fn run(&self) {
         unsafe {
-            ll::grustna_main_loop_run_thread_local(self.raw);
+            ffi::grustna_main_loop_run_thread_local(self.raw);
         }
     }
 
     pub fn quit(&self) {
         unsafe {
-            ll::g_main_loop_quit(self.raw);
+            ffi::g_main_loop_quit(self.raw);
         }
     }
 }
@@ -49,7 +49,7 @@ impl EventLoop {
 impl Drop for EventLoop {
     fn finalize(&self) {
         unsafe {
-            ll::g_main_loop_unref(self.raw);
+            ffi::g_main_loop_unref(self.raw);
         }
     }
 }
@@ -57,7 +57,7 @@ impl Drop for EventLoop {
 impl Clone for EventLoop {
     fn clone(&self) -> EventLoop {
         unsafe {
-            ll::g_main_loop_ref(self.raw);
+            ffi::g_main_loop_ref(self.raw);
             EventLoop { raw: self.raw }
         }
     }

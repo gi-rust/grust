@@ -29,7 +29,7 @@
 
 pub mod eventloop;
 pub mod gstr;
-pub mod ll;
+pub mod ffi;
 pub mod object;
 pub mod plumbing;
 pub mod types;

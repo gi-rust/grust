@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301  USA
  */
-use ll;
+use ffi;
 use plumbing;
 use plumbing::{GObject,GMainContext};
 use types::*;
@@ -78,9 +78,9 @@ pub fn cast<'r, T, U: ObjectType>(t: &'r Interface<T>) -> &'r Interface<U> {
     unsafe {
         let inst = t.bare.type_instance();
         let dest_type = ObjectType::get_type::<U>();
-        if !(ll::g_type_check_instance_is_a(inst, dest_type) as bool) {
+        if !(ffi::g_type_check_instance_is_a(inst, dest_type) as bool) {
             fail!(fmt!("invalid cast to type `%s'",
-                       str::raw::from_c_str(ll::g_type_name(dest_type))));
+                       str::raw::from_c_str(ffi::g_type_name(dest_type))));
         }
         cast::transmute(t)
     }
