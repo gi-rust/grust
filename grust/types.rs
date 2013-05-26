@@ -18,6 +18,35 @@
  * 02110-1301  USA
  */
 
+// This module provides types that are intrinsic in GIR, so they do not
+// get defined through other types. It should ultimately have a name defined
+// for every basic type listed in the documentation:
+// https://live.gnome.org/GObjectIntrospection/Annotations#Default_Basic_Types
+//
+// Exceptions are:
+// 1. Fixed-size integer types. These have straightforward machine-independent
+//    counterparts in Rust.
+// 2. Strings annotated as "utf8" or "filename". These types are not named
+//    as such in the C API. There is no limitation for an introspected API
+//    against providing its own "utf8" or "filename", so these types are
+//    disambiguated in the generated code by qualifying their names with
+//    a separate module, gstr.
+//
+// Rust aliases are needed for machine-dependent basic types used in GIR,
+// since the GLib types are not necessarily identical to their Rust namesakes
+// (the issue similarly addressed by std::libc::c_int and the like).
+// Usage of the GLib typedef names prevents potential name conflicts,
+// because the introspected C API is likely to compile with the GLib type
+// definitions, and it's highly unlikely for these names to be given to
+// something else via GI annotations.
+//
+// Any other GLib-derived types used by the bindings require some name
+// disambiguation with definitions for the same C types that are emitted
+// in "raw" namespaces of the generated GLib API crates (which are dependent,
+// as any others, on the grust crate, so we cannot refer to their types here
+// without creating a circular build dependency). Those type names should
+// not be defined so as to be pulled in by 'use grust::types::*'.
+
 pub type gboolean       = libc::c_int;
 pub type gchar          = libc::c_char;
 pub type gint           = libc::c_int;
