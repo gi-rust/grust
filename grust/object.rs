@@ -17,11 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301  USA
  */
-
+use ll;
 use plumbing;
 use plumbing::{GObject,GMainContext};
 use types::*;
-use gobject;
 
 pub type GType = gsize;
 
@@ -50,7 +49,7 @@ impl<T> Interface<T> {
 }
 
 impl<T> Reference<T> {
-    pub fn interface<'r>(&'r self) -> &'r Interface<T> { &'r self.iface }
+    pub fn interface<'r>(&'r self) -> &'r Interface<T> { &self.iface }
     pub fn as_interface<U>(&self, f: &fn(&Interface<T>) -> U) -> U {
         f(&self.iface)
     }
@@ -79,9 +78,9 @@ pub fn cast<'r, T, U: ObjectType>(t: &'r Interface<T>) -> &'r Interface<U> {
     unsafe {
         let inst = t.bare.type_instance();
         let dest_type = ObjectType::get_type::<U>();
-        if !(gobject::g_type_check_instance_is_a(inst, dest_type) as bool) {
+        if !(ll::g_type_check_instance_is_a(inst, dest_type) as bool) {
             fail!(fmt!("invalid cast to type `%s'",
-                       str::raw::from_c_str(gobject::g_type_name(dest_type))));
+                       str::raw::from_c_str(ll::g_type_name(dest_type))));
         }
         cast::transmute(t)
     }

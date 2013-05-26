@@ -17,8 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301  USA
  */
-
-use gobject::g_type_init;
+use ll::*;
 
 pub fn init() {
     unsafe {

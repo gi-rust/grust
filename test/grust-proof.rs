@@ -21,29 +21,26 @@
 extern mod grust (name="grust", vers="0.1");
 extern mod gio (name="grust-Gio", vers="2.0");
 
-extern mod std;
-
-use core::result::{Result,Ok};
-use core::comm::{Port,stream};
-use core::task::TaskResult;
-use core::util;
+use std::result::{Result,Ok};
+use std::comm::{Port,stream};
+use std::task::TaskResult;
+use std::util;
 // use std::timer::recv_timeout;
 // use std::uv_global_loop;
 use grust::eventloop::EventLoop;
 
 // We have to do this because of an rpath problem with crates linking to
 // foreign libraries
-extern mod grustna {
-}
+mod grustna { extern { } }
 
 // Test timeout in milliseconds
 static TEST_TIMEOUT: uint = 3000u;
 
 fn spawn_with_future(func: ~fn()) -> Port<TaskResult> {
     let mut (port, _) = stream::<TaskResult>();
-    let mut tb = task::task();
-    do tb.future_result |p| { port = p; };
-    tb.spawn(func);
+    let mut task = task::task();
+    do task.future_result |p| { port = p; };
+    task.spawn(func);
     port
 }
 

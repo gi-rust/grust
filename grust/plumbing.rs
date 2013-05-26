@@ -17,10 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301  USA
  */
-
-use na::grustna_call;
-use glib::{g_main_context_ref, g_main_context_unref};
-use gobject::{g_object_ref,g_object_unref};
+use ll;
 
 pub struct GMainContext;
 pub struct GMainLoop;
@@ -39,7 +36,7 @@ pub unsafe fn get_object(obj: *GObject, ctx: *GMainContext) -> Object {
 pub unsafe fn take_object(obj: *GObject, ctx: *GMainContext) -> Object {
     debug!("task %d: taking object %? (ref context %?)",
            *task::get_task(), obj, ctx);
-    Object { raw_obj: obj, context: g_main_context_ref(ctx) }
+    Object { raw_obj: obj, context: ll::g_main_context_ref(ctx) }
 }
 
 impl Object {
@@ -54,15 +51,15 @@ impl Object {
     pub unsafe fn inc_ref(&self) {
         debug!("task %d: ref object %? (ref context %?)",
                *task::get_task(), self.raw_obj, self.context);
-        g_object_ref(self.raw_obj as *());
-        g_main_context_ref(self.context);
+        ll::g_object_ref(self.raw_obj as *());
+        ll::g_main_context_ref(self.context);
     }
 
     pub unsafe fn dec_ref(&self) {
         debug!("task %d: unref object %? (unref context %?)",
                *task::get_task(), self.raw_obj, self.context);
-        g_object_unref(self.raw_obj as *());
-        g_main_context_unref(self.context);
+        ll::g_object_unref(self.raw_obj as *());
+        ll::g_main_context_unref(self.context);
     }
 }
 
@@ -79,9 +76,8 @@ extern fn grust_call_cb(data: *(), ctx: *GMainContext) {
 }
 
 pub unsafe fn call(ctx: *GMainContext, func: &fn(*GMainContext)) {
-    if !(grustna_call(grust_call_cb,
-                      ptr::to_unsafe_ptr(&func) as *(),
-                      ctx)
+    if !(ll::grustna_call(grust_call_cb,
+                ptr::to_unsafe_ptr(&func) as *(), ctx)
          as bool) {
         fail!(~"call failure");
     }
