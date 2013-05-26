@@ -32,10 +32,8 @@ impl EventLoop {
         }
     }
 
-    pub fn run(&self) {
-        unsafe {
-            ffi::grustna_main_loop_run_thread_local(self.raw);
-        }
+    pub unsafe fn run(&self) {
+        ffi::grustna_main_loop_run_thread_local(self.raw);
     }
 
     pub fn quit(&self) {
