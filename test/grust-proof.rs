@@ -29,10 +29,6 @@ use std::util;
 // use std::uv_global_loop;
 use grust::eventloop::EventLoop;
 
-// We have to do this because of an rpath problem with crates linking to
-// foreign libraries
-mod grustna { extern { } }
-
 // Test timeout in milliseconds
 static TEST_TIMEOUT: uint = 3000u;
 

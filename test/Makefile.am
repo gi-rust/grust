@@ -15,7 +15,11 @@ TESTS_ENVIRONMENT_PARALLEL = \
 LOCAL_RUSTCFLAGS := \
   -L $(top_builddir)/na/.libs \
   -L $(top_builddir)/grust/.libs \
-  -L $(top_builddir)/fauxgen/.libs --test
+  -L $(top_builddir)/fauxgen/.libs \
+  --link-args -lgrustna \
+  --link-args '$(strip $(GLIB_LIBS))' \
+  --link-args '$(strip $(GIO_LIBS))' \
+  --test
 
 check-local: grust-proof
 if TEST_RUN_SERIAL
