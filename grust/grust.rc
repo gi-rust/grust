@@ -36,7 +36,7 @@ pub mod types;
 mod init;
 
 // Reexports into the top level do not work outside of a crate
-// due to https://github.com/mozilla/rust/issues/4202
+// due to https://github.com/mozilla/rust/issues/6745
 pub type utf8 = gstr::utf8;
 
 // For the same reason as above, init has to be proxied by a function below
