@@ -21,12 +21,12 @@
 extern mod grust (name="grust", vers="0.1");
 extern mod gio (name="grust-Gio", vers="2.0");
 
-use core::result::{Result,Ok};
-use core::comm::{Port,stream};
-use core::task::TaskResult;
-use core::util;
-// use core::timer::recv_timeout;
-// use core::uv_global_loop;
+use std::result::{Result,Ok};
+use std::comm::{Port,stream};
+use std::task::TaskResult;
+use std::util;
+// use std::timer::recv_timeout;
+// use std::uv_global_loop;
 use grust::eventloop::EventLoop;
 
 // Test timeout in milliseconds
