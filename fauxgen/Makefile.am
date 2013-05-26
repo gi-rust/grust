@@ -1,4 +1,7 @@
-LOCAL_RUSTCFLAGS := -L $(top_builddir)/grust/.libs -L .libs $(GLIB_L_FLAGS)
+LOCAL_RUSTCFLAGS := \
+  -L $(abs_top_builddir)/grust/.libs \
+  -L $(abs_builddir)/.libs \
+  $(GLIB_L_FLAGS)
 
 fauxgen_crates = glib gobject gio
 

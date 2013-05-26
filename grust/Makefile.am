@@ -6,6 +6,6 @@ include $(top_srcdir)/build/rules.mk
 
 DEPS = $(top_builddir)/na/libgrustna.la
 
-.libs/.built.grust: grust.rc *.rs $(DEPS)
+.libs/.built.grust: $(srcdir)/grust.rc $(srcdir)/*.rs $(DEPS)
 
 $(DEPS):
