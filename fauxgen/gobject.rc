@@ -55,7 +55,7 @@ pub mod classes {
     pub type Object = object::Interface<raw::GObject>;
 }
 
-impl object::ObjectType for classes::Object {
+impl object::ObjectType for raw::GObject {
     fn get_type() -> object::GType {
         unsafe {
             raw::g_object_get_type()
