@@ -176,7 +176,7 @@ fn async_off_stack() {
         let fobj = ~gio::file_new_for_path("/dev/null");
         let el = EventLoop::new();
         let elo = ~el.clone();
-        do task::spawn_sched(task::ThreadPerCore) {
+        do task::spawn_sched(task::SingleThreaded) {
             let f = fobj.interface() as &gio::File;
             let elo2 = ~elo.clone();
             do f.read_async(0, None) |obj, res| {
