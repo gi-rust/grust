@@ -21,6 +21,8 @@
 extern mod grust (name="grust", vers="0.1");
 extern mod gio (name="grust-Gio", vers="2.0");
 
+use gio::File;
+
 use std::result::{Result,Ok};
 use std::comm::{Port,stream};
 use std::libc;
@@ -70,7 +72,7 @@ fn tcase_result(test: ~fn() -> Result<(),()>) {
 fn simple() {
     do tcase {
         let fobj = gio::file_new_for_path("/dev/null");
-        let f = fobj.interface() as &gio::File;
+        let f = fobj.interface();
         assert!(f.get_path().to_str() == ~"/dev/null");
     }
 }
@@ -78,8 +80,7 @@ fn simple() {
 #[test]
 fn as_interface() {
     do tcase {
-        do gio::file_new_for_path("/dev/null").as_interface |fobj| {
-            let f = fobj as &gio::File;
+        do gio::file_new_for_path("/dev/null").as_interface |f| {
             assert!(f.get_path().to_str() == ~"/dev/null");
         };
     }
@@ -90,7 +91,7 @@ fn new_ref() {
     do tcase {
         let fobj = gio::file_new_for_path("/dev/null");
         let gobj = fobj.interface().new_ref();
-        let g = gobj.interface() as &gio::File;
+        let g = gobj.interface();
         assert!(g.get_path().to_str() == ~"/dev/null");
     }
 }
@@ -99,8 +100,7 @@ fn new_ref() {
 fn clone() {
     do tcase {
         let fobj = gio::file_new_for_path("/dev/null");
-        do fobj.clone().as_interface |gobj| {
-            let g = gobj as &gio::File;
+        do fobj.clone().as_interface |g| {
             assert!(g.get_path().to_str() == ~"/dev/null");
         };
     }
@@ -111,7 +111,7 @@ fn off_task() {
     do tcase_result {
         let f = ~gio::file_new_for_path("/dev/null");
         do try {
-            let f = f.interface() as &gio::File;
+            let f = f.interface();
             let p = f.get_path();
             assert!(p.to_str() == ~"/dev/null");
         }
@@ -123,8 +123,7 @@ fn off_task_as_interface() {
     do tcase_result {
         let fobj = ~gio::file_new_for_path("/dev/null");
         do try {
-            do fobj.as_interface |fifa| {
-                let f = fifa as &gio::File;
+            do fobj.as_interface |f| {
                 let p = f.get_path();
                 assert!(p.to_str() == ~"/dev/null");
             };
@@ -136,12 +135,11 @@ fn off_task_as_interface() {
 fn async() {
     do tcase {
         let fobj = gio::file_new_for_path("/dev/null");
-        let f = fobj.interface() as &gio::File;
+        let f = fobj.interface();
         let el = EventLoop::new();
         let elo = ~el.clone();
         do f.read_async(0, None) |obj, res| {
-            let f: &gio::File = obj.cast::<gio::raw::GFile>()
-                                as &gio::File;
+            let f: &gio::interfaces::File = obj.cast();
             let in = f.read_finish(res);
             util::ignore(in);
             elo.quit();
@@ -160,11 +158,10 @@ fn async_off_task() {
         let el = EventLoop::new();
         let elo = ~el.clone();
         do spawn {
-            let f = fobj.interface() as &gio::File;
+            let f = fobj.interface();
             let elo2 = ~elo.clone();
             do f.read_async(0, None) |obj, res| {
-                let fifa: &gio::interfaces::File = obj.cast();
-                let f = fifa as &gio::File;
+                let f: &gio::interfaces::File = obj.cast();
                 f.read_finish(res);
                 elo2.quit();
             };
@@ -182,10 +179,10 @@ fn async_off_stack() {
         let el = EventLoop::new();
         let elo = ~el.clone();
         do spawn_sched(SingleThreaded) {
-            let f = fobj.interface() as &gio::File;
+            let f = fobj.interface();
             let elo2 = ~elo.clone();
             do f.read_async(0, None) |obj, res| {
-                let f = obj.cast::<gio::raw::GFile>() as &gio::File;
+                let f: &gio::interfaces::File = obj.cast();
                 f.read_finish(res);
                 elo2.quit();
             };
