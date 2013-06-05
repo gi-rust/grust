@@ -20,6 +20,9 @@
 use ffi::*;
 use types::*;
 
+use std::libc;
+use std::str;
+
 pub struct utf8 {
     priv data: *gchar,
 }

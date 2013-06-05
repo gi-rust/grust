@@ -22,6 +22,9 @@ use plumbing;
 use plumbing::{GObject,GMainContext};
 use types::*;
 
+use std::cast;
+use std::str;
+
 pub type GType = gsize;
 
 trait ObjectType {
@@ -38,7 +41,9 @@ pub struct Reference<T> {
 
 impl<T> Interface<T> {
     pub fn new_ref(&self) -> Reference<T> {
-        self.bare.inc_ref();
+        unsafe {
+            self.bare.inc_ref();
+        }
         Reference { iface: Interface { bare: self.bare } }
     }
 
@@ -64,7 +69,9 @@ impl<T> Drop for Interface<T> {
 #[unsafe_destructor]
 impl<T> Drop for Reference<T> {
     fn finalize(&self) {
-        self.iface.bare.dec_ref();
+        unsafe {
+            self.iface.bare.dec_ref();
+        }
     }
 }
 

@@ -31,12 +31,17 @@ use grust::plumbing;
 use grust::object;
 use grust::types::*;
 use grust::gstr;
+use std::cast;
+use std::libc;
+use std::ptr;
+use std::str;
 
 pub mod raw {
     use grust::types::*;
     use grust::object::GType;
     use glib;
     use gobject;
+    use std::libc;
 
     pub struct GAsyncResult;
     pub struct GFile;
@@ -115,6 +120,8 @@ mod callbacks {
     use grust::object;
     use raw;
     use gobject;
+    use std::cast;
+    use std::ptr;
 
     pub extern fn async_ready_callback(source_object: *gobject::raw::GObject,
                                        res          : *raw::GAsyncResult,

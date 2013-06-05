@@ -47,6 +47,8 @@
 // without creating a circular build dependency). Those type names should
 // not be defined so as to be pulled in by 'use grust::types::*'.
 
+use std::libc;
+
 pub type gboolean       = libc::c_int;
 pub type gchar          = libc::c_char;
 pub type gint           = libc::c_int;

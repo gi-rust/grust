@@ -19,6 +19,9 @@
  */
 use ffi;
 
+use std::ptr;
+use std::task;
+
 pub struct GMainContext;
 pub struct GMainLoop;
 pub struct GObject;

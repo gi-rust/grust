@@ -23,7 +23,8 @@ extern mod gio (name="grust-Gio", vers="2.0");
 
 use std::result::{Result,Ok};
 use std::comm::{Port,stream};
-use std::task::TaskResult;
+use std::libc;
+use std::task::*;
 use std::util;
 // use std::timer::recv_timeout;
 // use std::uv_global_loop;
@@ -34,7 +35,7 @@ static TEST_TIMEOUT: uint = 3000u;
 
 fn spawn_with_future(func: ~fn()) -> Port<TaskResult> {
     let mut (port, _) = stream::<TaskResult>();
-    let mut task = task::task();
+    let mut task = task();
     do task.future_result |p| { port = p; };
     task.spawn(func);
     port
@@ -47,8 +48,8 @@ fn tcase(test: ~fn()) {
 
     // recv_timeout is broken, see https://github.com/mozilla/rust/issues/6089
     match Some(port.recv()) /* recv_timeout(&uv_global_loop::get(), TEST_TIMEOUT, &port) */ {
-        Some(task::Success) => {}
-        Some(task::Failure) => {
+        Some(Success) => {}
+        Some(Failure) => {
             fail!(~"test failed");
         }
         None => {
@@ -109,7 +110,7 @@ fn clone() {
 fn off_task() {
     do tcase_result {
         let f = ~gio::file_new_for_path("/dev/null");
-        do task::try {
+        do try {
             let f = f.interface() as &gio::File;
             let p = f.get_path();
             assert!(p.to_str() == ~"/dev/null");
@@ -121,7 +122,7 @@ fn off_task() {
 fn off_task_as_interface() {
     do tcase_result {
         let fobj = ~gio::file_new_for_path("/dev/null");
-        do task::try {
+        do try {
             do fobj.as_interface |fifa| {
                 let f = fifa as &gio::File;
                 let p = f.get_path();
@@ -145,7 +146,9 @@ fn async() {
             util::ignore(in);
             elo.quit();
         };
-        el.run();
+        unsafe {
+            el.run();
+        }
     }
 }
 
@@ -166,7 +169,9 @@ fn async_off_task() {
                 elo2.quit();
             };
         }
-        el.run();
+        unsafe {
+            el.run();
+        }
     }
 }
 
@@ -176,7 +181,7 @@ fn async_off_stack() {
         let fobj = ~gio::file_new_for_path("/dev/null");
         let el = EventLoop::new();
         let elo = ~el.clone();
-        do task::spawn_sched(task::SingleThreaded) {
+        do spawn_sched(SingleThreaded) {
             let f = fobj.interface() as &gio::File;
             let elo2 = ~elo.clone();
             do f.read_async(0, None) |obj, res| {
@@ -185,6 +190,8 @@ fn async_off_stack() {
                 elo2.quit();
             };
         };
-        el.run();
+        unsafe {
+            el.run();
+        }
     }
 }
