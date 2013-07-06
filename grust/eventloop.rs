@@ -45,7 +45,7 @@ impl EventLoop {
 
 #[unsafe_destructor]
 impl Drop for EventLoop {
-    fn finalize(&self) {
+    fn drop(&self) {
         unsafe {
             ffi::g_main_loop_unref(self.raw);
         }

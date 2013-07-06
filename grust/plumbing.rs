@@ -73,8 +73,8 @@ struct CallbackData {
 
 extern fn grust_call_cb(data: *(), ctx: *GMainContext) {
     unsafe {
-        let func = *(data as *&fn(*GMainContext));
-        func(ctx);
+        let func = data as *&fn(*GMainContext);
+        (*func)(ctx);
     } 
 }
 

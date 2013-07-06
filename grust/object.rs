@@ -63,12 +63,12 @@ impl<T> Reference<T> {
 #[unsafe_destructor]
 impl<T> Drop for Interface<T> {
     /* Non-copyable */
-    fn finalize(&self) { }
+    fn drop(&self) { }
 }
 
 #[unsafe_destructor]
 impl<T> Drop for Reference<T> {
-    fn finalize(&self) {
+    fn drop(&self) {
         unsafe {
             self.iface.bare.dec_ref();
         }

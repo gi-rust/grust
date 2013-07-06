@@ -34,7 +34,7 @@ impl utf8 {
 }
 
 impl Drop for utf8 {
-    fn finalize(&self) {
+    fn drop(&self) {
         unsafe {
             g_free(self.data as *());
         }

@@ -36,7 +36,7 @@ use grust::eventloop::EventLoop;
 static TEST_TIMEOUT: uint = 3000u;
 
 fn spawn_with_future(func: ~fn()) -> Port<TaskResult> {
-    let mut (port, _) = stream::<TaskResult>();
+    let mut port = match stream::<TaskResult>() { (p, _) => p };
     let mut task = task();
     do task.future_result |p| { port = p; };
     task.spawn(func);
