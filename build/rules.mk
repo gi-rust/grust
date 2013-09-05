@@ -1,13 +1,9 @@
 %: $(srcdir)/%.rs
-	cd $(srcdir) && \
-	$(RUSTC) $(LOCAL_RUSTCFLAGS) $(RUSTCFLAGS) -o $(abs_builddir)/$@ \
-		$(patsubst $(srcdir)/%,%,$<)
+	$(RUSTC) $(LOCAL_RUSTCFLAGS) $(RUSTCFLAGS) -o $@ $<
 
 .libs/.built.%: $(srcdir)/%.rc | .libs
-	cd $(srcdir) && \
-	$(RUSTC) $(LOCAL_RUSTCFLAGS) $(RUSTCFLAGS) --out-dir $(abs_builddir)/.libs \
-		$(patsubst $(srcdir)/%,%,$<) && \
-	touch $(abs_builddir)/$@
+	$(RUSTC) $(LOCAL_RUSTCFLAGS) $(RUSTCFLAGS) --out-dir $(builddir)/.libs $< && \
+	touch $@
 
 .libs:
 	mkdir -p .libs

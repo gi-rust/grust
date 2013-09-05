@@ -13,9 +13,9 @@ TESTS_ENVIRONMENT_PARALLEL = \
   $(TESTS_ENVIRONMENT)
 
 LOCAL_RUSTCFLAGS := \
-  -L $(abs_top_builddir)/na/.libs \
-  -L $(abs_top_builddir)/grust/.libs \
-  -L $(abs_top_builddir)/fauxgen/.libs \
+  -L $(top_builddir)/na/.libs \
+  -L $(top_builddir)/grust/.libs \
+  -L $(top_builddir)/fauxgen/.libs \
   --link-args -lgrustna \
   --link-args '$(strip $(GLIB_LIBS))' \
   --link-args '$(strip $(GIO_LIBS))' \
