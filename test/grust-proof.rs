@@ -44,8 +44,6 @@ fn spawn_with_future(func: ~fn()) -> Port<TaskResult> {
 }
 
 fn tcase(test: ~fn()) {
-    grust::init();
-
     let port = spawn_with_future(test);
 
     // recv_timeout is broken, see https://github.com/mozilla/rust/issues/6089

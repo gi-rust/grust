@@ -25,7 +25,6 @@ pub extern {
 
 #[link_name="gobject-2.0"]
 pub extern {
-    fn g_type_init();
     fn g_object_ref(obj: *()) -> *();
     fn g_object_unref(obj: *()) -> *();
     fn g_type_check_instance_is_a(instance   : *GTypeInstance,

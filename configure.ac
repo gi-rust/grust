@@ -46,8 +46,8 @@ AS_IF([test $enable_debug = yes],[
   CFLAGS="$CFLAGS -g"
 ])
 
-PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.32 gobject-2.0])
-PKG_CHECK_MODULES([GIO], [gio-2.0 >= 2.32])
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.36 gobject-2.0])
+PKG_CHECK_MODULES([GIO], [gio-2.0 >= 2.36])
 
 GLIB_L_FLAGS=$($PKG_CONFIG --libs-only-L glib-2.0 gobject-2.0 gio-2.0)
 AC_SUBST([GLIB_L_FLAGS])
