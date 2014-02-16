@@ -1,6 +1,6 @@
 /* This file is part of Grust, GObject introspection bindings for Rust
  *
- * Copyright (C) 2013  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+ * Copyright (C) 2013, 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,64 +17,51 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301  USA
  */
-use ffi::*;
-use types::*;
+use ffi;
+use types::{gchar,gpointer};
 
-use std::libc;
-use std::str;
+use libc;
 
-pub struct utf8 {
-    priv data: *gchar,
+pub struct Utf8 {
+    data: *mut gchar,
 }
 
-impl utf8 {
-    pub unsafe fn wrap(data: *gchar) -> utf8 {
-        utf8 { data: data }
+impl Utf8 {
+    pub unsafe fn new(data: *mut gchar) -> Utf8 {
+        Utf8 { data: data }
     }
 }
 
-impl Drop for utf8 {
-    fn drop(&self) {
+impl Drop for Utf8 {
+    fn drop(&mut self) {
         unsafe {
-            g_free(self.data as *());
+            ffi::g_free(self.data as gpointer);
         }
     }
 }
 
-impl Clone for utf8 {
-    fn clone(&self) -> utf8 {
+impl Clone for Utf8 {
+    fn clone(&self) -> Utf8 {
         unsafe {
-            utf8::wrap(g_strdup(self.data))
+            Utf8::new(ffi::g_strdup(self.data as *const gchar))
         }
     }
 }
 
-impl ToStr for utf8 {
-    fn to_str(&self) -> ~str {
+impl PartialEq for Utf8 {
+    fn eq(&self, other: &Utf8) -> bool {
         unsafe {
-            str::raw::from_c_str(self.data)
+            libc::strcmp(self.data as *const gchar,
+                         other.data as *const gchar) == 0
+        }
+    }
+
+    fn ne(&self, other: &Utf8) -> bool {
+        unsafe {
+            libc::strcmp(self.data as *const gchar,
+                         other.data as *const gchar) != 0
         }
     }
 }
 
-impl Eq for utf8 {
-    fn eq(&self, other: &utf8) -> bool {
-        unsafe {
-            libc::strcmp(self.data, other.data) == 0
-        }
-    }
-
-    fn ne(&self, other: &utf8) -> bool {
-        unsafe {
-            libc::strcmp(self.data, other.data) != 0
-        }
-    }
-}
-
-impl TotalEq for utf8 {
-    fn equals(&self, other: &utf8) -> bool {
-        unsafe {
-            libc::strcmp(self.data, other.data) == 0
-        }
-    }
-}
+impl Eq for Utf8 { }

@@ -1,7 +1,6 @@
 TESTS_ENVIRONMENT = \
   export G_DEBUG=fatal-criticals;			\
   export GIO_USE_VFS=local;				\
-  export LD_LIBRARY_PATH=$(top_builddir)/na/.libs; 	\
   #
 
 TESTS_ENVIRONMENT_SERIAL = \
@@ -13,12 +12,8 @@ TESTS_ENVIRONMENT_PARALLEL = \
   $(TESTS_ENVIRONMENT)
 
 LOCAL_RUSTCFLAGS := \
-  -L $(top_builddir)/na/.libs \
   -L $(top_builddir)/grust/.libs \
   -L $(top_builddir)/fauxgen/.libs \
-  --link-args -lgrustna \
-  --link-args '$(strip $(GLIB_LIBS))' \
-  --link-args '$(strip $(GIO_LIBS))' \
   --test
 
 check-local: grust-proof

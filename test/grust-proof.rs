@@ -18,175 +18,78 @@
  * 02110-1301  USA
  */
 
-extern mod grust (name="grust", vers="0.1");
-extern mod gio (name="grust-Gio", vers="2.0");
+extern crate grust;
+extern crate "grust-Gio-2_0" as gio;
 
 use gio::File;
-
-use std::result::{Result,Ok};
-use std::comm::{Port,stream};
-use std::libc;
-use std::task::*;
-use std::util;
-// use std::timer::recv_timeout;
-// use std::uv_global_loop;
-use grust::eventloop::EventLoop;
+use gio::interface::File as FileIface;
+use grust::refcount::{Ref,SyncRef};
+use grust::native::LoopRunner;
+use grust::object;
 
 // Test timeout in milliseconds
-static TEST_TIMEOUT: uint = 3000u;
+// static TEST_TIMEOUT: uint = 3000u;
 
-fn spawn_with_future(func: ~fn()) -> Port<TaskResult> {
-    let mut port = match stream::<TaskResult>() { (p, _) => p };
-    let mut task = task();
-    do task.future_result |p| { port = p; };
-    task.spawn(func);
-    port
-}
-
-fn tcase(test: ~fn()) {
-    let port = spawn_with_future(test);
-
-    // recv_timeout is broken, see https://github.com/mozilla/rust/issues/6089
-    match Some(port.recv()) /* recv_timeout(&uv_global_loop::get(), TEST_TIMEOUT, &port) */ {
-        Some(Success) => {}
-        Some(Failure) => {
-            fail!(~"test failed");
-        }
-        None => {
-            error!("test timed out");
-            unsafe { libc::abort(); }
-        }
-    }
-}
-
-fn tcase_result(test: ~fn() -> Result<(),()>) {
-    do tcase {
-        let result = test();
-        assert!(result == Ok(()));
-    }
+fn tcase(test: proc(): Send) {
+    test()
 }
 
 #[test]
 fn simple() {
-    do tcase {
-        let fobj = gio::file_new_for_path("/dev/null");
-        let f = fobj.interface();
-        assert!(f.get_path().to_str() == ~"/dev/null");
-    }
+    tcase(proc() {
+        let mut f = File::new_for_path("/dev/null");
+        let path = f.borrow_mut().get_path();
+        assert_eq!(path, "/dev/null");
+    })
 }
 
 #[test]
 fn as_interface() {
-    do tcase {
-        do gio::file_new_for_path("/dev/null").as_interface |f| {
-            assert!(f.get_path().to_str() == ~"/dev/null");
-        };
-    }
+    tcase(proc() {
+        let mut r = File::new_for_path("/dev/null");
+        let f = r.borrow_mut() as &mut FileIface;
+        let path = f.get_path();
+        assert_eq!(path, "/dev/null");
+    })
 }
 
 #[test]
 fn new_ref() {
-    do tcase {
-        let fobj = gio::file_new_for_path("/dev/null");
-        let gobj = fobj.interface().new_ref();
-        let g = gobj.interface();
-        assert!(g.get_path().to_str() == ~"/dev/null");
-    }
+    tcase(proc() {
+        let mut f = File::new_for_path("/dev/null");
+        let mut g = Ref::new(f.borrow_mut());
+        let path = g.borrow_mut().get_path();
+        assert_eq!(path, "/dev/null");
+    })
 }
 
 #[test]
 fn clone() {
-    do tcase {
-        let fobj = gio::file_new_for_path("/dev/null");
-        do fobj.clone().as_interface |g| {
-            assert!(g.get_path().to_str() == ~"/dev/null");
-        };
-    }
-}
-
-#[test]
-fn off_task() {
-    do tcase_result {
-        let f = ~gio::file_new_for_path("/dev/null");
-        do try {
-            let f = f.interface();
-            let p = f.get_path();
-            assert!(p.to_str() == ~"/dev/null");
-        }
-    }
-}
-
-#[test]
-fn off_task_as_interface() {
-    do tcase_result {
-        let fobj = ~gio::file_new_for_path("/dev/null");
-        do try {
-            do fobj.as_interface |f| {
-                let p = f.get_path();
-                assert!(p.to_str() == ~"/dev/null");
-            };
-        }
-    }
+    tcase(proc() {
+        let rf = File::new_for_path("/dev/null");
+        let mut rg = rf.clone();
+        let g = rg.borrow_mut();
+        let path = g.get_path();
+        assert_eq!(path, "/dev/null");
+    })
 }
 
 #[test]
 fn async() {
-    do tcase {
-        let fobj = gio::file_new_for_path("/dev/null");
-        let f = fobj.interface();
-        let el = EventLoop::new();
-        let elo = ~el.clone();
-        do f.read_async(0, None) |obj, res| {
-            let f: &gio::interfaces::File = obj.cast();
-            let in = f.read_finish(res);
-            util::ignore(in);
-            elo.quit();
-        };
-        unsafe {
-            el.run();
-        }
-    }
-}
-
-#[test]
-#[ignore]  // See https://github.com/mzabaluev/grust/issues/4
-fn async_off_task() {
-    do tcase {
-        let fobj = ~gio::file_new_for_path("/dev/null");
-        let el = EventLoop::new();
-        let elo = ~el.clone();
-        do spawn {
-            let f = fobj.interface();
-            let elo2 = ~elo.clone();
-            do f.read_async(0, None) |obj, res| {
-                let f: &gio::interfaces::File = obj.cast();
-                f.read_finish(res);
-                elo2.quit();
-            };
-        }
-        unsafe {
-            el.run();
-        }
-    }
-}
-
-#[test]
-fn async_off_stack() {
-    do tcase {
-        let fobj = ~gio::file_new_for_path("/dev/null");
-        let el = EventLoop::new();
-        let elo = ~el.clone();
-        do spawn_sched(SingleThreaded) {
-            let f = fobj.interface();
-            let elo2 = ~elo.clone();
-            do f.read_async(0, None) |obj, res| {
-                let f: &gio::interfaces::File = obj.cast();
-                f.read_finish(res);
-                elo2.quit();
-            };
-        };
-        unsafe {
-            el.run();
-        }
-    }
+    tcase(proc() {
+        let mut f = File::new_for_path("/dev/null");
+        let runner = LoopRunner::new();
+        runner.run_after(|mainloop| {
+            let mut rml = SyncRef::new(mainloop);
+            f.read_async(0, None,
+                box proc(obj, res) {
+                    let f: &mut File = object::cast_mut(obj);
+                    match f.read_finish(res) {
+                        Ok(_)  => {}
+                        Err(_) => { println!("Error!") }  // TODO: impl Fmt for Error
+                    }
+                    rml.quit();
+                });
+        });
+    })
 }

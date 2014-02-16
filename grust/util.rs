@@ -1,6 +1,6 @@
 /* This file is part of Grust, GObject introspection bindings for Rust
  *
- * Copyright (C) 2013  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+ * Copyright (C) 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,22 +18,10 @@
  * 02110-1301  USA
  */
 
-#[link(name = "grust", vers = "0.1",
-       uuid="e274cf32-7985-40e3-aa18-2dff719ab31d")];
+use types::{gboolean,FALSE};
 
-#[crate_type = "lib"];
+#[inline]
+pub fn is_true(v: gboolean) -> bool { v != FALSE }
 
-#[desc = "GObject introspection bindings"];
-#[license = "LGPL 2.1"];
-#[author = "Mikhail Zabaluev"];
-
-pub mod eventloop;
-pub mod gstr;
-pub mod ffi;
-pub mod object;
-pub mod plumbing;
-pub mod types;
-
-// Reexports into the top level do not work outside of a crate
-// due to https://github.com/mozilla/rust/issues/6745
-pub type utf8 = gstr::utf8;
+#[inline]
+pub fn is_false(v: gboolean) -> bool { v == FALSE }

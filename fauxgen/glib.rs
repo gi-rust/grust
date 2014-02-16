@@ -18,34 +18,8 @@
  * 02110-1301  USA
  */
 
-use gtype::GType;
-use ffi;
-use ffi::GTypeInstance;
-use refcount::RefcountFuncs;
-use util::is_false;
+#![crate_name = "grust-GLib-2_0"]
 
-use std::c_str::CString;
-use std::mem::transmute;
+#![crate_type = "lib"]
 
-pub trait ObjectType {
-    fn get_type(&self) -> GType;
-}
-
-pub static refcount_funcs: RefcountFuncs = (
-        &ffi::g_object_ref,
-        &ffi::g_object_unref
-    );
-
-pub fn cast<'a, T: ObjectType, U: ObjectType>(source: &'a T)
-                                             -> &'a U {
-    unsafe {
-        let inst = source as *const T as *const GTypeInstance;
-        let dest: &'a U = transmute(source);
-        let dest_type = dest.get_type();
-        if is_false(ffi::g_type_check_instance_is_a(inst, dest_type)) {
-            fail!("invalid cast to type {}",
-                  CString::new(ffi::g_type_name(dest_type), false));
-        }
-        dest
-    }
-}
+extern crate grust;

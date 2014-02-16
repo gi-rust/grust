@@ -1,6 +1,6 @@
 /* This file is part of Grust, GObject introspection bindings for Rust
  *
- * Copyright (C) 2013  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+ * Copyright (C) 2013, 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,28 +18,26 @@
  * 02110-1301  USA
  */
 
-#[link(name = "grust-GLib", vers = "2.0",
-       uuid="30112a42-d710-4e13-845c-b2d23d73facd")];
+#![crate_name = "grust"]
 
-#[crate_type = "lib"];
+#![crate_type = "lib"]
 
-extern mod grust (name="grust", vers="0.1");
+#![desc = "GObject introspection bindings"]
+#![license = "LGPL 2.1"]
 
-pub mod raw {
-    use grust::types::*;
+#![feature(unsafe_destructor)]
 
-    pub type GQuark = u32;
+extern crate libc;
 
-    pub struct GError {
-        domain: GQuark,
-        code: gint,
-        message: *gchar
-    }
+pub mod error;
+pub mod gstr;
+pub mod gtype;
+pub mod mainloop;
+pub mod native;
+pub mod object;
+pub mod quark;
+pub mod refcount;
+pub mod types;
+pub mod util;
 
-    #[link_name="glib-2.0"]
-    pub extern {
-        pub fn g_free(mem: *());
-        pub fn g_strdup(str: *gchar) -> *gchar;
-        pub fn g_error_free(err: *GError);
-    }
-}
+mod ffi;
