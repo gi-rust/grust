@@ -28,14 +28,11 @@ extern crate "grust-GObject-2_0" as gobject;
 extern crate libc;
 
 use grust::error;
+use grust::gstr;
 use grust::gtype::GType;
 use grust::object;
 use grust::refcount;
 use grust::types;
-
-use std::mem;
-use std::str;
-use std::slice;
 
 #[repr(C)]
 pub struct AsyncResult;
@@ -83,7 +80,7 @@ pub mod raw {
         pub fn g_async_result_get_type() -> GType;
         pub fn g_file_get_type() -> GType;
         pub fn g_file_new_for_path(path: *const gchar) -> *mut GFile;
-        pub fn g_file_get_path(file: *mut GFile) -> *const libc::c_char;
+        pub fn g_file_get_path(file: *mut GFile) -> *mut libc::c_char;
         pub fn g_file_read_async(file: *mut GFile,
                                  io_priority: gint,
                                  cancellable: *mut GCancellable,
@@ -130,6 +127,7 @@ mod async_shim {
 pub mod interface {
 
     use grust::error;
+    use grust::gstr;
     use grust::object;
     use grust::refcount;
     use grust::types;
@@ -149,15 +147,15 @@ pub mod interface {
 
     pub trait InputStream : gobject::interface::Object {
     }
-    
+
     pub trait FileInputStream : InputStream {
     }
-    
+
     pub trait File : object::ObjectType {
         fn as_gio_file<'a>(&'a self) -> &'a super::File;
         fn as_mut_gio_file<'a>(&'a mut self) -> &'a mut super::File;
 
-        fn get_path<'a>(&'a mut self) -> &'a str {
+        fn get_path<'a>(&'a mut self) -> gstr::Utf8 {
             self.as_mut_gio_file()._impl_get_path()
         }
 
@@ -186,16 +184,10 @@ impl File {
         }
     }
 
-    fn _impl_get_path<'a>(&'a mut self) -> &'a str {
+    fn _impl_get_path<'a>(&mut self) -> gstr::Utf8 {
         unsafe {
             let ret = raw::g_file_get_path(self);
-            slice::raw::buf_as_slice(
-                ret as *const u8,
-                libc::strlen(ret) as uint,
-                |bytes| {
-                    let s = str::raw::from_utf8(bytes);
-                    mem::transmute::<&str, &'a str>(s)
-                })
+            gstr::Utf8::new(ret)
         }
     }
 

@@ -39,7 +39,7 @@ fn simple() {
     tcase(proc() {
         let mut f = File::new_for_path("/dev/null");
         let path = f.borrow_mut().get_path();
-        assert_eq!(path, "/dev/null");
+        assert!(path.equiv(&"/dev/null"));
     })
 }
 
@@ -49,7 +49,7 @@ fn as_interface() {
         let mut r = File::new_for_path("/dev/null");
         let f = r.borrow_mut() as &mut FileIface;
         let path = f.get_path();
-        assert_eq!(path, "/dev/null");
+        assert_eq!(path.into_string(), String::from_str("/dev/null"));
     })
 }
 
@@ -59,7 +59,7 @@ fn new_ref() {
         let mut f = File::new_for_path("/dev/null");
         let mut g = Ref::new(f.borrow_mut());
         let path = g.borrow_mut().get_path();
-        assert_eq!(path, "/dev/null");
+        assert_eq!(path.into_string().as_slice(), "/dev/null");
     })
 }
 
@@ -70,7 +70,7 @@ fn clone() {
         let mut rg = rf.clone();
         let g = rg.borrow_mut();
         let path = g.get_path();
-        assert_eq!(path, "/dev/null");
+        assert_eq!(path.into_string().as_slice(), "/dev/null");
     })
 }
 
