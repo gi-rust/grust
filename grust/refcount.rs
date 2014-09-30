@@ -19,7 +19,7 @@
  */
 
 use std::kinds::marker;
-use types::gpointer;
+use types::{gpointer,gconstpointer};
 
 pub type RefFunc = unsafe extern "C" fn(gpointer) -> gpointer;
 pub type UnrefFunc = unsafe extern "C" fn(gpointer);
@@ -27,34 +27,43 @@ pub type RefcountFuncs = (*const RefFunc, *const UnrefFunc);
 
 pub trait Refcount {
     fn refcount_funcs(&self) -> &'static RefcountFuncs;
-
-    unsafe fn inc_ref(&mut self) {
-        let (ref_func, _) = *self.refcount_funcs();
-        let p: *mut Self = self;
-        (*ref_func)(p as gpointer);
-    }
-
-    unsafe fn dec_ref(&mut self) {
-        let (_, unref_func) = *self.refcount_funcs();
-        let p: *mut Self = self;
-        (*unref_func)(p as gpointer);
-    }
 }
 
 pub struct Ref<T: Refcount> {
-    ptr: *mut T,
+    plumbing: RefImpl,
     no_send: marker::NoSend,
     no_sync: marker::NoSync
 }
 
+impl<T: Refcount> Ref<T> {
+    pub fn new(source: &mut T) -> Ref<T> {
+        unsafe { make_ref(source as *mut T) }
+    }
+
+    pub fn borrow<'a>(&'a self) -> &'a T {
+        unsafe { &*self.raw_ptr() }
+    }
+    pub fn borrow_mut<'a>(&'a mut self) -> &'a mut T {
+        unsafe { &mut *self.raw_mut_ptr() }
+    }
+
+    pub fn raw_ptr(&self) -> *const T {
+        self.plumbing.ptr as gconstpointer as *const T
+    }
+    pub fn raw_mut_ptr(&mut self) -> *mut T {
+        self.plumbing.ptr as *mut T
+    }
+}
+
 pub mod raw {
 
-    use super::{Ref,Refcount};
+    use super::{Refcount,Ref,RefImpl};
+    use types::gpointer;
     use std::kinds::marker;
 
     pub unsafe fn ref_from_ptr<T: Refcount>(p: *mut T) -> Ref<T> {
         Ref {
-            ptr: p,
+            plumbing: RefImpl::from_ptr(p as gpointer),
             no_send: marker::NoSend,
             no_sync: marker::NoSync
         }
@@ -62,45 +71,72 @@ pub mod raw {
 
 }
 
-unsafe fn make_ref<T: Refcount>(p: *mut T) -> Ref<T> {
-    (*p).inc_ref();
-    raw::ref_from_ptr(p)
+struct RefImpl {
+    ptr: gpointer
 }
 
-impl<T: Refcount> Ref<T> {
-    pub fn new(source: &mut T) -> Ref<T> {
-        unsafe { make_ref(source as *mut T) }
+impl RefImpl {
+    fn from_ptr(p: gpointer) -> RefImpl {
+        RefImpl { ptr: p }
     }
-    pub fn borrow<'a>(&'a self) -> &'a T { unsafe { &*self.ptr } }
-    pub fn borrow_mut<'a>(&'a mut self) -> &'a mut T { unsafe { &mut *self.ptr } }
+
+    unsafe fn impl_drop(&mut self, (_, dec_ref): RefcountFuncs) {
+        (*dec_ref)(self.ptr);
+    }
+
+    unsafe fn impl_clone_from(&mut self, source: &RefImpl,
+                              (inc_ref, dec_ref): RefcountFuncs) {
+        (*inc_ref)(source.ptr);
+        (*dec_ref)(self.ptr);
+        self.ptr = source.ptr;
+    }
+}
+
+unsafe fn make_ref_impl(p: gpointer, (inc_ref, _): RefcountFuncs) -> RefImpl {
+    (*inc_ref)(p);
+    RefImpl::from_ptr(p)
+}
+
+unsafe fn make_ref<T: Refcount>(p: *mut T) -> Ref<T> {
+    Ref {
+        plumbing: make_ref_impl(p as gpointer, *(*p).refcount_funcs()),
+        no_send: marker::NoSend,
+        no_sync: marker::NoSync
+    }
 }
 
 #[unsafe_destructor]
 impl<T: Refcount> Drop for Ref<T> {
     fn drop(&mut self) {
         unsafe {
-            (*self.ptr).dec_ref();
+            let funcs = (*self.raw_ptr()).refcount_funcs();
+            self.plumbing.impl_drop(*funcs);
         }
     }
 }
 
 impl<T: Refcount> Clone for Ref<T> {
 
-    fn clone(&self) -> Ref<T> { unsafe { make_ref(self.ptr) } }
+    fn clone(&self) -> Ref<T> {
+        unsafe { make_ref(self.raw_ptr() as *mut T) }
+    }
 
     fn clone_from(&mut self, source: &Ref<T>) {
         unsafe {
-            (*source.ptr).inc_ref();
-            (*self.ptr).dec_ref();
-            self.ptr = source.ptr;
+            let funcs = (*self.raw_ptr()).refcount_funcs();
+            self.plumbing.impl_clone_from(&source.plumbing, *funcs);
         }
     }
 }
 
 impl<T: Refcount> Deref<T> for Ref<T> {
-    fn deref<'a>(&'a self) -> &'a T { unsafe { &*self.ptr } }
+    fn deref<'a>(&'a self) -> &'a T {
+        unsafe { &*self.raw_ptr() }
+    }
 }
 
 impl<T: Refcount> DerefMut<T> for Ref<T> {
-    fn deref_mut<'a>(&'a mut self) -> &'a mut T { unsafe { &mut *self.ptr } }
+    fn deref_mut<'a>(&'a mut self) -> &'a mut T {
+        unsafe { &mut *self.raw_mut_ptr() }
+    }
 }
