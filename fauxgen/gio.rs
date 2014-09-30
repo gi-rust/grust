@@ -118,7 +118,6 @@ mod async_shim {
     pub extern "C" fn async_ready_callback(source_object: *mut gobject::raw::GObject,
                                            res: *mut raw::GAsyncResult,
                                            user_data: types::gpointer) {
-        assert!(user_data.is_not_null());
         unsafe {
             let callback: Box<async::AsyncReadyCallback> =
                     mem::transmute(user_data);
@@ -165,7 +164,7 @@ pub mod interface {
         fn read_async(&mut self,
                       io_priority: types::gint,
                       cancellable: Option<&mut Cancellable>,
-                      callback: async::AsyncReadyCallback) {
+                      callback: Box<async::AsyncReadyCallback>) {
             self.as_mut_gio_file()._impl_read_async(
                     io_priority, cancellable, callback)
         }
@@ -203,14 +202,14 @@ impl File {
     fn _impl_read_async(&mut self,
                         io_priority: types::gint,
                         cancellable: Option<&mut interface::Cancellable>,
-                        callback: async::AsyncReadyCallback) {
+                        callback: Box<async::AsyncReadyCallback>) {
         unsafe {
             let raw_cancellable =
                 match cancellable {
                     Some(c) => c.as_mut_gio_cancellable() as *mut raw::GCancellable,
                     None    => std::ptr::null_mut::<raw::GCancellable>()
                 };
-            let raw_callback: types::gpointer = std::mem::transmute(box callback);
+            let raw_callback: types::gpointer = std::mem::transmute(callback);
 
             raw::g_file_read_async(self,
                                    io_priority as libc::c_int,
