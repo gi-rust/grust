@@ -43,8 +43,10 @@ extern {
     pub fn g_strdup(str: *const gchar) -> *mut gchar;
     pub fn g_error_copy(error: *const GError) -> *mut GError;
     pub fn g_error_free(error: *mut GError);
+    pub fn g_main_context_new() -> *mut GMainContext;
     pub fn g_main_context_ref(context: *mut GMainContext) -> *mut GMainContext;
     pub fn g_main_context_unref(context: *mut GMainContext);
+    pub fn g_main_context_default() -> *mut GMainContext;
     pub fn g_main_context_push_thread_default(context: *mut GMainContext);
     pub fn g_main_context_pop_thread_default(context: *mut GMainContext);
     pub fn g_main_loop_new(ctx: *mut GMainContext, is_running: gboolean) -> *mut GMainLoop;

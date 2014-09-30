@@ -19,14 +19,18 @@
  */
 
 use ffi;
-use native;
-use refcount::{Refcount};
+use plumbing::Threadsafe;
+use refcount::Refcount;
 use refcount::{RefcountFuncs,RefFunc,UnrefFunc};
 
 #[repr(C)]
 pub struct MainContext;
 
-pub type MainLoop = native::MainLoop;
+impl MainContext {
+    pub fn default() -> &'static mut MainContext {
+        unsafe { &mut *ffi::g_main_context_default() }
+    }
+}
 
 type MainContextRefFunc   = unsafe extern "C" fn(p: *mut ffi::GMainContext) -> *mut ffi::GMainContext;
 type MainContextUnrefFunc = unsafe extern "C" fn(p: *mut ffi::GMainContext);
@@ -44,7 +48,4 @@ impl Refcount for MainContext {
     }
 }
 
-pub trait TaskLoop {
-    fn run_after(&mut self, setup: |&mut MainContext|);
-    fn quit(&mut self);
-}
+impl Threadsafe for MainContext { }

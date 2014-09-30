@@ -129,7 +129,7 @@ unsafe fn make_ref_impl(p: gpointer, (inc_ref, _): RefcountFuncs) -> RefImpl {
     RefImpl::from_ptr(p)
 }
 
-unsafe fn make_ref<T: Refcount>(p: *mut T) -> Ref<T> {
+pub unsafe fn make_ref<T: Refcount>(p: *mut T) -> Ref<T> {
     Ref {
         plumbing: make_ref_impl(p as gpointer, *(*p).refcount_funcs()),
         no_send: marker::NoSend,
@@ -137,7 +137,7 @@ unsafe fn make_ref<T: Refcount>(p: *mut T) -> Ref<T> {
     }
 }
 
-unsafe fn make_sync_ref<T: Refcount + Threadsafe>(p: *mut T) -> SyncRef<T> {
+pub unsafe fn make_sync_ref<T: Refcount + Threadsafe>(p: *mut T) -> SyncRef<T> {
     SyncRef {
         plumbing: make_ref_impl(p as gpointer, *(*p).refcount_funcs())
     }
