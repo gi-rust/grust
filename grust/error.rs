@@ -45,7 +45,9 @@ pub fn init() -> Error {
 
 impl Drop for Error {
     fn drop(&mut self) {
-        unsafe { ffi::g_error_free(self.ptr); }
+        if self.ptr.is_not_null() {
+            unsafe { ffi::g_error_free(self.ptr); }
+        }
     }
 }
 
