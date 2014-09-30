@@ -21,6 +21,8 @@ use ffi;
 use types::{gchar,gpointer};
 
 use libc;
+use libc::{c_char,size_t};
+use std::string;
 
 pub struct Utf8 {
     data: *mut gchar,
@@ -29,6 +31,12 @@ pub struct Utf8 {
 impl Utf8 {
     pub unsafe fn new(data: *mut gchar) -> Utf8 {
         Utf8 { data: data }
+    }
+
+    pub fn into_string(self) -> String {
+        unsafe {
+            string::raw::from_buf(self.data as *const gchar as *const u8)
+        }
     }
 }
 
@@ -58,10 +66,23 @@ impl PartialEq for Utf8 {
 
     fn ne(&self, other: &Utf8) -> bool {
         unsafe {
-            libc::strcmp(self.data as *const gchar,
-                         other.data as *const gchar) != 0
+            libc::strcmp(self.data as *const c_char,
+                         other.data as *const c_char) != 0
         }
     }
 }
 
 impl Eq for Utf8 { }
+
+impl<S: Str> Equiv<S> for Utf8 {
+    fn equiv(&self, other: &S) -> bool {
+        let os = other.as_slice();
+        let len = os.len();
+        unsafe {
+            libc::strncmp(self.data as *const c_char,
+                          os.as_ptr() as *const c_char,
+                          len as size_t) == 0
+            && *self.data.offset(len as int) == 0
+        }
+    }
+}
