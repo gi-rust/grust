@@ -21,8 +21,7 @@
 use ffi;
 use mainloop::MainContext;
 use plumbing::Threadsafe;
-use refcount::{Refcount,SyncRef};
-use refcount::make_sync_ref;
+use refcount::Refcount;
 use refcount::{RefcountFuncs,RefFunc,UnrefFunc};
 use types::FALSE;
 
@@ -42,23 +41,23 @@ impl LoopRunner {
     pub fn new() -> LoopRunner {
         unsafe {
             let ctx = ffi::g_main_context_new();
-
             let l = ffi::g_main_loop_new(ctx, FALSE);
-
-            ffi::g_main_context_push_thread_default(ctx);
             ffi::g_main_context_unref(ctx);
 
             LoopRunner { l: l, no_send: marker::NoSend }
         }
     }
 
-    pub fn ref_loop(&self) -> SyncRef<MainLoop> {
-        unsafe { make_sync_ref(self.l) }
-    }
-
-    pub fn run(&self) {
+    pub fn run_after(&self, setup: |&mut MainLoop|) {
         unsafe {
+            let ctx = ffi::g_main_loop_get_context(self.l);
+            ffi::g_main_context_push_thread_default(ctx);
+
+            setup(&mut *self.l);
+
             ffi::g_main_loop_run(self.l);
+
+            ffi::g_main_context_pop_thread_default(ctx);
         }
     }
 }
@@ -67,8 +66,6 @@ impl LoopRunner {
 impl Drop for LoopRunner {
     fn drop(&mut self) {
         unsafe {
-            let ctx = ffi::g_main_loop_get_context(self.l);
-            ffi::g_main_context_pop_thread_default(ctx);
             ffi::g_main_loop_unref(self.l);
         }
     }
