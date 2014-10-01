@@ -1,5 +1,5 @@
 LOCAL_RUSTCFLAGS = \
-  -L $(top_builddir)/grust/.libs \
+  -L $(top_builddir)/src/.libs \
   -L $(builddir)/.libs \
   $(GLIB_L_FLAGS)
 
@@ -13,7 +13,7 @@ include $(top_srcdir)/build/rules.mk
 
 $(fauxgen_crates): %: .libs/.built.%
 
-DEPS = $(top_builddir)/grust/.libs/.built.grust
+DEPS = $(top_builddir)/src/.libs/.built.grust
 
 .libs/.built.glib: $(DEPS)
 

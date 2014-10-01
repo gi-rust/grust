@@ -12,7 +12,7 @@ TESTS_ENVIRONMENT_PARALLEL = \
   $(TESTS_ENVIRONMENT)
 
 LOCAL_RUSTCFLAGS := \
-  -L $(top_builddir)/grust/.libs \
+  -L $(top_builddir)/src/.libs \
   -L $(top_builddir)/fauxgen/.libs \
   --test
 
@@ -36,7 +36,7 @@ CLEANFILES = grust-proof
 include $(top_srcdir)/build/rules.mk
 
 DEPS = \
-  $(top_builddir)/grust/.libs/.built.grust \
+  $(top_builddir)/src/.libs/.built.grust \
   $(top_builddir)/fauxgen/.libs/.built.gio
 
 grust-proof: grust-proof.rs $(DEPS)

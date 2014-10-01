@@ -46,8 +46,8 @@ AC_SUBST([GLIB_L_FLAGS])
 
 AC_CONFIG_FILES([
   Makefile
-  grust/Makefile
+  src/Makefile
   fauxgen/Makefile
-  test/Makefile
+  tests/Makefile
 ])
 AC_OUTPUT

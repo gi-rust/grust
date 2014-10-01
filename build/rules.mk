@@ -5,6 +5,10 @@
 	$(RUSTC) $(LOCAL_RUSTCFLAGS) $(RUSTCFLAGS) --out-dir $(builddir)/.libs $< && \
 	touch $@
 
+.libs/.built.%: $(srcdir)/lib.rs | .libs
+	$(RUSTC) $(LOCAL_RUSTCFLAGS) $(RUSTCFLAGS) --out-dir $(builddir)/.libs $< && \
+	touch $@
+
 .libs:
 	mkdir -p .libs
 
