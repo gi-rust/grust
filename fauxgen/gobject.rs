@@ -24,12 +24,15 @@ extern crate grust;
 extern crate "grust-GLib-2_0" as glib;
 
 use grust::gtype;
+use grust::marker;
 use grust::object;
 use grust::types::{gpointer,guint};
 
 #[repr(C)]
 pub struct TypeInstance {
     g_class: gpointer,
+
+    _marker: marker::ObjectMarker
 }
 
 #[repr(C)]

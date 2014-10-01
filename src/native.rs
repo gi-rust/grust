@@ -18,21 +18,23 @@
 
 use ffi;
 use mainloop::MainContext;
-use plumbing::Threadsafe;
+use marker;
 use refcount::Refcount;
 use refcount::{RefcountFuncs,RefFunc,UnrefFunc};
 use types::FALSE;
 
-use std::kinds::marker;
+use std::kinds::marker as std_marker;
 
 #[repr(C)]
-pub struct MainLoop;
+pub struct MainLoop {
+    marker: marker::SyncObjectMarker
+}
 
 pub struct LoopRunner {
     l: *mut MainLoop,
 
     // Can't send the runner around due to the thread default stuff
-    no_send: marker::NoSend
+    no_send: std_marker::NoSend
 }
 
 impl LoopRunner {
@@ -42,7 +44,7 @@ impl LoopRunner {
             let l = ffi::g_main_loop_new(ctx, FALSE);
             ffi::g_main_context_unref(ctx);
 
-            LoopRunner { l: l, no_send: marker::NoSend }
+            LoopRunner { l: l, no_send: std_marker::NoSend }
         }
     }
 
@@ -99,5 +101,3 @@ impl Refcount for MainLoop {
         &main_loop_ref_funcs
     }
 }
-
-impl Threadsafe for MainLoop { }

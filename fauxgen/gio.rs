@@ -28,15 +28,20 @@ extern crate libc;
 use grust::error;
 use grust::gstr;
 use grust::gtype::GType;
+use grust::marker;
 use grust::object;
 use grust::refcount;
 use grust::types;
 
 #[repr(C)]
-pub struct AsyncResult;
+pub struct AsyncResult {
+    marker: marker::ObjectMarker
+}
 
 #[repr(C)]
-pub struct File;
+pub struct File {
+    marker: marker::ObjectMarker
+}
 
 #[repr(C)]
 pub struct Cancellable {
@@ -56,6 +61,7 @@ pub struct FileInputStream {
     _priv: types::gpointer
 }
 
+#[allow(ctypes)]
 pub mod raw {
     use grust::types::{gchar,gint,gpointer};
     use grust::gtype::GType;
