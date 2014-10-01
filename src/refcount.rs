@@ -16,7 +16,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use plumbing::Threadsafe;
 use types::{gpointer,gconstpointer};
 use std::kinds::marker;
 
@@ -34,7 +33,7 @@ pub struct Ref<T: Refcount> {
     no_sync: marker::NoSync
 }
 
-pub struct SyncRef<T: Refcount + Threadsafe> {
+pub struct SyncRef<T: Refcount + Send + Sync> {
     plumbing: RefImpl
 }
 
@@ -58,7 +57,7 @@ impl<T: Refcount> Ref<T> {
     }
 }
 
-impl<T: Refcount + Threadsafe> SyncRef<T> {
+impl<T: Refcount + Send + Sync> SyncRef<T> {
     pub fn new(source: &mut T) -> SyncRef<T> {
         unsafe { make_sync_ref(source as *mut T) }
     }
@@ -81,7 +80,6 @@ impl<T: Refcount + Threadsafe> SyncRef<T> {
 pub mod raw {
 
     use super::{Refcount,RefImpl,Ref,SyncRef};
-    use plumbing::Threadsafe;
     use types::gpointer;
     use std::kinds::marker;
 
@@ -93,7 +91,7 @@ pub mod raw {
         }
     }
 
-    pub unsafe fn sync_ref_from_ptr<T: Refcount + Threadsafe>(p: *mut T)
+    pub unsafe fn sync_ref_from_ptr<T: Refcount + Send + Sync>(p: *mut T)
                                                              -> SyncRef<T> {
         SyncRef {
             plumbing: RefImpl::from_ptr(p as gpointer)
@@ -135,7 +133,7 @@ pub unsafe fn make_ref<T: Refcount>(p: *mut T) -> Ref<T> {
     }
 }
 
-pub unsafe fn make_sync_ref<T: Refcount + Threadsafe>(p: *mut T) -> SyncRef<T> {
+pub unsafe fn make_sync_ref<T: Refcount + Send + Sync>(p: *mut T) -> SyncRef<T> {
     SyncRef {
         plumbing: make_ref_impl(p as gpointer, *(*p).refcount_funcs())
     }
@@ -152,7 +150,7 @@ impl<T: Refcount> Drop for Ref<T> {
 }
 
 #[unsafe_destructor]
-impl<T: Refcount + Threadsafe> Drop for SyncRef<T> {
+impl<T: Refcount + Send + Sync> Drop for SyncRef<T> {
     fn drop(&mut self) {
         unsafe {
             let funcs = (*self.raw_ptr()).refcount_funcs();
@@ -175,7 +173,7 @@ impl<T: Refcount> Clone for Ref<T> {
     }
 }
 
-impl<T: Refcount + Threadsafe> Clone for SyncRef<T> {
+impl<T: Refcount + Send + Sync> Clone for SyncRef<T> {
 
     fn clone(&self) -> SyncRef<T> {
         unsafe { make_sync_ref(self.raw_ptr() as *mut T) }
@@ -195,7 +193,7 @@ impl<T: Refcount> Deref<T> for Ref<T> {
     }
 }
 
-impl<T: Refcount + Threadsafe> Deref<T> for SyncRef<T> {
+impl<T: Refcount + Send + Sync> Deref<T> for SyncRef<T> {
     fn deref<'a>(&'a self) -> &'a T {
         unsafe { &*self.raw_ptr() }
     }
@@ -207,7 +205,7 @@ impl<T: Refcount> DerefMut<T> for Ref<T> {
     }
 }
 
-impl<T: Refcount + Threadsafe> DerefMut<T> for SyncRef<T> {
+impl<T: Refcount + Send + Sync> DerefMut<T> for SyncRef<T> {
     fn deref_mut<'a>(&'a mut self) -> &'a mut T {
         unsafe { &mut *self.raw_mut_ptr() }
     }

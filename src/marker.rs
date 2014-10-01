@@ -16,10 +16,16 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+use std::kinds::marker;
 
-// We mark library types with this marker trait when GLib guarantees thread
-// safety of their implementations. There are only a few such types in GLib,
-// and we provide representations of them in Grust itself, so this trait is
-// private to the crate.
+#[repr(C)]
+pub struct ObjectMarker {
+    no_copy: marker::NoCopy,
+    no_send: marker::NoSend,
+    no_sync: marker::NoSync
+}
 
-pub trait Threadsafe { }
+#[repr(C)]
+pub struct SyncObjectMarker {
+    no_copy: marker::NoCopy
+}

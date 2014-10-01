@@ -31,6 +31,7 @@ pub mod error;
 pub mod gstr;
 pub mod gtype;
 pub mod mainloop;
+pub mod marker;
 pub mod native;
 pub mod object;
 pub mod quark;
@@ -39,4 +40,3 @@ pub mod types;
 pub mod util;
 
 mod ffi;
-mod plumbing;

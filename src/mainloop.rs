@@ -17,12 +17,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use ffi;
-use plumbing::Threadsafe;
+use marker;
 use refcount::Refcount;
 use refcount::{RefcountFuncs,RefFunc,UnrefFunc};
 
 #[repr(C)]
-pub struct MainContext;
+pub struct MainContext {
+    marker: marker::SyncObjectMarker
+}
 
 impl MainContext {
     pub fn default() -> &'static mut MainContext {
@@ -45,5 +47,3 @@ impl Refcount for MainContext {
         &main_context_ref_funcs
     }
 }
-
-impl Threadsafe for MainContext { }
