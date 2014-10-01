@@ -57,7 +57,7 @@ fn new_ref() {
         let mut f = File::new_for_path("/dev/null");
         let mut g = Ref::new(f.borrow_mut());
         let path = g.borrow_mut().get_path();
-        assert_eq!(path.into_string().as_slice(), "/dev/null");
+        assert_eq!(path.as_slice(), "/dev/null");
     })
 }
 
@@ -68,7 +68,7 @@ fn clone() {
         let mut rg = rf.clone();
         let g = rg.borrow_mut();
         let path = g.get_path();
-        assert_eq!(path.into_string().as_slice(), "/dev/null");
+        assert_eq!(path.as_slice(), "/dev/null");
     })
 }
 

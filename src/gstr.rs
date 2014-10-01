@@ -21,6 +21,9 @@ use types::{gchar,gpointer};
 
 use libc;
 use libc::{c_char,size_t};
+use std::mem::transmute;
+use std::slice;
+use std::str;
 use std::string;
 
 pub struct Utf8 {
@@ -51,6 +54,29 @@ impl Clone for Utf8 {
     fn clone(&self) -> Utf8 {
         unsafe {
             Utf8::new(ffi::g_strdup(self.data as *const gchar))
+        }
+    }
+}
+
+impl Str for Utf8 {
+    fn as_slice<'a>(&'a self) -> &'a str {
+        unsafe {
+            let len = libc::strlen(self.data as *const c_char);
+            slice::raw::buf_as_slice(
+                self.data as *const u8,
+                len as uint,
+                |bytes| {
+                    let s = str::raw::from_utf8(bytes);
+                    transmute(s)
+                })
+        }
+    }
+}
+
+impl StrAllocating for Utf8 {
+    fn into_string(self) -> String {
+        unsafe {
+            string::raw::from_buf(self.data as *const gchar as *const u8)
         }
     }
 }
