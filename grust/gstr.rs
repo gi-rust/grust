@@ -1,6 +1,6 @@
 /* This file is part of Grust, GObject introspection bindings for Rust
  *
- * Copyright (C) 2013  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+ * Copyright (C) 2013, 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,64 +17,72 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301  USA
  */
-use ffi::*;
-use types::*;
+use ffi;
+use types::{gchar,gpointer};
 
-use std::libc;
-use std::str;
+use libc;
+use libc::{c_char,size_t};
+use std::string;
 
-pub struct utf8 {
-    priv data: *gchar,
+pub struct Utf8 {
+    data: *mut gchar,
 }
 
-impl utf8 {
-    pub unsafe fn wrap(data: *gchar) -> utf8 {
-        utf8 { data: data }
+impl Utf8 {
+    pub unsafe fn new(data: *mut gchar) -> Utf8 {
+        Utf8 { data: data }
     }
-}
 
-impl Drop for utf8 {
-    fn drop(&self) {
+    pub fn into_string(self) -> String {
         unsafe {
-            g_free(self.data as *());
+            string::raw::from_buf(self.data as *const gchar as *const u8)
         }
     }
 }
 
-impl Clone for utf8 {
-    fn clone(&self) -> utf8 {
+impl Drop for Utf8 {
+    fn drop(&mut self) {
         unsafe {
-            utf8::wrap(g_strdup(self.data))
+            ffi::g_free(self.data as gpointer);
         }
     }
 }
 
-impl ToStr for utf8 {
-    fn to_str(&self) -> ~str {
+impl Clone for Utf8 {
+    fn clone(&self) -> Utf8 {
         unsafe {
-            str::raw::from_c_str(self.data)
+            Utf8::new(ffi::g_strdup(self.data as *const gchar))
         }
     }
 }
 
-impl Eq for utf8 {
-    fn eq(&self, other: &utf8) -> bool {
+impl PartialEq for Utf8 {
+    fn eq(&self, other: &Utf8) -> bool {
         unsafe {
-            libc::strcmp(self.data, other.data) == 0
+            libc::strcmp(self.data as *const gchar,
+                         other.data as *const gchar) == 0
         }
     }
 
-    fn ne(&self, other: &utf8) -> bool {
+    fn ne(&self, other: &Utf8) -> bool {
         unsafe {
-            libc::strcmp(self.data, other.data) != 0
+            libc::strcmp(self.data as *const c_char,
+                         other.data as *const c_char) != 0
         }
     }
 }
 
-impl TotalEq for utf8 {
-    fn equals(&self, other: &utf8) -> bool {
+impl Eq for Utf8 { }
+
+impl<S: Str> Equiv<S> for Utf8 {
+    fn equiv(&self, other: &S) -> bool {
+        let os = other.as_slice();
+        let len = os.len();
         unsafe {
-            libc::strcmp(self.data, other.data) == 0
+            libc::strncmp(self.data as *const c_char,
+                          os.as_ptr() as *const c_char,
+                          len as size_t) == 0
+            && *self.data.offset(len as int) == 0
         }
     }
 }

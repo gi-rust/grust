@@ -1,6 +1,6 @@
 /* This file is part of Grust, GObject introspection bindings for Rust
  *
- * Copyright (C) 2013  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+ * Copyright (C) 2013, 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,10 +17,28 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301  USA
  */
-use ffi::*;
 
-pub fn init() {
-    unsafe {
-        g_type_init();
-    }
-}
+#![crate_name = "grust"]
+
+#![crate_type = "lib"]
+
+#![desc = "GObject introspection bindings"]
+#![license = "LGPL 2.1"]
+
+#![feature(unsafe_destructor)]
+
+extern crate libc;
+
+pub mod error;
+pub mod gstr;
+pub mod gtype;
+pub mod mainloop;
+pub mod native;
+pub mod object;
+pub mod quark;
+pub mod refcount;
+pub mod types;
+pub mod util;
+
+mod ffi;
+mod plumbing;

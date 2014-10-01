@@ -1,6 +1,6 @@
 /* This file is part of Grust, GObject introspection bindings for Rust
  *
- * Copyright (C) 2013  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+ * Copyright (C) 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,28 +18,10 @@
  * 02110-1301  USA
  */
 
-#[link(name = "grust-GLib", vers = "2.0",
-       uuid="30112a42-d710-4e13-845c-b2d23d73facd")];
+use types::{gboolean,FALSE};
 
-#[crate_type = "lib"];
+#[inline]
+pub fn is_true(v: gboolean) -> bool { v != FALSE }
 
-extern mod grust (name="grust", vers="0.1");
-
-pub mod raw {
-    use grust::types::*;
-
-    pub type GQuark = u32;
-
-    pub struct GError {
-        domain: GQuark,
-        code: gint,
-        message: *gchar
-    }
-
-    #[link_name="glib-2.0"]
-    pub extern {
-        pub fn g_free(mem: *());
-        pub fn g_strdup(str: *gchar) -> *gchar;
-        pub fn g_error_free(err: *GError);
-    }
-}
+#[inline]
+pub fn is_false(v: gboolean) -> bool { v == FALSE }

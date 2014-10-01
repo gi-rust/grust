@@ -1,6 +1,6 @@
 /* This file is part of Grust, GObject introspection bindings for Rust
  *
- * Copyright (C) 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+ * Copyright (C) 2013, 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,9 +18,8 @@
  * 02110-1301  USA
  */
 
-// We mark library types with this marker trait when GLib guarantees thread
-// safety of their implementations. There are only a few such types in GLib,
-// and we provide representations of them in Grust itself, so this trait is
-// private to the crate.
+#![crate_name = "grust-GLib-2_0"]
 
-pub trait Threadsafe { }
+#![crate_type = "lib"]
+
+extern crate grust;

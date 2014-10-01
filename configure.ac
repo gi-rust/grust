@@ -3,7 +3,6 @@ AC_INIT([grust], [0.1.0])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([foreign no-dependencies])
-LT_INIT([disable-static])
 
 AC_ARG_ENABLE([test-runs],
   [AS_HELP_STRING([--enable-test-runs=(serial|parallel)],
@@ -31,12 +30,6 @@ AM_CONDITIONAL([TEST_RUN_PARALLEL], [test .$test_run_parallel = .yes])
 AC_CHECK_TOOL([RUSTC], [rustc], [rustc])
 AC_ARG_VAR([RUSTCFLAGS], [Rust compiler flags])
 
-AC_PROG_CC
-
-AS_IF([test ."$GCC" = .yes], [
-  CFLAGS="$CFLAGS -Wall -Werror"
-])
-
 AC_ARG_ENABLE([debug],
   [AS_HELP_STRING([--enable-debug],
     [Compile with debug information])],
@@ -46,15 +39,13 @@ AS_IF([test $enable_debug = yes],[
   CFLAGS="$CFLAGS -g"
 ])
 
-PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.32 gobject-2.0])
-PKG_CHECK_MODULES([GIO], [gio-2.0 >= 2.32])
+PKG_CHECK_EXISTS([glib-2.0 >= 2.36 gobject-2.0 gio-2.0 >= 2.36])
 
 GLIB_L_FLAGS=$($PKG_CONFIG --libs-only-L glib-2.0 gobject-2.0 gio-2.0)
 AC_SUBST([GLIB_L_FLAGS])
 
 AC_CONFIG_FILES([
   Makefile
-  na/Makefile
   grust/Makefile
   fauxgen/Makefile
   test/Makefile

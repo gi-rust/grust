@@ -18,9 +18,4 @@
  * 02110-1301  USA
  */
 
-// We mark library types with this marker trait when GLib guarantees thread
-// safety of their implementations. There are only a few such types in GLib,
-// and we provide representations of them in Grust itself, so this trait is
-// private to the crate.
-
-pub trait Threadsafe { }
+pub type Quark = u32;

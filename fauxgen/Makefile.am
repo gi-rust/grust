@@ -1,4 +1,4 @@
-LOCAL_RUSTCFLAGS := \
+LOCAL_RUSTCFLAGS = \
   -L $(top_builddir)/grust/.libs \
   -L $(builddir)/.libs \
   $(GLIB_L_FLAGS)

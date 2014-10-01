@@ -1,11 +1,9 @@
-LOCAL_RUSTCFLAGS = -L $(top_builddir)/na/.libs $(GLIB_L_FLAGS)
+LOCAL_RUSTCFLAGS = $(GLIB_L_FLAGS)
 
 all-local: .libs/.built.grust
 
 include $(top_srcdir)/build/rules.mk
 
-DEPS = $(top_builddir)/na/libgrustna.la
-
-.libs/.built.grust: $(srcdir)/grust.rc $(srcdir)/*.rs $(DEPS)
+.libs/.built.grust: $(srcdir)/grust.rs $(srcdir)/*.rs $(DEPS)
 
 $(DEPS):

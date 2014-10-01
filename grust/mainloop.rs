@@ -18,9 +18,34 @@
  * 02110-1301  USA
  */
 
-// We mark library types with this marker trait when GLib guarantees thread
-// safety of their implementations. There are only a few such types in GLib,
-// and we provide representations of them in Grust itself, so this trait is
-// private to the crate.
+use ffi;
+use plumbing::Threadsafe;
+use refcount::Refcount;
+use refcount::{RefcountFuncs,RefFunc,UnrefFunc};
 
-pub trait Threadsafe { }
+#[repr(C)]
+pub struct MainContext;
+
+impl MainContext {
+    pub fn default() -> &'static mut MainContext {
+        unsafe { &mut *ffi::g_main_context_default() }
+    }
+}
+
+type MainContextRefFunc   = unsafe extern "C" fn(p: *mut ffi::GMainContext) -> *mut ffi::GMainContext;
+type MainContextUnrefFunc = unsafe extern "C" fn(p: *mut ffi::GMainContext);
+
+static main_context_ref_funcs: RefcountFuncs = (
+        &ffi::g_main_context_ref
+            as *const MainContextRefFunc as *const RefFunc,
+        &ffi::g_main_context_unref
+            as *const MainContextUnrefFunc as *const UnrefFunc
+    );
+
+impl Refcount for MainContext {
+    fn refcount_funcs(&self) -> &'static RefcountFuncs {
+        &main_context_ref_funcs
+    }
+}
+
+impl Threadsafe for MainContext { }
