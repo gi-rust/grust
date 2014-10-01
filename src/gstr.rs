@@ -19,18 +19,15 @@
 use ffi;
 use types::{gchar,gpointer};
 
+use alloc::libc_heap::malloc_raw;
 use libc;
 use libc::{c_char,size_t};
 use std::c_str::{CString,ToCStr};
 use std::mem::transmute;
+use std::ptr::copy_nonoverlapping_memory;
 use std::slice;
 use std::str;
 use std::string;
-
-// Huh, no strdup in the libc crate?
-extern {
-    fn strdup(p: *const c_char) -> *mut c_char;
-}
 
 pub struct Utf8 {
     data: *mut gchar,
@@ -90,12 +87,14 @@ impl StrAllocating for Utf8 {
 impl ToCStr for Utf8 {
 
     fn to_c_str(&self) -> CString {
-        // It's all right, Glib does not grok interior nulls
         unsafe { self.to_c_str_unchecked() }
     }
 
     unsafe fn to_c_str_unchecked(&self) -> CString {
-        let copy = strdup(self.data as *const c_char);
+        let src = self.data as *const c_char;
+        let len = libc::strlen(src) as uint;
+        let copy = malloc_raw(len + 1) as *mut c_char;
+        copy_nonoverlapping_memory(copy, src, len + 1);
         CString::new(copy as *const c_char, true)
     }
 
