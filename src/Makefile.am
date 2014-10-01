@@ -4,6 +4,6 @@ all-local: .libs/.built.grust
 
 include $(top_srcdir)/build/rules.mk
 
-.libs/.built.grust: $(srcdir)/lib.rs $(DEPS)
+.libs/.built.grust: $(srcdir)/lib.rs $(srcdir)/*.rs $(DEPS)
 
 $(DEPS):
