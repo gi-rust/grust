@@ -21,10 +21,16 @@ use types::{gchar,gpointer};
 
 use libc;
 use libc::{c_char,size_t};
+use std::c_str::{CString,ToCStr};
 use std::mem::transmute;
 use std::slice;
 use std::str;
 use std::string;
+
+// Huh, no strdup in the libc crate?
+extern {
+    fn strdup(p: *const c_char) -> *mut c_char;
+}
 
 pub struct Utf8 {
     data: *mut gchar,
@@ -78,6 +84,27 @@ impl StrAllocating for Utf8 {
         unsafe {
             string::raw::from_buf(self.data as *const gchar as *const u8)
         }
+    }
+}
+
+impl ToCStr for Utf8 {
+
+    fn to_c_str(&self) -> CString {
+        // It's all right, Glib does not grok interior nulls
+        unsafe { self.to_c_str_unchecked() }
+    }
+
+    unsafe fn to_c_str_unchecked(&self) -> CString {
+        let copy = strdup(self.data as *const c_char);
+        CString::new(copy as *const c_char, true)
+    }
+
+    fn with_c_str<T>(&self, f: |*const i8| -> T) -> T {
+        f(self.data as *const i8)
+    }
+
+    unsafe fn with_c_str_unchecked<T>(&self, f: |*const i8| -> T) -> T {
+        f(self.data as *const i8)
     }
 }
 
