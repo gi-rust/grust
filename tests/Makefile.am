@@ -18,18 +18,26 @@ LOCAL_RUSTCFLAGS := \
 
 check-local: grust-proof
 if TEST_RUN_SERIAL
-	@echo Running tests serially
-	@$(TESTS_ENVIRONMENT_SERIAL) ./grust-proof
+	$(MAKE) check-serial
 endif
 if TEST_RUN_PARALLEL
-	@echo Running tests in parallel
-	@$(TESTS_ENVIRONMENT_PARALLEL) ./grust-proof
+	$(MAKE) check-parallel
 endif
 if !TEST_RUN_SERIAL
 if !TEST_RUN_PARALLEL
 	@echo Test runs are disabled per --enable-test-runs=no
 endif
 endif
+
+check-serial: grust-proof
+	@echo Running tests serially
+	@$(TESTS_ENVIRONMENT_SERIAL) ./grust-proof
+
+check-parallel: grust-proof
+	@echo Running tests in parallel
+	@$(TESTS_ENVIRONMENT_PARALLEL) ./grust-proof
+
+.PHONY: check-serial check-parallel
 
 CLEANFILES = grust-proof
 
