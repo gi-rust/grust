@@ -44,8 +44,8 @@ CLEANFILES = grust-proof
 include $(top_srcdir)/build/rules.mk
 
 DEPS = \
-  $(top_builddir)/src/.libs/.built.grust \
-  $(top_builddir)/fauxgen/.libs/.built.gio
+  $(top_builddir)/src/.libs/libgrust.$(CRATEEXT) \
+  $(top_builddir)/fauxgen/.libs/libgrust-Gio-2_0.$(CRATEEXT)
 
 grust-proof: grust-proof.rs $(DEPS)
 

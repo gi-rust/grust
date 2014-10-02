@@ -46,6 +46,9 @@ PKG_CHECK_EXISTS([glib-2.0 >= 2.36 gobject-2.0 gio-2.0 >= 2.36])
 GLIB_L_FLAGS=$($PKG_CONFIG --libs-only-L glib-2.0 gobject-2.0 gio-2.0)
 AC_SUBST([GLIB_L_FLAGS])
 
+CRATEEXT=rlib
+AC_SUBST([CRATEEXT])
+
 AC_CONFIG_FILES([
   Makefile
   src/Makefile

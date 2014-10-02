@@ -3,22 +3,25 @@ LOCAL_RUSTCFLAGS = \
   -L $(builddir)/.libs \
   $(GLIB_L_FLAGS)
 
-fauxgen_crates = glib gobject gio
+fauxgen_CRATES = GLib-2_0 GObject-2_0 Gio-2_0
 
-.PHONY: $(fauxgen_crates)
+.PHONY: $(fauxgen_CRATES)
 
-all-local: $(fauxgen_crates)
+all-local: $(fauxgen_CRATES)
 
 include $(top_srcdir)/build/rules.mk
 
-$(fauxgen_crates): %: .libs/.built.%
+$(fauxgen_CRATES): %: .libs/libgrust-%.$(CRATEEXT)
 
-DEPS = $(top_builddir)/src/.libs/.built.grust
+DEPS = $(top_builddir)/src/.libs/libgrust.$(CRATEEXT)
 
-.libs/.built.glib: $(DEPS)
+.libs/libgrust-GLib-2_0.$(CRATEEXT): glib.rs $(DEPS) | .libs
+	$(run-rustc)
 
-.libs/.built.gobject: $(DEPS) | glib
+.libs/libgrust-GObject-2_0.$(CRATEEXT): gobject.rs $(DEPS) | .libs GLib-2_0
+	$(run-rustc)
 
-.libs/.built.gio: $(DEPS) | glib gobject
+.libs/libgrust-Gio-2_0.$(CRATEEXT): gio.rs $(DEPS) | .libs GLib-2_0 GObject-2_0
+	$(run-rustc)
 
 $(DEPS):
