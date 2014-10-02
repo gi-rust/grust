@@ -35,13 +35,6 @@
 // since the GLib types are not necessarily identical to their Rust namesakes
 // (the issue similarly addressed by libc::c_int and the like).
 // GIR uses the GLib names for these types as well.
-//
-// Any other GLib-derived types used by the bindings require some name
-// disambiguation with definitions for the same C types that are emitted
-// in "raw" namespaces of the generated GLib API crates (which are dependent,
-// as any others, on the grust crate, so we cannot refer to their types here
-// without creating a circular build dependency). Those type names should
-// not be defined so as to be pulled in by 'use grust::types::*'.
 
 #![allow(non_camel_case_types)]
 
