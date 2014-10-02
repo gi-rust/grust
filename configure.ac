@@ -37,8 +37,15 @@ AC_ARG_ENABLE([debug],
     [Compile with debug information])],
   [], [enable_debug=no])
 AS_IF([test $enable_debug = yes],[
-  RUSTCFLAGS="$RUSTCFLAGS -Z debug-info"
-  CFLAGS="$CFLAGS -g"
+  RUSTCFLAGS="$RUSTCFLAGS -g"
+])
+
+AC_ARG_ENABLE([optimize],
+  [AS_HELP_STRING([--enable-optimize],
+    [Compile with optimization])],
+  [], [enable_optimize=no])
+AS_IF([test $enable_optimize = yes],[
+  RUSTCFLAGS="$RUSTCFLAGS -O"
 ])
 
 PKG_CHECK_EXISTS([glib-2.0 >= 2.36 gobject-2.0 gio-2.0 >= 2.36])
