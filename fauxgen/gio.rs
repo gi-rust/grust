@@ -26,12 +26,12 @@ extern crate "grust-GObject-2_0" as gobject;
 extern crate libc;
 
 use grust::error;
-use grust::gstr;
 use grust::gtype::GType;
 use grust::marker;
 use grust::object;
 use grust::refcount;
 use grust::types;
+use grust::utf8;
 
 #[repr(C)]
 pub struct AsyncResult {
@@ -130,14 +130,14 @@ mod async_shim {
 
 pub mod interface {
 
+    use super::async;
+    use std::result;
     use grust::error;
-    use grust::gstr;
     use grust::object;
     use grust::refcount;
     use grust::types;
-    use super::async;
+    use grust::utf8;
     use gobject;
-    use std::result;
 
     pub trait AsyncResult {
         fn as_gio_async_result<'a>(&'a self) -> &'a super::AsyncResult;
@@ -159,7 +159,7 @@ pub mod interface {
         fn as_gio_file<'a>(&'a self) -> &'a super::File;
         fn as_mut_gio_file<'a>(&'a mut self) -> &'a mut super::File;
 
-        fn get_path<'a>(&'a mut self) -> gstr::Utf8 {
+        fn get_path<'a>(&'a mut self) -> utf8::Utf8Buf {
             self.as_mut_gio_file()._impl_get_path()
         }
 
@@ -188,10 +188,10 @@ impl File {
         }
     }
 
-    fn _impl_get_path<'a>(&mut self) -> gstr::Utf8 {
+    fn _impl_get_path<'a>(&mut self) -> utf8::Utf8Buf {
         unsafe {
             let ret = raw::g_file_get_path(self);
-            gstr::Utf8::new(ret)
+            utf8::Utf8Buf::new(ret)
         }
     }
 

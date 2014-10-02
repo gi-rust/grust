@@ -26,10 +26,9 @@
 // 1. Fixed-size integer types. These have straightforward machine-independent
 //    counterparts in Rust.
 // 2. Strings annotated as "utf8" or "filename". These types are not named
-//    as such in the C API. There is no limitation for an introspected API
-//    against providing its own "utf8" or "filename", so these types are
-//    disambiguated in the generated code by qualifying their names with
-//    a separate module, gstr.
+//    as such in the C API, being only aliases for gchar*.
+//    Their representation in Rust is quite intricate and involves multiple
+//    types, so they each get their own module.
 //
 // Rust aliases are needed for machine-dependent basic types used in GIR,
 // since the GLib types are not necessarily identical to their Rust namesakes
