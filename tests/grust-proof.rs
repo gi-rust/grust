@@ -111,7 +111,7 @@ fn utf8_str_len() {
 }
 
 #[test]
-fn utf8_sized_with_c_str() {
+fn utf8_str_with_c_str() {
     tcase(proc() {
         let mut f = File::new_for_path("/dev/null");
         let path = f.borrow_mut().get_path().into_collection();
