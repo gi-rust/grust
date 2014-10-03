@@ -131,7 +131,11 @@ impl StrAllocating for Utf8Str {
 }
 
 impl Collection for Utf8Str {
+
+    // Common sense says we should return the UTF-8 length,
+    // but &str returns length in bytes, so...
     fn len(&self) -> uint { return self.len }
+
     fn is_empty(&self) -> bool { return self.len == 0 }
 }
 
