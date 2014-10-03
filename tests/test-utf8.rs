@@ -16,7 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use grust::utf8::{Utf8Buf,Utf8Str};
+use grust::utf8::{Utf8Buf,Utf8Str,WithUtf8};
 
 use grust::types::gchar;
 
@@ -85,6 +85,15 @@ fn buf_with_c_str() {
 }
 
 #[test]
+fn buf_with_utf8_str() {
+    let buf = new_test_buf(TEST_CSTR);
+    buf.with_utf8_c_str(|p| {
+        let s = unsafe { string::raw::from_buf(p as *const u8) };
+        assert_eq!(s, String::from_str(TEST_STR));
+    });
+}
+
+#[test]
 fn str_clone() {
     let s1 = new_test_str(TEST_CSTR);
     let s2 = s1.clone();
@@ -109,6 +118,15 @@ fn str_to_c_str() {
 fn str_with_c_str() {
     let s = new_test_str(TEST_CSTR);
     s.with_c_str(|p| {
+        let s = unsafe { string::raw::from_buf(p as *const u8) };
+        assert_eq!(s, String::from_str(TEST_STR));
+    });
+}
+
+#[test]
+fn str_with_utf8_str() {
+    let s = new_test_str(TEST_CSTR);
+    s.with_utf8_c_str(|p| {
         let s = unsafe { string::raw::from_buf(p as *const u8) };
         assert_eq!(s, String::from_str(TEST_STR));
     });

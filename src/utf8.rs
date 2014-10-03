@@ -169,3 +169,35 @@ impl<S: Str> Equiv<S> for Utf8Str {
         self.as_slice() == other.as_slice()
     }
 }
+
+pub trait WithUtf8 {
+    fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T;
+}
+
+impl WithUtf8 for Utf8Buf {
+
+    fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
+        f(self.data as *const gchar)
+    }
+}
+
+impl WithUtf8 for Utf8Str {
+
+    fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
+        self.buf.with_utf8_c_str(f)
+    }
+}
+
+impl<'a> WithUtf8 for &'a str {
+
+    fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
+        self.with_c_str(f)
+    }
+}
+
+impl WithUtf8 for String {
+
+    fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
+        self.with_c_str(f)
+    }
+}
