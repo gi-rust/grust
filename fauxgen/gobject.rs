@@ -42,7 +42,7 @@ pub struct Object {
     data           : gpointer
 }
 
-pub mod interface {
+pub mod cast {
     pub trait Object {
         fn as_gobject_object<'a>(&'a self) -> &'a super::Object;
         fn as_mut_gobject_object<'a>(&'a mut self) -> &'a mut super::Object;
@@ -69,7 +69,7 @@ impl object::ObjectType for Object {
     }
 }
 
-impl interface::Object for Object {
+impl cast::Object for Object {
     fn as_gobject_object<'a>(&'a self) -> &'a Object { self }
     fn as_mut_gobject_object<'a>(&'a mut self) -> &'a mut Object { self }
 }

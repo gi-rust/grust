@@ -20,7 +20,6 @@ extern crate grust;
 extern crate "grust-Gio-2_0" as gio;
 
 use gio::File;
-use gio::interface::File as FileIface;
 use grust::refcount::{Ref,SyncRef};
 use grust::native::LoopRunner;
 use grust::object;
@@ -150,16 +149,6 @@ fn utf8_sized_with_c_str() {
             let s = unsafe { string::raw::from_buf(p as *const u8) };
             assert_eq!(s, String::from_str("/dev/null"));
         });
-    })
-}
-
-#[test]
-fn as_interface() {
-    tcase(proc() {
-        let mut r = File::new_for_path("/dev/null");
-        let f = r.borrow_mut() as &mut FileIface;
-        let path = f.get_path();
-        assert_eq!(path.into_string(), String::from_str("/dev/null"));
     })
 }
 

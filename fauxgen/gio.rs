@@ -33,6 +33,9 @@ use grust::refcount;
 use grust::types;
 use grust::utf8;
 
+use cast::AsyncResult as _cast_AsyncResult;
+use cast::Cancellable as _cast_Cancellable;
+
 #[repr(C)]
 pub struct AsyncResult {
     marker: marker::ObjectMarker
@@ -128,15 +131,8 @@ mod async_shim {
     }
 }
 
-pub mod interface {
+pub mod cast {
 
-    use super::async;
-    use std::result;
-    use grust::error;
-    use grust::object;
-    use grust::refcount;
-    use grust::types;
-    use grust::utf8;
     use gobject;
 
     pub trait AsyncResult {
@@ -144,37 +140,20 @@ pub mod interface {
         fn as_mut_gio_async_result<'a>(&'a mut self) -> &'a mut super::AsyncResult;
     }
 
-    pub trait Cancellable : gobject::interface::Object {
+    pub trait Cancellable : gobject::cast::Object {
         fn as_gio_cancellable<'a>(&'a self) -> &'a super::Cancellable;
         fn as_mut_gio_cancellable<'a>(&'a mut self) -> &'a mut super::Cancellable;
     }
 
-    pub trait InputStream : gobject::interface::Object {
+    pub trait InputStream : gobject::cast::Object {
     }
 
     pub trait FileInputStream : InputStream {
     }
 
-    pub trait File : object::ObjectType {
+    pub trait File {
         fn as_gio_file<'a>(&'a self) -> &'a super::File;
         fn as_mut_gio_file<'a>(&'a mut self) -> &'a mut super::File;
-
-        fn get_path<'a>(&'a mut self) -> utf8::Utf8Buf {
-            self.as_mut_gio_file()._impl_get_path()
-        }
-
-        fn read_async(&mut self,
-                      io_priority: types::gint,
-                      cancellable: Option<&mut Cancellable>,
-                      callback: Box<async::AsyncReadyCallback>) {
-            self.as_mut_gio_file()._impl_read_async(
-                    io_priority, cancellable, callback)
-        }
-
-        fn read_finish(&mut self, res: &mut AsyncResult)
-                      -> result::Result<refcount::Ref<super::FileInputStream>, error::Error> {
-            self.as_mut_gio_file()._impl_read_finish(res)
-        }
     }
 }
 
@@ -188,17 +167,17 @@ impl File {
         }
     }
 
-    fn _impl_get_path<'a>(&mut self) -> utf8::Utf8Buf {
+    pub fn get_path<'a>(&mut self) -> utf8::Utf8Buf {
         unsafe {
             let ret = raw::g_file_get_path(self);
             utf8::Utf8Buf::new(ret)
         }
     }
 
-    fn _impl_read_async(&mut self,
-                        io_priority: types::gint,
-                        cancellable: Option<&mut interface::Cancellable>,
-                        callback: Box<async::AsyncReadyCallback>) {
+    pub fn read_async(&mut self,
+                      io_priority: types::gint,
+                      cancellable: Option<&mut Cancellable>,
+                      callback: Box<async::AsyncReadyCallback>) {
         unsafe {
             let raw_cancellable =
                 match cancellable {
@@ -215,8 +194,9 @@ impl File {
         }
     }
 
-    fn _impl_read_finish(&mut self, res: &mut interface::AsyncResult)
-                        -> std::result::Result<refcount::Ref<FileInputStream>, error::Error> {
+    pub fn read_finish(&mut self, res: &mut AsyncResult)
+                      -> std::result::Result<refcount::Ref<FileInputStream>,
+                                             error::Error> {
         unsafe {
             let mut err: error::Error = error::init();
             let ret = raw::g_file_read_finish(self,
@@ -259,12 +239,12 @@ impl refcount::Refcount for FileInputStream {
     }
 }
 
-impl interface::AsyncResult for AsyncResult {
+impl cast::AsyncResult for AsyncResult {
     fn as_gio_async_result<'a>(&'a self) -> &'a AsyncResult { self }
     fn as_mut_gio_async_result<'a>(&'a mut self) -> &'a mut AsyncResult { self }
 }
 
-impl gobject::interface::Object for Cancellable {
+impl gobject::cast::Object for Cancellable {
     fn as_gobject_object<'a>(&'a self) -> &'a gobject::Object {
         &self.parent_instance
     }
@@ -273,17 +253,17 @@ impl gobject::interface::Object for Cancellable {
     }
 }
 
-impl interface::Cancellable for Cancellable {
+impl cast::Cancellable for Cancellable {
     fn as_gio_cancellable<'a>(&'a self) -> &'a Cancellable { self }
     fn as_mut_gio_cancellable<'a>(&'a mut self) -> &'a mut Cancellable { self }
 }
 
-impl interface::File for File {
+impl cast::File for File {
     fn as_gio_file<'a>(&'a self) -> &'a File { self }
     fn as_mut_gio_file<'a>(&'a mut self) -> &'a mut File { self }
 }
 
-impl gobject::interface::Object for InputStream {
+impl gobject::cast::Object for InputStream {
     fn as_gobject_object<'a>(&'a self) -> &'a gobject::Object {
         &self.parent_instance
     }
@@ -292,7 +272,7 @@ impl gobject::interface::Object for InputStream {
     }
 }
 
-impl gobject::interface::Object for FileInputStream {
+impl gobject::cast::Object for FileInputStream {
     fn as_gobject_object<'a>(&'a self) -> &'a gobject::Object {
         self.parent_instance.as_gobject_object()
     }
