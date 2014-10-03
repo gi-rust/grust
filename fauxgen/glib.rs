@@ -21,3 +21,13 @@
 #![crate_type = "lib"]
 
 extern crate grust;
+
+pub mod raw {
+
+    use grust::types::gchar;
+
+    extern "C" {
+        pub fn g_strdup(src: *const gchar) -> *mut gchar;
+    }
+
+}
