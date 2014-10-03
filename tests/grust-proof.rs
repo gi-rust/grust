@@ -34,15 +34,6 @@ fn tcase(test: proc(): Send) {
 }
 
 #[test]
-fn simple() {
-    tcase(proc() {
-        let mut f = File::new_for_path("/dev/null");
-        let path = f.borrow_mut().get_path();
-        assert!(path.equiv(&"/dev/null"));
-    })
-}
-
-#[test]
 fn utf8_buf_to_string() {
     tcase(proc() {
         let mut f = File::new_for_path("/dev/null");
@@ -86,27 +77,6 @@ fn utf8_buf_with_c_str() {
             let s = unsafe { string::raw::from_buf(p as *const u8) };
             assert_eq!(s, String::from_str("/dev/null"));
         });
-    })
-}
-
-#[test]
-fn utf8_buf_eq() {
-    tcase(proc() {
-        let mut f = File::new_for_path("/dev/null");
-        let path1 = f.borrow_mut().get_path();
-        let path2 = f.borrow_mut().get_path();
-        assert!(path1 == path2);
-    })
-}
-
-#[test]
-fn utf8_buf_ne() {
-    tcase(proc() {
-        let mut f = File::new_for_path("/dev/null");
-        let mut g = File::new_for_path("/dev/zero");
-        let path1 = f.borrow_mut().get_path();
-        let path2 = g.borrow_mut().get_path();
-        assert!(path1 != path2);
     })
 }
 

@@ -21,7 +21,7 @@ use types::{gchar,gpointer};
 
 use alloc::libc_heap::malloc_raw;
 use libc;
-use libc::{c_char,size_t};
+use libc::c_char;
 use std::c_str::{CString,ToCStr};
 use std::mem::transmute;
 use std::ptr::copy_nonoverlapping_memory;
@@ -103,37 +103,6 @@ impl ToCStr for Utf8Buf {
 
     unsafe fn with_c_str_unchecked<T>(&self, f: |*const i8| -> T) -> T {
         f(self.data as *const i8)
-    }
-}
-
-impl PartialEq for Utf8Buf {
-    fn eq(&self, other: &Utf8Buf) -> bool {
-        unsafe {
-            libc::strcmp(self.data as *const gchar,
-                         other.data as *const gchar) == 0
-        }
-    }
-
-    fn ne(&self, other: &Utf8Buf) -> bool {
-        unsafe {
-            libc::strcmp(self.data as *const c_char,
-                         other.data as *const c_char) != 0
-        }
-    }
-}
-
-impl Eq for Utf8Buf { }
-
-impl<S: Str> Equiv<S> for Utf8Buf {
-    fn equiv(&self, other: &S) -> bool {
-        let os = other.as_slice();
-        let len = os.len();
-        unsafe {
-            libc::strncmp(self.data as *const c_char,
-                          os.as_ptr() as *const c_char,
-                          len as size_t) == 0
-            && *self.data.offset(len as int) == 0
-        }
     }
 }
 
