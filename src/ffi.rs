@@ -19,7 +19,8 @@
 // https://github.com/rust-lang/rust/issues/17679
 #![allow(ctypes)]
 
-use types::{gboolean,gchar,gpointer};
+use types::{gboolean,gchar,guint};
+use types::{gpointer,gconstpointer};
 use gtype::GType;
 
 use error;
@@ -42,6 +43,7 @@ pub struct GTypeInstance;
 extern {
     pub fn g_free(mem: gpointer);
     pub fn g_strdup(str: *const gchar) -> *mut gchar;
+    pub fn g_memdup(mem: gconstpointer, byte_size: guint) -> gpointer;
     pub fn g_error_copy(error: *const GError) -> *mut GError;
     pub fn g_error_free(error: *mut GError);
     pub fn g_main_context_new() -> *mut GMainContext;

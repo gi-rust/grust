@@ -17,7 +17,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use ffi;
-use types::{gchar,gpointer};
+use types::{gchar,guint};
+use types::{gpointer,gconstpointer};
 
 use alloc::libc_heap::malloc_raw;
 use libc;
@@ -110,6 +111,19 @@ impl ToCStr for UTF8Buf {
 pub struct UTF8Str {
     buf: UTF8Buf,
     len: uint
+}
+
+impl UTF8Str {
+    pub unsafe fn wrap(data: *mut gchar, len: uint) -> UTF8Str {
+        UTF8Str { buf: UTF8Buf::wrap(data), len: len }
+    }
+
+    pub unsafe fn dup(cstr: *const gchar) -> UTF8Str {
+        let len = libc::strlen(cstr) as uint;
+        let copy = ffi::g_memdup(cstr as gconstpointer, (len + 1) as guint)
+                   as *mut gchar;
+        UTF8Str::wrap(copy, len)
+    }
 }
 
 impl Str for UTF8Str {
