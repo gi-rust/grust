@@ -31,7 +31,7 @@ fn new_test_buf(source: &str) -> Utf8Buf {
     assert!(source.ends_with("\0"));
     unsafe {
         let p = source.as_ptr();
-        Utf8Buf::new(g_strdup(p as *const gchar))
+        Utf8Buf::wrap(g_strdup(p as *const gchar))
     }
 }
 

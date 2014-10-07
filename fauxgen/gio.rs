@@ -171,7 +171,7 @@ impl File {
     pub fn get_path<'a>(&mut self) -> utf8::Utf8Buf {
         unsafe {
             let ret = raw::g_file_get_path(self);
-            utf8::Utf8Buf::new(ret)
+            utf8::Utf8Buf::wrap(ret)
         }
     }
 

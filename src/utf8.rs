@@ -35,7 +35,7 @@ pub struct Utf8Buf {
 
 impl Utf8Buf {
 
-    pub unsafe fn new(data: *mut gchar) -> Utf8Buf {
+    pub unsafe fn wrap(data: *mut gchar) -> Utf8Buf {
         Utf8Buf { data: data }
     }
 
@@ -74,7 +74,7 @@ impl Drop for Utf8Buf {
 impl Clone for Utf8Buf {
     fn clone(&self) -> Utf8Buf {
         unsafe {
-            Utf8Buf::new(ffi::g_strdup(self.data as *const gchar))
+            Utf8Buf::wrap(ffi::g_strdup(self.data as *const gchar))
         }
     }
 }
