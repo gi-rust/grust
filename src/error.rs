@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use ffi;
+
 use std::default::Default;
 use std::ptr;
 
@@ -37,7 +38,7 @@ pub struct Error {
     ptr: *mut raw::GError
 }
 
-pub fn init() -> Error {
+pub fn unset() -> Error {
     Error { ptr: ptr::null_mut() }
 }
 
@@ -52,7 +53,7 @@ impl Drop for Error {
 impl Clone for Error {
     fn clone(&self) -> Error {
         if self.ptr.is_null() {
-            init()
+            unset()
         } else {
             unsafe {
                 Error { ptr: ffi::g_error_copy(self.ptr as *const raw::GError) }
@@ -62,7 +63,7 @@ impl Clone for Error {
 }
 
 impl Default for Error {
-    fn default() -> Error { init() }
+    fn default() -> Error { unset() }
 }
 
 impl Error {

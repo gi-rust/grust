@@ -199,7 +199,7 @@ impl File {
                       -> std::result::Result<refcount::Ref<FileInputStream>,
                                              error::Error> {
         unsafe {
-            let mut err: error::Error = error::init();
+            let mut err: error::Error = error::unset();
             let ret = raw::g_file_read_finish(self,
                                               res.as_mut_gio_async_result(),
                                               err.slot_ptr());
