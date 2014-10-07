@@ -16,7 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use grust::utf8::{Utf8Buf,Utf8Str,WithUtf8};
+use grust::utf8::{UTF8Buf,UTF8Str,WithUTF8};
 
 use grust::types::gchar;
 
@@ -27,15 +27,15 @@ use std::string;
 static TEST_CSTR: &'static str = "¡Hola, amigos!\0";
 static TEST_STR:  &'static str = "¡Hola, amigos!";
 
-fn new_test_buf(source: &str) -> Utf8Buf {
+fn new_test_buf(source: &str) -> UTF8Buf {
     assert!(source.ends_with("\0"));
     unsafe {
         let p = source.as_ptr();
-        Utf8Buf::wrap(g_strdup(p as *const gchar))
+        UTF8Buf::wrap(g_strdup(p as *const gchar))
     }
 }
 
-fn new_test_str(source: &str) -> Utf8Str {
+fn new_test_str(source: &str) -> UTF8Str {
     new_test_buf(source).into_collection()
 }
 

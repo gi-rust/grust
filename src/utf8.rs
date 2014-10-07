@@ -29,20 +29,20 @@ use std::slice;
 use std::str;
 use std::string;
 
-pub struct Utf8Buf {
+pub struct UTF8Buf {
     data: *mut gchar,
 }
 
-impl Utf8Buf {
+impl UTF8Buf {
 
-    pub unsafe fn wrap(data: *mut gchar) -> Utf8Buf {
-        Utf8Buf { data: data }
+    pub unsafe fn wrap(data: *mut gchar) -> UTF8Buf {
+        UTF8Buf { data: data }
     }
 
-    pub fn into_collection(self) -> Utf8Str {
+    pub fn into_collection(self) -> UTF8Str {
         unsafe {
             let len = libc::strlen(self.data as *const c_char);
-            Utf8Str { buf: transmute(self), len: len as uint }
+            UTF8Str { buf: transmute(self), len: len as uint }
         }
     }
 
@@ -65,16 +65,16 @@ impl Utf8Buf {
     pub fn is_empty(&self) -> bool { unsafe { *self.data == 0 } }
 }
 
-impl Drop for Utf8Buf {
+impl Drop for UTF8Buf {
     fn drop(&mut self) {
         unsafe { ffi::g_free(self.data as gpointer) }
     }
 }
 
-impl Clone for Utf8Buf {
-    fn clone(&self) -> Utf8Buf {
+impl Clone for UTF8Buf {
+    fn clone(&self) -> UTF8Buf {
         unsafe {
-            Utf8Buf::wrap(ffi::g_strdup(self.data as *const gchar))
+            UTF8Buf::wrap(ffi::g_strdup(self.data as *const gchar))
         }
     }
 }
@@ -85,7 +85,7 @@ unsafe fn dup_to_c_str(source: *const c_char, len: uint) -> CString {
     CString::new(copy as *const c_char, true)
 }
 
-impl ToCStr for Utf8Buf {
+impl ToCStr for UTF8Buf {
 
     fn to_c_str(&self) -> CString {
         unsafe { self.to_c_str_unchecked() }
@@ -107,12 +107,12 @@ impl ToCStr for Utf8Buf {
 }
 
 #[deriving(Clone)]
-pub struct Utf8Str {
-    buf: Utf8Buf,
+pub struct UTF8Str {
+    buf: UTF8Buf,
     len: uint
 }
 
-impl Str for Utf8Str {
+impl Str for UTF8Str {
     fn as_slice<'a>(&'a self) -> &'a str {
         unsafe {
             slice::raw::buf_as_slice(
@@ -126,11 +126,11 @@ impl Str for Utf8Str {
     }
 }
 
-impl StrAllocating for Utf8Str {
+impl StrAllocating for UTF8Str {
     fn into_string(self) -> String { self.buf.to_string() }
 }
 
-impl Collection for Utf8Str {
+impl Collection for UTF8Str {
 
     // Common sense says we should return the UTF-8 length,
     // but &str returns length in bytes, so...
@@ -139,7 +139,7 @@ impl Collection for Utf8Str {
     fn is_empty(&self) -> bool { return self.len == 0 }
 }
 
-impl ToCStr for Utf8Str {
+impl ToCStr for UTF8Str {
 
     fn to_c_str(&self) -> CString { self.buf.to_c_str() }
 
@@ -156,46 +156,46 @@ impl ToCStr for Utf8Str {
     }
 }
 
-impl PartialEq for Utf8Str {
-    fn eq(&self, other: &Utf8Str) -> bool {
+impl PartialEq for UTF8Str {
+    fn eq(&self, other: &UTF8Str) -> bool {
         self.as_slice() == other.as_slice()
     }
 }
 
-impl Eq for Utf8Str { }
+impl Eq for UTF8Str { }
 
-impl<S: Str> Equiv<S> for Utf8Str {
+impl<S: Str> Equiv<S> for UTF8Str {
     fn equiv(&self, other: &S) -> bool {
         self.as_slice() == other.as_slice()
     }
 }
 
-pub trait WithUtf8 {
+pub trait WithUTF8 {
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T;
 }
 
-impl WithUtf8 for Utf8Buf {
+impl WithUTF8 for UTF8Buf {
 
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         f(self.data as *const gchar)
     }
 }
 
-impl WithUtf8 for Utf8Str {
+impl WithUTF8 for UTF8Str {
 
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         self.buf.with_utf8_c_str(f)
     }
 }
 
-impl<'a> WithUtf8 for &'a str {
+impl<'a> WithUTF8 for &'a str {
 
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         self.with_c_str(f)
     }
 }
 
-impl WithUtf8 for String {
+impl WithUTF8 for String {
 
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         self.with_c_str(f)

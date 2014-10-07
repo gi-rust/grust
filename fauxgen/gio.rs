@@ -159,7 +159,7 @@ pub mod cast {
 
 impl File {
 
-    pub fn new_for_path<T: utf8::WithUtf8>(path: T) -> refcount::Ref<File> {
+    pub fn new_for_path<T: utf8::WithUTF8>(path: T) -> refcount::Ref<File> {
         let ret = path.with_utf8_c_str(|p| {
             unsafe {
                 raw::g_file_new_for_path(p)
@@ -168,10 +168,10 @@ impl File {
         unsafe { refcount::raw::ref_from_ptr(ret) }
     }
 
-    pub fn get_path<'a>(&mut self) -> utf8::Utf8Buf {
+    pub fn get_path<'a>(&mut self) -> utf8::UTF8Buf {
         unsafe {
             let ret = raw::g_file_get_path(self);
-            utf8::Utf8Buf::wrap(ret)
+            utf8::UTF8Buf::wrap(ret)
         }
     }
 
