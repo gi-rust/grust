@@ -44,6 +44,7 @@ pub type gchar          = libc::c_char;
 pub type gint           = libc::c_int;
 pub type guint          = libc::c_uint;
 pub type gsize          = libc::size_t;
+pub type gssize         = libc::ssize_t;
 pub type gpointer       = *mut   libc::c_void;
 pub type gconstpointer  = *const libc::c_void;
 
