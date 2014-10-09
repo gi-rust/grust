@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use ffi;
-use types::{gchar,guint};
+use types::{gchar,gsize,guint};
 use types::{gpointer,gconstpointer};
 
 use alloc::libc_heap::malloc_raw;
@@ -124,6 +124,17 @@ impl UTF8Str {
                    as *mut gchar;
         UTF8Str::wrap(copy, len)
     }
+
+    pub unsafe fn ndup(cstr: *const gchar, len: uint) -> UTF8Str {
+        let copy = ffi::g_strndup(cstr, len as gsize);
+        UTF8Str::wrap(copy, len)
+    }
+
+    pub fn to_string(&self) -> String {
+        unsafe {
+            string::raw::from_buf_len(self.buf.data as *const u8, self.len)
+        }
+    }
 }
 
 impl Str for UTF8Str {
@@ -141,7 +152,7 @@ impl Str for UTF8Str {
 }
 
 impl StrAllocating for UTF8Str {
-    fn into_string(self) -> String { self.buf.to_string() }
+    fn into_string(self) -> String { self.to_string() }
 }
 
 impl Collection for UTF8Str {
