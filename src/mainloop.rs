@@ -35,7 +35,7 @@ impl MainContext {
 type MainContextRefFunc   = unsafe extern "C" fn(p: *mut ffi::GMainContext) -> *mut ffi::GMainContext;
 type MainContextUnrefFunc = unsafe extern "C" fn(p: *mut ffi::GMainContext);
 
-static main_context_ref_funcs: RefcountFuncs = (
+static MAIN_CONTEXT_REF_FUNCS: RefcountFuncs = (
         &ffi::g_main_context_ref
             as *const MainContextRefFunc as *const RefFunc,
         &ffi::g_main_context_unref
@@ -44,6 +44,6 @@ static main_context_ref_funcs: RefcountFuncs = (
 
 impl Refcount for MainContext {
     fn refcount_funcs(&self) -> &'static RefcountFuncs {
-        &main_context_ref_funcs
+        &MAIN_CONTEXT_REF_FUNCS
     }
 }

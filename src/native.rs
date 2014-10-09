@@ -89,7 +89,7 @@ impl MainLoop {
 type MainLoopRefFunc   = unsafe extern "C" fn(p: *mut ffi::GMainLoop) -> *mut ffi::GMainLoop;
 type MainLoopUnrefFunc = unsafe extern "C" fn(p: *mut ffi::GMainLoop);
 
-static main_loop_ref_funcs: RefcountFuncs = (
+static MAIN_LOOP_REF_FUNCS: RefcountFuncs = (
         &ffi::g_main_loop_ref
             as *const MainLoopRefFunc as *const RefFunc,
         &ffi::g_main_loop_unref
@@ -98,6 +98,6 @@ static main_loop_ref_funcs: RefcountFuncs = (
 
 impl Refcount for MainLoop {
     fn refcount_funcs(&self) -> &'static RefcountFuncs {
-        &main_loop_ref_funcs
+        &MAIN_LOOP_REF_FUNCS
     }
 }

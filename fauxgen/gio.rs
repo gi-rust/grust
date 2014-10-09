@@ -230,13 +230,13 @@ impl object::ObjectType for File {
 
 impl refcount::Refcount for File {
     fn refcount_funcs(&self) -> &'static refcount::RefcountFuncs {
-        &object::refcount_funcs
+        &object::REFCOUNT_FUNCS
     }
 }
 
 impl refcount::Refcount for FileInputStream {
     fn refcount_funcs(&self) -> &'static refcount::RefcountFuncs {
-        &object::refcount_funcs
+        &object::REFCOUNT_FUNCS
     }
 }
 

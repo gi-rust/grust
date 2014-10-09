@@ -29,7 +29,7 @@ pub trait ObjectType {
     fn get_type(&self) -> GType;
 }
 
-pub static refcount_funcs: RefcountFuncs = (
+pub static REFCOUNT_FUNCS: RefcountFuncs = (
         &ffi::g_object_ref,
         &ffi::g_object_unref
     );
