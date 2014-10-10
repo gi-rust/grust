@@ -18,53 +18,44 @@
 
 use gio::File;
 use grust::refcount::{Ref,SyncRef};
-use grust::native::LoopRunner;
+use grust::native::{LoopRunner,MainLoop};
 use grust::object;
 
-// Test timeout in milliseconds
-// static TEST_TIMEOUT: uint = 3000u;
-
-fn tcase(test: proc(): Send) {
-    test()
+fn run_on_mainloop(setup: |mainloop: &mut MainLoop|) {
+    let runner = LoopRunner::new();
+    runner.run_after(setup);
 }
 
 #[test]
 fn new_ref() {
-    tcase(proc() {
-        let mut f = File::new_for_path("/dev/null");
-        let mut g = Ref::new(f.borrow_mut());
-        let path = g.borrow_mut().get_path().into_collection();
-        assert_eq!(path.as_slice(), "/dev/null");
-    })
+    let mut f = File::new_for_path("/dev/null");
+    let mut g = Ref::new(f.borrow_mut());
+    let path = g.borrow_mut().get_path().into_collection();
+    assert_eq!(path.as_slice(), "/dev/null");
 }
 
 #[test]
 fn clone() {
-    tcase(proc() {
-        let rf = File::new_for_path("/dev/null");
-        let mut rg = rf.clone();
-        let g = rg.borrow_mut();
-        let path = g.get_path().into_collection();
-        assert_eq!(path.as_slice(), "/dev/null");
-    })
+    let rf = File::new_for_path("/dev/null");
+    let mut rg = rf.clone();
+    let g = rg.borrow_mut();
+    let path = g.get_path().into_collection();
+    assert_eq!(path.as_slice(), "/dev/null");
 }
 
 #[test]
 fn async() {
-    tcase(proc() {
+    run_on_mainloop(|mainloop| {
         let mut f = File::new_for_path("/dev/null");
-        let runner = LoopRunner::new();
-        runner.run_after(|mainloop| {
-            let mut rml = SyncRef::new(mainloop);
-            f.read_async(0, None,
-                box proc(obj, res) {
-                    let f: &mut File = object::cast_mut(obj);
-                    match f.read_finish(res) {
-                        Ok(_)  => {}
-                        Err(_) => { println!("Error!") }  // TODO: impl Fmt for Error
-                    }
-                    rml.quit();
-                });
-        });
+        let mut rml = SyncRef::new(mainloop);
+        f.read_async(0, None,
+            box proc(obj, res) {
+                let f: &mut File = object::cast_mut(obj);
+                match f.read_finish(res) {
+                    Ok(_)  => {}
+                    Err(e) => { println!("Error: {}", e.message()) }
+                }
+                rml.quit();
+            });
     })
 }
