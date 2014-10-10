@@ -58,6 +58,7 @@ extern {
     pub fn g_main_loop_run(l: *mut GMainLoop);
     pub fn g_main_loop_quit(l: *mut GMainLoop);
     pub fn g_memdup(mem: gconstpointer, byte_size: guint) -> gpointer;
+    pub fn g_quark_from_static_string(string: *const gchar) -> GQuark;
     pub fn g_strdup(str: *const gchar) -> *mut gchar;
     pub fn g_strndup(str: *const gchar, len: gsize) -> *mut gchar;
 }

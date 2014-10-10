@@ -16,4 +16,14 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+use ffi;
+use types::gchar;
+
 pub type Quark = u32;
+
+pub fn from_static_string(string: &'static str) -> Quark {
+    debug_assert!(string.ends_with("\0"));
+    unsafe {
+        ffi::g_quark_from_static_string(string.as_ptr() as *const gchar)
+    }
+}
