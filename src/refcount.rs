@@ -52,7 +52,7 @@ impl<T: Refcount> Ref<T> {
     pub fn raw_ptr(&self) -> *const T {
         self.plumbing.ptr as gconstpointer as *const T
     }
-    pub fn raw_mut_ptr(&mut self) -> *mut T {
+    pub fn raw_mut_ptr(&self) -> *mut T {
         self.plumbing.ptr as *mut T
     }
 }
@@ -72,7 +72,7 @@ impl<T: Refcount + Send + Sync> SyncRef<T> {
     pub fn raw_ptr(&self) -> *const T {
         self.plumbing.ptr as gconstpointer as *const T
     }
-    pub fn raw_mut_ptr(&mut self) -> *mut T {
+    pub fn raw_mut_ptr(&self) -> *mut T {
         self.plumbing.ptr as *mut T
     }
 }
