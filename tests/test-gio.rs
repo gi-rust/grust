@@ -94,7 +94,9 @@ fn error_to_domain() {
                     Err(e) => {
                         match e.to_domain::<IOErrorEnum>() {
                             error::NotInDomain => { unreachable!() }
-                            error::Unknown => { unreachable!() }
+                            error::Unknown(code) => {
+                                fail!("unknown error code {}", code)
+                            }
                             error::Known(code) => {
                                 assert_eq!(code, NotFound);
                             }

@@ -57,7 +57,7 @@ pub trait ErrorDomain {
 pub enum ErrorMatch<T> {
     NotInDomain,
     Known(T),
-    Unknown
+    Unknown(int)
 }
 
 impl Drop for Error {
@@ -160,7 +160,7 @@ impl Error {
         let maybe_enum: Option<E> = FromPrimitive::from_int(code);
         match maybe_enum {
             Some(m) => Known(m),
-            None    => Unknown
+            None    => Unknown(code)
         }
     }
 }
