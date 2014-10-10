@@ -19,7 +19,7 @@
 // https://github.com/rust-lang/rust/issues/17679
 #![allow(ctypes)]
 
-use types::{gboolean,gchar,gsize,gssize,guint};
+use types::{gboolean,gchar,gint,gsize,gssize,guint};
 use types::{gpointer,gconstpointer};
 use gtype::GType;
 
@@ -44,6 +44,7 @@ extern {
     pub fn g_free(mem: gpointer);
     pub fn g_error_copy(error: *const GError) -> *mut GError;
     pub fn g_error_free(error: *mut GError);
+    pub fn g_error_matches(error: *const GError, domain: GQuark, code: gint) -> gboolean;
     pub fn g_locale_to_utf8(sysstr: *const gchar, len: gssize, bytes_read: *mut gsize, bytes_written: *mut gsize, error: *mut *mut GError) -> *mut gchar;
     pub fn g_main_context_new() -> *mut GMainContext;
     pub fn g_main_context_ref(context: *mut GMainContext) -> *mut GMainContext;

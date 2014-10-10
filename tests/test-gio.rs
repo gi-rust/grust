@@ -63,7 +63,7 @@ fn async() {
 }
 
 #[test]
-fn error() {
+fn error_matches() {
     run_on_mainloop(|mainloop| {
         let mut rml = SyncRef::new(mainloop);
         let mut f = File::new_for_path("./does-not-exist");
@@ -71,7 +71,26 @@ fn error() {
             box proc(obj, res) {
                 let f: &mut File = object::cast_mut(obj);
                 match f.read_finish(res) {
-                    Ok(_)  => {}
+                    Ok(_)  => { unreachable!() }
+                    Err(e) => {
+                        assert!(e.matches(NotFound));
+                    }
+                }
+                rml.quit();
+            });
+    })
+}
+
+#[test]
+fn error_to_domain() {
+    run_on_mainloop(|mainloop| {
+        let mut rml = SyncRef::new(mainloop);
+        let mut f = File::new_for_path("./does-not-exist");
+        f.read_async(0, None,
+            box proc(obj, res) {
+                let f: &mut File = object::cast_mut(obj);
+                match f.read_finish(res) {
+                    Ok(_)  => { unreachable!() }
                     Err(e) => {
                         match e.to_domain::<IOErrorEnum>() {
                             error::NotInDomain => { unreachable!() }

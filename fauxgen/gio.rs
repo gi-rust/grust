@@ -109,6 +109,12 @@ pub mod error {
             }
         }
     }
+
+    impl ToPrimitive for IOErrorEnum {
+        fn to_int(&self) -> Option<int> { Some(*self as int) }
+        fn to_i64(&self) -> Option<i64> { Some(*self as i64) }
+        fn to_u64(&self) -> Option<u64> { Some(*self as u64) }
+    }
 }
 
 #[allow(ctypes)]

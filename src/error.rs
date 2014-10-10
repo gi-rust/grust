@@ -18,8 +18,9 @@
 
 use ffi;
 use quark::Quark;
-use types::{gsize,gssize};
+use types::{gint,gsize,gssize};
 use utf8::UTF8Str;
+use util::is_true;
 
 use std::default::Default;
 use std::ptr;
@@ -135,6 +136,19 @@ impl Error {
             // As the last resort, try to salvage what we can
             slice::raw::buf_as_slice(raw_msg as *const u8, len,
                 |b| { String::from_utf8_lossy(b).into_string() })
+        }
+    }
+
+    pub fn matches<E: ErrorDomain + ToPrimitive + Copy>(&self, expected: E)
+                    -> bool {
+        if self.ptr.is_null() {
+            fail!("use of an unset GError pointer slot");
+        }
+        let domain = ErrorDomain::error_domain(Some(expected));
+        let code = expected.to_int().unwrap() as gint;
+        unsafe {
+            is_true(ffi::g_error_matches(self.ptr as *const raw::GError,
+                                         domain, code))
         }
     }
 
