@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use gio::File;
-use gio::error::{IOErrorEnum,NotFound};
+use gio::enums::io_error;
 use grust::refcount::{Ref,SyncRef};
 use grust::native::{LoopRunner,MainLoop};
 use grust::object;
@@ -73,7 +73,7 @@ fn error_matches() {
                 match f.read_finish(res) {
                     Ok(_)  => { unreachable!() }
                     Err(e) => {
-                        assert!(e.matches(NotFound));
+                        assert!(e.matches(io_error::NotFound));
                     }
                 }
                 rml.quit();
@@ -92,13 +92,13 @@ fn error_to_domain() {
                 match f.read_finish(res) {
                     Ok(_)  => { unreachable!() }
                     Err(e) => {
-                        match e.to_domain::<IOErrorEnum>() {
+                        match e.to_domain::<io_error::IOErrorEnum>() {
                             error::NotInDomain => { unreachable!() }
                             error::Unknown(code) => {
                                 fail!("unknown error code {}", code)
                             }
                             error::Known(code) => {
-                                assert_eq!(code, NotFound);
+                                assert_eq!(code, io_error::NotFound);
                             }
                         }
                     }
