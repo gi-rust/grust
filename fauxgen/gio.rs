@@ -25,7 +25,6 @@ extern crate "grust-GLib-2_0" as glib;
 extern crate "grust-GObject-2_0" as gobject;
 extern crate libc;
 
-use grust::error;
 use grust::gtype::GType;
 use grust::marker;
 use grust::object;
@@ -62,6 +61,54 @@ pub struct InputStream {
 pub struct FileInputStream {
     parent_instance: InputStream,
     _priv: types::gpointer
+}
+
+pub mod error {
+
+    use grust;
+    use std::fmt;
+    use std::sync::atomic;
+
+    #[deriving(FromPrimitive,PartialEq,Eq)]
+    #[repr(C)]
+    pub enum IOErrorEnum {
+        Failed = 0,
+        NotFound = 1,
+        Exists = 2,
+        // ...
+    }
+
+    impl fmt::Show for IOErrorEnum {
+        fn fmt(&self, format: &mut fmt::Formatter) -> Result<(), fmt::FormatError> {
+            let s: &'static str = match *self {
+                Failed   => "failed",
+                NotFound => "not-found",
+                Exists   => "exists",
+                // ...
+            };
+            s.fmt(format)
+        }
+    }
+
+    mod cached {
+        use std::sync::atomic;
+
+        pub static mut IO_ERROR_ENUM_QUARK: atomic::AtomicUint = atomic::INIT_ATOMIC_UINT; 
+    }
+
+    impl grust::error::ErrorDomain for IOErrorEnum {
+        fn error_domain(_: Option<IOErrorEnum>) -> grust::quark::Quark {
+            unsafe {
+                let mut d = cached::IO_ERROR_ENUM_QUARK.load(atomic::Relaxed)
+                            as grust::quark::Quark;
+                if d == 0 {
+                    d = grust::quark::from_static_string("g-io-error-quark\0");
+                    cached::IO_ERROR_ENUM_QUARK.store(d as uint, atomic::Relaxed);
+                }
+                d
+            }
+        }
+    }
 }
 
 #[allow(ctypes)]
@@ -197,9 +244,9 @@ impl File {
 
     pub fn read_finish(&mut self, res: &mut AsyncResult)
                       -> std::result::Result<refcount::Ref<FileInputStream>,
-                                             error::Error> {
+                                             grust::error::Error> {
         unsafe {
-            let mut err: error::Error = error::unset();
+            let mut err: grust::error::Error = grust::error::unset();
             let ret = raw::g_file_read_finish(self,
                                               res.as_mut_gio_async_result(),
                                               err.slot_ptr());

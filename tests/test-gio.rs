@@ -17,9 +17,11 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use gio::File;
+use gio::error::{IOErrorEnum,NotFound};
 use grust::refcount::{Ref,SyncRef};
 use grust::native::{LoopRunner,MainLoop};
 use grust::object;
+use grust::error;
 
 fn run_on_mainloop(setup: |mainloop: &mut MainLoop|) {
     let runner = LoopRunner::new();
@@ -54,6 +56,31 @@ fn async() {
                 match f.read_finish(res) {
                     Ok(_)  => {}
                     Err(e) => { println!("Error: {}", e.message()) }
+                }
+                rml.quit();
+            });
+    })
+}
+
+#[test]
+fn error() {
+    run_on_mainloop(|mainloop| {
+        let mut rml = SyncRef::new(mainloop);
+        let mut f = File::new_for_path("./does-not-exist");
+        f.read_async(0, None,
+            box proc(obj, res) {
+                let f: &mut File = object::cast_mut(obj);
+                match f.read_finish(res) {
+                    Ok(_)  => {}
+                    Err(e) => {
+                        match e.to_domain::<IOErrorEnum>() {
+                            error::NotInDomain => { unreachable!() }
+                            error::Unknown => { unreachable!() }
+                            error::Known(code) => {
+                                assert_eq!(code, NotFound);
+                            }
+                        }
+                    }
                 }
                 rml.quit();
             });

@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use ffi;
+use quark::Quark;
 use types::{gsize,gssize};
 use utf8::UTF8Str;
 
@@ -46,6 +47,16 @@ pub struct Error {
 
 pub fn unset() -> Error {
     Error { ptr: ptr::null_mut() }
+}
+
+pub trait ErrorDomain {
+    fn error_domain(_: Option<Self>) -> Quark;
+}
+
+pub enum ErrorMatch<T> {
+    NotInDomain,
+    Known(T),
+    Unknown
 }
 
 impl Drop for Error {
@@ -78,6 +89,13 @@ impl Error {
     }
 
     pub fn is_set(&self) -> bool { self.ptr.is_not_null() }
+
+    pub fn key(&self) -> (Quark, int) {
+        if self.ptr.is_null() {
+            fail!("use of an unset GError pointer slot");
+        }
+        unsafe { ((*self.ptr).domain, (*self.ptr).code as int) }
+    }
 
     pub fn message(&self) -> String {
 
@@ -117,6 +135,18 @@ impl Error {
             // As the last resort, try to salvage what we can
             slice::raw::buf_as_slice(raw_msg as *const u8, len,
                 |b| { String::from_utf8_lossy(b).into_string() })
+        }
+    }
+
+    pub fn to_domain<E: ErrorDomain + FromPrimitive>(&self) -> ErrorMatch<E> {
+        let (domain, code) = self.key();
+        if domain != ErrorDomain::error_domain(None::<E>) {
+            return NotInDomain;
+        }
+        let maybe_enum: Option<E> = FromPrimitive::from_int(code);
+        match maybe_enum {
+            Some(m) => Known(m),
+            None    => Unknown
         }
     }
 }
