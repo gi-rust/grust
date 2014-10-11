@@ -93,7 +93,7 @@ pub mod enums {
             }
         }
 
-        pub static mut ERROR_QUARK: atomic::AtomicUint = atomic::INIT_ATOMIC_UINT; 
+        static mut ERROR_QUARK: atomic::AtomicUint = atomic::INIT_ATOMIC_UINT;
 
         impl error::ErrorDomain for IOErrorEnum {
             fn error_domain(_: Option<IOErrorEnum>) -> quark::Quark {
