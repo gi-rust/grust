@@ -120,27 +120,6 @@ impl UTF8Str {
         UTF8Str { buf: UTF8Buf::wrap(data), len: len }
     }
 
-    unsafe fn dup_raw(buf: *const gchar, len: uint) -> UTF8Str {
-        let copy = ffi::g_malloc((len + 1) as gsize) as *mut gchar;
-        copy_nonoverlapping_memory(copy, buf, len);
-        *copy.offset(len as int) = NUL;
-        UTF8Str::wrap(copy, len)
-    }
-
-    pub unsafe fn dup(cstr: *const gchar) -> UTF8Str {
-        UTF8Str::dup_raw(cstr, libc::strlen(cstr) as uint)
-    }
-
-    pub unsafe fn ndup(cstr: *const gchar, len: uint) -> UTF8Str {
-        let len = slice::raw::buf_as_slice(cstr, len, |s| {
-            match s.position_elem(&NUL) {
-                Some(pos) => pos,
-                None      => len
-            }
-        });
-        UTF8Str::dup_raw(cstr, len)
-    }
-
     pub fn to_string(&self) -> String {
         unsafe {
             string::raw::from_buf_len(self.buf.data as *const u8, self.len)
@@ -151,7 +130,11 @@ impl UTF8Str {
 impl Clone for UTF8Str {
     fn clone(&self) -> UTF8Str {
         unsafe {
-            UTF8Str::dup_raw(self.buf.data as *const gchar, self.len)
+            let copy = ffi::g_malloc((self.len + 1) as gsize) as *mut gchar;
+            copy_nonoverlapping_memory(copy,
+                    self.buf.data as *const gchar, self.len);
+            *copy.offset(self.len as int) = NUL;
+            UTF8Str::wrap(copy, self.len)
         }
     }
 }
