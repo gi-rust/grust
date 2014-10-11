@@ -107,7 +107,6 @@ impl ToCStr for UTF8Buf {
     }
 }
 
-#[deriving(Clone)]
 pub struct UTF8Str {
     buf: UTF8Buf,
     len: uint
@@ -145,6 +144,14 @@ impl UTF8Str {
     pub fn to_string(&self) -> String {
         unsafe {
             string::raw::from_buf_len(self.buf.data as *const u8, self.len)
+        }
+    }
+}
+
+impl Clone for UTF8Str {
+    fn clone(&self) -> UTF8Str {
+        unsafe {
+            UTF8Str::dup_raw(self.buf.data as *const gchar, self.len)
         }
     }
 }
