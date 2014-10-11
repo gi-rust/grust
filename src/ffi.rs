@@ -19,8 +19,8 @@
 // https://github.com/rust-lang/rust/issues/17679
 #![allow(ctypes)]
 
-use types::{gboolean,gchar,gint,gsize,gssize,guint};
-use types::{gpointer,gconstpointer};
+use types::{gboolean,gchar,gint,gsize,gssize};
+use types::gpointer;
 use gtype::GType;
 
 use error;
@@ -58,10 +58,9 @@ extern {
     pub fn g_main_loop_get_context(l: *mut GMainLoop) -> *mut GMainContext; 
     pub fn g_main_loop_run(l: *mut GMainLoop);
     pub fn g_main_loop_quit(l: *mut GMainLoop);
-    pub fn g_memdup(mem: gconstpointer, byte_size: guint) -> gpointer;
+    pub fn g_malloc(n_bytes: gsize) -> gpointer;
     pub fn g_quark_from_static_string(string: *const gchar) -> GQuark;
     pub fn g_strdup(str: *const gchar) -> *mut gchar;
-    pub fn g_strndup(str: *const gchar, len: gsize) -> *mut gchar;
 }
 
 #[link(name = "gobject-2.0")]

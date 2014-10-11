@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use ffi;
-use types::{gchar,gsize,guint};
-use types::{gpointer,gconstpointer};
+use types::{gchar,gsize};
+use types::{gpointer};
 
 use alloc::libc_heap::malloc_raw;
 use libc;
@@ -113,21 +113,33 @@ pub struct UTF8Str {
     len: uint
 }
 
+static NUL: gchar = 0;
+
 impl UTF8Str {
+
     pub unsafe fn wrap(data: *mut gchar, len: uint) -> UTF8Str {
         UTF8Str { buf: UTF8Buf::wrap(data), len: len }
     }
 
-    pub unsafe fn dup(cstr: *const gchar) -> UTF8Str {
-        let len = libc::strlen(cstr) as uint;
-        let copy = ffi::g_memdup(cstr as gconstpointer, (len + 1) as guint)
-                   as *mut gchar;
+    unsafe fn dup_raw(buf: *const gchar, len: uint) -> UTF8Str {
+        let copy = ffi::g_malloc((len + 1) as gsize) as *mut gchar;
+        copy_nonoverlapping_memory(copy, buf, len);
+        *copy.offset(len as int) = NUL;
         UTF8Str::wrap(copy, len)
     }
 
+    pub unsafe fn dup(cstr: *const gchar) -> UTF8Str {
+        UTF8Str::dup_raw(cstr, libc::strlen(cstr) as uint)
+    }
+
     pub unsafe fn ndup(cstr: *const gchar, len: uint) -> UTF8Str {
-        let copy = ffi::g_strndup(cstr, len as gsize);
-        UTF8Str::wrap(copy, len)
+        let len = slice::raw::buf_as_slice(cstr, len, |s| {
+            match s.position_elem(&NUL) {
+                Some(pos) => pos,
+                None      => len
+            }
+        });
+        UTF8Str::dup_raw(cstr, len)
     }
 
     pub fn to_string(&self) -> String {
