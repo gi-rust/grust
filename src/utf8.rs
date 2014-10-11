@@ -168,7 +168,9 @@ impl Collection for UTF8Str {
 
 impl ToCStr for UTF8Str {
 
-    fn to_c_str(&self) -> CString { self.buf.to_c_str() }
+    fn to_c_str(&self) -> CString {
+        unsafe { self.to_c_str_unchecked() }
+    }
 
     unsafe fn to_c_str_unchecked(&self) -> CString {
         dup_to_c_str(self.buf.data as *const c_char, self.len)
