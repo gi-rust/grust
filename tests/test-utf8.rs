@@ -145,3 +145,15 @@ fn str_ne() {
     let s2 = new_test_str("This is not the string you are looking for\0");
     assert!(s1 != s2);
 }
+
+#[test]
+fn chars() {
+    let s = new_test_str("A\u0410\u4E00\U00100000.\0");
+    let mut chars = s.chars();
+    assert_eq!(chars.next().unwrap(), 'A');
+    assert_eq!(chars.next().unwrap(), '\u0410');
+    assert_eq!(chars.next().unwrap(), '\u4E00');
+    assert_eq!(chars.next().unwrap(), '\U00100000');
+    assert_eq!(chars.next().unwrap(), '.');
+    assert_eq!(chars.next(), None);
+}

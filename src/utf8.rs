@@ -24,11 +24,82 @@ use alloc::libc_heap::malloc_raw;
 use libc;
 use libc::c_char;
 use std::c_str::{CString,ToCStr};
+use std::kinds::marker;
 use std::mem::transmute;
 use std::ptr::copy_nonoverlapping_memory;
 use std::slice;
 use std::str;
 use std::string;
+
+pub struct UTF8Chars<'a> {
+    data: *const gchar,
+    lifetime: marker::ContravariantLifetime<'a>
+}
+
+impl<'a> UTF8Chars<'a> {
+    pub unsafe fn wrap(ptr: *const gchar) -> UTF8Chars<'a> {
+        UTF8Chars { data: ptr, lifetime: marker::ContravariantLifetime }
+    }
+}
+
+impl<'a> Iterator<char> for UTF8Chars<'a> {
+    fn next(&mut self) -> Option<char> {
+        let first_byte = unsafe { *self.data as u8 };
+        if first_byte == 0 {
+            return None;
+        }
+        if first_byte < 0x80 {
+            unsafe {
+                self.data = self.data.offset(1);
+            }
+            return Some(first_byte as char);
+        }
+        unsafe {
+            let mut p = self.data.offset(1);
+            let mut wc: u32 = (first_byte & 0x1F) as u32 << 6;
+            wc |= (*p as u8 & 0x3F) as u32;
+            if first_byte >= 0xE0 {
+                p = p.offset(1);
+                wc = (wc << 6) & 0xFFFF;
+                wc |= (*p as u8 & 0x3F) as u32;
+                if first_byte >= 0xF0 {
+                    p = p.offset(1);
+                    wc = (wc << 6) & 0x1FFFFF;
+                    wc |= (*p as u8 & 0x3F) as u32;
+                }
+            }
+            self.data = p.offset(1);
+            Some(transmute(wc))
+        }
+    }
+}
+
+unsafe fn dup_to_c_str(source: *const c_char, len: uint) -> CString {
+    let copy = malloc_raw(len + 1) as *mut c_char;
+    copy_nonoverlapping_memory(copy, source, len + 1);
+    CString::new(copy as *const c_char, true)
+}
+
+impl<'a> ToCStr for UTF8Chars<'a> {
+
+    fn to_c_str(&self) -> CString {
+        unsafe { self.to_c_str_unchecked() }
+    }
+
+    unsafe fn to_c_str_unchecked(&self) -> CString {
+        let src = self.data as *const c_char;
+        let len = libc::strlen(src) as uint;
+        dup_to_c_str(src, len)
+    }
+
+    fn with_c_str<T>(&self, f: |*const i8| -> T) -> T {
+        f(self.data as *const i8)
+    }
+
+    unsafe fn with_c_str_unchecked<T>(&self, f: |*const i8| -> T) -> T {
+        f(self.data as *const i8)
+    }
+}
 
 pub struct UTF8Buf {
     data: *mut gchar,
@@ -38,6 +109,10 @@ impl UTF8Buf {
 
     pub unsafe fn wrap(data: *mut gchar) -> UTF8Buf {
         UTF8Buf { data: data }
+    }
+
+    pub fn chars<'a>(&'a self) -> UTF8Chars<'a> {
+        unsafe { UTF8Chars::wrap(self.data as *const gchar) }
     }
 
     pub fn into_collection(self) -> UTF8Str {
@@ -80,22 +155,14 @@ impl Clone for UTF8Buf {
     }
 }
 
-unsafe fn dup_to_c_str(source: *const c_char, len: uint) -> CString {
-    let copy = malloc_raw(len + 1) as *mut c_char;
-    copy_nonoverlapping_memory(copy, source, len + 1);
-    CString::new(copy as *const c_char, true)
-}
-
 impl ToCStr for UTF8Buf {
 
     fn to_c_str(&self) -> CString {
-        unsafe { self.to_c_str_unchecked() }
+        self.chars().to_c_str()
     }
 
     unsafe fn to_c_str_unchecked(&self) -> CString {
-        let src = self.data as *const c_char;
-        let len = libc::strlen(src) as uint;
-        dup_to_c_str(src, len)
+        self.chars().to_c_str_unchecked()
     }
 
     fn with_c_str<T>(&self, f: |*const i8| -> T) -> T {
@@ -119,6 +186,8 @@ impl UTF8Str {
     pub unsafe fn wrap(data: *mut gchar, len: uint) -> UTF8Str {
         UTF8Str { buf: UTF8Buf::wrap(data), len: len }
     }
+
+    pub fn chars<'a>(&'a self) -> UTF8Chars<'a> { self.buf.chars() }
 
     pub fn to_string(&self) -> String {
         unsafe {
@@ -201,6 +270,12 @@ impl<S: Str> Equiv<S> for UTF8Str {
 
 pub trait WithUTF8 {
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T;
+}
+
+impl<'a> WithUTF8 for UTF8Chars<'a> {
+    fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
+        f(self.data)
+    }
 }
 
 impl WithUTF8 for UTF8Buf {
