@@ -40,6 +40,12 @@ impl<'a> UTF8Chars<'a> {
     pub unsafe fn wrap(ptr: *const gchar) -> UTF8Chars<'a> {
         UTF8Chars { data: ptr, lifetime: marker::ContravariantLifetime }
     }
+
+    pub fn to_string(&self) -> String {
+        unsafe {
+            string::raw::from_buf(self.data as *const u8)
+        }
+    }
 }
 
 impl<'a> Iterator<char> for UTF8Chars<'a> {
@@ -122,11 +128,8 @@ impl UTF8Buf {
         }
     }
 
-    pub fn to_string(&self) -> String {
-        unsafe {
-            string::raw::from_buf(self.data as *const gchar as *const u8)
-        }
-    }
+    #[inline]
+    pub fn to_string(&self) -> String { self.chars().to_string() }
 
     #[inline]
     pub fn to_owned(&self) -> String { self.to_string() }
