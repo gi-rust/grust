@@ -48,6 +48,13 @@ impl<'a> UTF8Chars<'a> {
     }
 }
 
+#[inline]
+unsafe fn utf8_cont_byte(p: *const gchar) -> u8 {
+    let byte = *p as u8;
+    debug_assert!((byte & 0xC0) == 0x80);
+    byte & 0x3F
+}
+
 impl<'a> Iterator<char> for UTF8Chars<'a> {
     fn next(&mut self) -> Option<char> {
         let first_byte = unsafe { *self.data as u8 };
@@ -63,16 +70,23 @@ impl<'a> Iterator<char> for UTF8Chars<'a> {
         unsafe {
             let mut p = self.data.offset(1);
             let mut wc: u32 = (first_byte & 0x1F) as u32 << 6;
-            wc |= (*p as u8 & 0x3F) as u32;
+            wc |= utf8_cont_byte(p) as u32;
             if first_byte >= 0xE0 {
                 p = p.offset(1);
                 wc = (wc << 6) & 0xFFFF;
-                wc |= (*p as u8 & 0x3F) as u32;
+                wc |= utf8_cont_byte(p) as u32;
                 if first_byte >= 0xF0 {
+                    debug_assert!(first_byte < 0xF8);
                     p = p.offset(1);
                     wc = (wc << 6) & 0x1FFFFF;
-                    wc |= (*p as u8 & 0x3F) as u32;
+                    wc |= utf8_cont_byte(p) as u32;
+                    debug_assert!(wc >= 0x010000 && wc <= 0x10FFFF);
+                } else {
+                    debug_assert!(wc >= 0x0800);
+                    debug_assert!((wc & 0xF800) != 0xD800);
                 }
+            } else {
+                debug_assert!(wc >= 0x80);
             }
             self.data = p.offset(1);
             Some(transmute(wc))
