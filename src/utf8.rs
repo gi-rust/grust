@@ -49,46 +49,49 @@ impl<'a> UTF8Chars<'a> {
 }
 
 #[inline]
-unsafe fn utf8_cont_byte(p: *const gchar) -> u8 {
+unsafe fn utf8_cont_bits(p: *const gchar) -> u32 {
     let byte = *p as u8;
     debug_assert!((byte & 0xC0) == 0x80);
-    byte & 0x3F
+    (byte & 0x3F) as u32
 }
 
 impl<'a> Iterator<char> for UTF8Chars<'a> {
     fn next(&mut self) -> Option<char> {
-        let first_byte = unsafe { *self.data as u8 };
+        let p = self.data;
+        let first_byte = unsafe { *p as u8 };
         if first_byte == 0 {
             return None;
         }
-        if first_byte < 0x80 {
-            unsafe {
-                self.data = self.data.offset(1);
-            }
-            return Some(first_byte as char);
-        }
         unsafe {
-            let mut p = self.data.offset(1);
-            let mut wc: u32 = (first_byte & 0x1F) as u32 << 6;
-            wc |= utf8_cont_byte(p) as u32;
-            if first_byte >= 0xE0 {
-                p = p.offset(1);
-                wc = (wc << 6) & 0xFFFF;
-                wc |= utf8_cont_byte(p) as u32;
-                if first_byte >= 0xF0 {
-                    debug_assert!(first_byte < 0xF8);
-                    p = p.offset(1);
-                    wc = (wc << 6) & 0x1FFFFF;
-                    wc |= utf8_cont_byte(p) as u32;
-                    debug_assert!(wc >= 0x010000 && wc <= 0x10FFFF);
-                } else {
-                    debug_assert!(wc >= 0x0800);
-                    debug_assert!((wc & 0xF800) != 0xD800);
-                }
+            let mut wc: u32;
+            if first_byte < 0xC0 {
+                debug_assert!(first_byte < 0x80);
+                wc = first_byte as u32;
+                self.data = p.offset(1);
             } else {
-                debug_assert!(wc >= 0x80);
+                let c1 = utf8_cont_bits(p.offset(1));
+                if first_byte < 0xE0 {
+                    wc = ((first_byte & 0x1F) as u32 << 6) | c1;
+                    debug_assert!(wc >= 0x80);
+                    self.data = p.offset(2);
+                } else {
+                    let c2 = utf8_cont_bits(p.offset(2));
+                    if first_byte < 0xF0 {
+                        wc = ((first_byte & 0x0F) as u32 << 12)
+                             | (c1 << 6) | c2;
+                        debug_assert!(wc >= 0x0800);
+                        debug_assert!((wc & 0xF800) != 0xD800);
+                        self.data = p.offset(3);
+                    } else {
+                        debug_assert!(first_byte <= 0xF4);
+                        let c3 = utf8_cont_bits(p.offset(3));
+                        wc = ((first_byte & 0x07) as u32 << 18)
+                             | (c1 << 12) | (c2 << 6) | c3;
+                        debug_assert!(wc >= 0x010000 && wc <= 0x10FFFF);
+                        self.data = p.offset(4);
+                    }
+                }
             }
-            self.data = p.offset(1);
             Some(transmute(wc))
         }
     }
