@@ -117,7 +117,7 @@ pub mod enums {
     }
 }
 
-#[allow(ctypes)]
+#[allow(improper_ctypes)]
 pub mod raw {
     use grust::types::{gchar,gint,gpointer};
     use grust::gtype::GType;

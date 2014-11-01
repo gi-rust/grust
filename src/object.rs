@@ -41,7 +41,7 @@ pub fn cast<'a, T: ObjectType, U: ObjectType>(source: &'a T)
         let dest: &'a U = transmute(source);
         let dest_type = dest.get_type();
         if is_false(ffi::g_type_check_instance_is_a(inst, dest_type)) {
-            fail!("invalid cast to type {}",
+            panic!("invalid cast to type {}",
                   CString::new(ffi::g_type_name(dest_type), false));
         }
         dest
@@ -55,7 +55,7 @@ pub fn cast_mut<'a, T: ObjectType, U: ObjectType>(source: &'a mut T)
         let dest: &'a mut U = transmute(source);
         let dest_type = dest.get_type();
         if is_false(ffi::g_type_check_instance_is_a(inst, dest_type)) {
-            fail!("invalid cast to type {}",
+            panic!("invalid cast to type {}",
                   CString::new(ffi::g_type_name(dest_type), false));
         }
         dest

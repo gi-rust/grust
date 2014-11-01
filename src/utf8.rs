@@ -20,7 +20,6 @@ use ffi;
 use types::{gchar,gsize};
 use types::{gpointer};
 
-use alloc::libc_heap::malloc_raw;
 use libc;
 use libc::c_char;
 use std::c_str::{CString,ToCStr};
@@ -98,7 +97,7 @@ impl<'a> Iterator<char> for UTF8Chars<'a> {
 }
 
 unsafe fn dup_to_c_str(source: *const c_char, len: uint) -> CString {
-    let copy = malloc_raw(len + 1) as *mut c_char;
+    let copy = libc::malloc(len as libc::size_t + 1) as *mut c_char;
     copy_nonoverlapping_memory(copy, source, len + 1);
     CString::new(copy as *const c_char, true)
 }

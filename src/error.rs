@@ -93,7 +93,7 @@ impl Error {
 
     pub fn key(&self) -> (Quark, int) {
         if self.ptr.is_null() {
-            fail!("use of an unset GError pointer slot");
+            panic!("use of an unset GError pointer slot");
         }
         unsafe { ((*self.ptr).domain, (*self.ptr).code as int) }
     }
@@ -142,7 +142,7 @@ impl Error {
     pub fn matches<E: ErrorDomain + ToPrimitive + Copy>(&self, expected: E)
                     -> bool {
         if self.ptr.is_null() {
-            fail!("use of an unset GError pointer slot");
+            panic!("use of an unset GError pointer slot");
         }
         let domain = ErrorDomain::error_domain(Some(expected));
         let code = expected.to_int().unwrap() as gint;
