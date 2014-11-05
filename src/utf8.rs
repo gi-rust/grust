@@ -40,6 +40,8 @@ impl<'a> UTF8Chars<'a> {
         UTF8Chars { data: ptr, lifetime: marker::ContravariantLifetime }
     }
 
+    pub fn as_ptr(&self) -> *const gchar { self.data }
+
     pub fn to_string(&self) -> String {
         unsafe {
             string::raw::from_buf(self.data as *const u8)
