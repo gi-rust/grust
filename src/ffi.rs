@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 // https://github.com/rust-lang/rust/issues/17679
-#![allow(ctypes)]
+#![allow(improper_ctypes)]
 
 use types::{gboolean,gchar,gint,gsize,gssize};
 use types::gpointer;

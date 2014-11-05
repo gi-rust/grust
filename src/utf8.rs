@@ -194,7 +194,7 @@ pub struct UTF8Str {
     len: uint
 }
 
-static NUL: gchar = 0;
+const NUL: gchar = 0;
 
 impl UTF8Str {
 
@@ -203,6 +203,10 @@ impl UTF8Str {
     }
 
     pub fn chars<'a>(&'a self) -> UTF8Chars<'a> { self.buf.chars() }
+
+    pub fn len(&self) -> uint { return self.len }
+
+    pub fn is_empty(&self) -> bool { return self.len == 0 }
 
     pub fn to_string(&self) -> String {
         unsafe {
@@ -241,15 +245,6 @@ impl StrAllocating for UTF8Str {
     fn into_string(self) -> String { self.to_string() }
 }
 
-impl Collection for UTF8Str {
-
-    // Common sense says we should return the UTF-8 length,
-    // but &str returns length in bytes, so...
-    fn len(&self) -> uint { return self.len }
-
-    fn is_empty(&self) -> bool { return self.len == 0 }
-}
-
 impl ToCStr for UTF8Str {
 
     fn to_c_str(&self) -> CString {
@@ -283,7 +278,7 @@ impl<S: Str> Equiv<S> for UTF8Str {
     }
 }
 
-pub trait WithUTF8 {
+pub trait WithUTF8 for Sized? {
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T;
 }
 
@@ -307,16 +302,21 @@ impl WithUTF8 for UTF8Str {
     }
 }
 
-impl<'a> WithUTF8 for &'a str {
-
+impl WithUTF8 for str {
     #[inline]
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         self.with_c_str(f)
     }
 }
 
-impl WithUTF8 for String {
+impl<'a, Sized? T: WithUTF8> WithUTF8 for &'a T {
+    #[inline]
+    fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
+        (**self).with_utf8_c_str(f)
+    }
+}
 
+impl WithUTF8 for String {
     #[inline]
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         self.with_c_str(f)
