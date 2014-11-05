@@ -98,6 +98,9 @@ impl<'a> Iterator<char> for UTF8Chars<'a> {
 
 unsafe fn dup_to_c_str(source: *const c_char, len: uint) -> CString {
     let copy = libc::malloc(len as libc::size_t + 1) as *mut c_char;
+    if copy.is_null() {
+        ::alloc::oom();
+    }
     copy_nonoverlapping_memory(copy, source, len + 1);
     CString::new(copy as *const c_char, true)
 }
@@ -110,37 +113,35 @@ impl<'a> ToCStr for UTF8Chars<'a> {
     }
 
     unsafe fn to_c_str_unchecked(&self) -> CString {
-        let src = self.data as *const c_char;
-        let len = libc::strlen(src) as uint;
-        dup_to_c_str(src, len)
+        dup_to_c_str(self.data, libc::strlen(self.data) as uint)
     }
 
-    fn with_c_str<T>(&self, f: |*const i8| -> T) -> T {
-        f(self.data as *const i8)
+    fn with_c_str<T>(&self, f: |*const c_char| -> T) -> T {
+        f(self.data)
     }
 
-    unsafe fn with_c_str_unchecked<T>(&self, f: |*const i8| -> T) -> T {
-        f(self.data as *const i8)
+    unsafe fn with_c_str_unchecked<T>(&self, f: |*const c_char| -> T) -> T {
+        f(self.data)
     }
 }
 
 pub struct UTF8Buf {
-    data: *mut gchar,
+    data: *const gchar,
 }
 
 impl UTF8Buf {
 
     pub unsafe fn wrap(data: *mut gchar) -> UTF8Buf {
-        UTF8Buf { data: data }
+        UTF8Buf { data: data as *const gchar }
     }
 
     pub fn chars<'a>(&'a self) -> UTF8Chars<'a> {
-        unsafe { UTF8Chars::wrap(self.data as *const gchar) }
+        unsafe { UTF8Chars::wrap(self.data) }
     }
 
     pub fn into_collection(self) -> UTF8Str {
         unsafe {
-            let len = libc::strlen(self.data as *const c_char);
+            let len = libc::strlen(self.data);
             UTF8Str { buf: transmute(self), len: len as uint }
         }
     }
@@ -163,7 +164,7 @@ impl Drop for UTF8Buf {
 impl Clone for UTF8Buf {
     fn clone(&self) -> UTF8Buf {
         unsafe {
-            UTF8Buf::wrap(ffi::g_strdup(self.data as *const gchar))
+            UTF8Buf::wrap(ffi::g_strdup(self.data))
         }
     }
 }
@@ -180,12 +181,12 @@ impl ToCStr for UTF8Buf {
         self.chars().to_c_str_unchecked()
     }
 
-    fn with_c_str<T>(&self, f: |*const i8| -> T) -> T {
-        f(self.data as *const i8)
+    fn with_c_str<T>(&self, f: |*const c_char| -> T) -> T {
+        f(self.data)
     }
 
-    unsafe fn with_c_str_unchecked<T>(&self, f: |*const i8| -> T) -> T {
-        f(self.data as *const i8)
+    unsafe fn with_c_str_unchecked<T>(&self, f: |*const c_char| -> T) -> T {
+        f(self.data)
     }
 }
 
@@ -252,14 +253,14 @@ impl ToCStr for UTF8Str {
     }
 
     unsafe fn to_c_str_unchecked(&self) -> CString {
-        dup_to_c_str(self.buf.data as *const c_char, self.len)
+        dup_to_c_str(self.buf.data, self.len)
     }
 
-    fn with_c_str<T>(&self, f: |*const i8| -> T) -> T {
+    fn with_c_str<T>(&self, f: |*const c_char| -> T) -> T {
         self.buf.with_c_str(f)
     }
 
-    unsafe fn with_c_str_unchecked<T>(&self, f: |*const i8| -> T) -> T {
+    unsafe fn with_c_str_unchecked<T>(&self, f: |*const c_char| -> T) -> T {
         self.buf.with_c_str_unchecked(f)
     }
 }
