@@ -149,13 +149,7 @@ impl UTF8Buf {
     pub fn to_string(&self) -> String { self.chars().to_string() }
 
     #[inline]
-    pub fn to_owned(&self) -> String { self.to_string() }
-
-    #[inline]
     pub fn into_string(self) -> String { self.to_string() }
-
-    #[inline]
-    pub fn into_owned(self) -> String { self.to_string() }
 
     pub fn is_empty(&self) -> bool { unsafe { *self.data == 0 } }
 }
