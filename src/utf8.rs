@@ -48,8 +48,8 @@ impl<'a> UTF8Chars<'a> {
 }
 
 #[inline]
-unsafe fn utf8_cont_bits(p: *const gchar) -> u32 {
-    let byte = *(p as *const u8);
+fn utf8_cont_bits(p: *const gchar) -> u32 {
+    let byte = unsafe { *(p as *const u8) };
     debug_assert!((byte & 0xC0) == 0x80);
     (byte & 0x3F) as u32
 }
