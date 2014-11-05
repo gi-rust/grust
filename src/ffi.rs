@@ -19,17 +19,19 @@
 // https://github.com/rust-lang/rust/issues/17679
 #![allow(improper_ctypes)]
 
-use types::{gboolean, gchar, gssize};
-use types::gpointer;
 use gtype::GType;
-
 use error;
 use mainloop;
+use types::{gboolean, gchar, gdouble, gfloat, gint, glong, gssize};
+use types::{guchar, guint, gulong};
+use types::gpointer;
+use value;
 
 pub type GError = error::raw::GError;
 pub type GMainContext = mainloop::MainContext;
 pub type GMainLoop = mainloop::MainLoop;
 pub type GQuark = u32;
+pub type GValue = value::Value;
 
 #[repr(C)]
 pub struct GTypeInstance;
@@ -64,4 +66,35 @@ extern {
     pub fn g_type_check_instance_is_a(instance  : *const GTypeInstance,
                                   iface_type: GType) -> gboolean;
     pub fn g_type_name(t: GType) -> *const gchar;
+    pub fn g_value_copy(src: *const GValue, dst: *mut GValue);
+    pub fn g_value_get_boolean(value: *const GValue) -> gboolean;
+    pub fn g_value_get_char(value: *const GValue) -> gchar;
+    pub fn g_value_get_double(value: *const GValue) -> gdouble;
+    pub fn g_value_get_float(value: *const GValue) -> gfloat;
+    pub fn g_value_get_int(value: *const GValue) -> gint;
+    pub fn g_value_get_int64(value: *const GValue) -> i64;
+    pub fn g_value_get_long(value: *const GValue) -> glong;
+    pub fn g_value_get_schar(value: *const GValue) -> i8;
+    pub fn g_value_get_string(value: *const GValue) -> *const gchar;
+    pub fn g_value_get_uchar(value: *const GValue) -> guchar;
+    pub fn g_value_get_uint(value: *const GValue) -> guint;
+    pub fn g_value_get_uint64(value: *const GValue) -> u64;
+    pub fn g_value_get_ulong(value: *const GValue) -> gulong;
+    pub fn g_value_init(value: *mut GValue, type_id: GType) -> *mut GValue;
+    pub fn g_value_set_boolean(value: *mut GValue, v_boolean: gboolean);
+    pub fn g_value_set_char(value: *mut GValue, v_char: gchar);
+    pub fn g_value_set_double(value: *mut GValue, v_double: gdouble);
+    pub fn g_value_set_float(value: *mut GValue, v_float: gfloat);
+    pub fn g_value_set_int(value: *mut GValue, v_int: gint);
+    pub fn g_value_set_int64(value: *mut GValue, v_int: i64);
+    pub fn g_value_set_long(value: *mut GValue, v_long: glong);
+    pub fn g_value_set_schar(value: *mut GValue, v_char: i8);
+    pub fn g_value_set_string(value: *mut GValue, v_string: *const gchar);
+    pub fn g_value_set_static_string(value: *mut GValue, v_string: *const gchar);
+    pub fn g_value_set_uchar(value: *mut GValue, v_char: guchar);
+    pub fn g_value_set_uint(value: *mut GValue, v_uint: guint);
+    pub fn g_value_set_uint64(value: *mut GValue, v_uint: u64);
+    pub fn g_value_set_ulong(value: *mut GValue, v_ulong: gulong);
+    pub fn g_value_take_string(value: *mut GValue, v_string: *mut gchar);
+    pub fn g_value_unset(value: *mut GValue);
 }

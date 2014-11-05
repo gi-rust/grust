@@ -37,5 +37,6 @@ pub mod quark;
 pub mod refcount;
 pub mod types;
 pub mod util;
+pub mod value;
 
 mod ffi;

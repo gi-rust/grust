@@ -41,10 +41,15 @@ use libc;
 
 pub type gboolean       = libc::c_int;
 pub type gchar          = libc::c_char;
+pub type guchar         = libc::c_uchar;
 pub type gint           = libc::c_int;
 pub type guint          = libc::c_uint;
+pub type glong          = libc::c_long;
+pub type gulong         = libc::c_ulong;
 pub type gsize          = libc::size_t;
 pub type gssize         = libc::ssize_t;
+pub type gfloat         = libc::c_float;
+pub type gdouble        = libc::c_double;
 pub type gpointer       = *mut   libc::c_void;
 pub type gconstpointer  = *const libc::c_void;
 
