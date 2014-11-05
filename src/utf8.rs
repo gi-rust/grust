@@ -104,6 +104,7 @@ unsafe fn dup_to_c_str(source: *const c_char, len: uint) -> CString {
 
 impl<'a> ToCStr for UTF8Chars<'a> {
 
+    #[inline]
     fn to_c_str(&self) -> CString {
         unsafe { self.to_c_str_unchecked() }
     }
@@ -175,10 +176,12 @@ impl Clone for UTF8Buf {
 
 impl ToCStr for UTF8Buf {
 
+    #[inline]
     fn to_c_str(&self) -> CString {
         self.chars().to_c_str()
     }
 
+    #[inline]
     unsafe fn to_c_str_unchecked(&self) -> CString {
         self.chars().to_c_str_unchecked()
     }
@@ -312,6 +315,7 @@ impl WithUTF8 for UTF8Str {
 
 impl<'a> WithUTF8 for &'a str {
 
+    #[inline]
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         self.with_c_str(f)
     }
@@ -319,6 +323,7 @@ impl<'a> WithUTF8 for &'a str {
 
 impl WithUTF8 for String {
 
+    #[inline]
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         self.with_c_str(f)
     }
