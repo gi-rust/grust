@@ -281,45 +281,45 @@ impl<S: Str> Equiv<S> for UTF8Str {
     }
 }
 
-pub trait WithUTF8 for Sized? {
+pub trait ToUTF8 for Sized? {
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T;
 }
 
-impl<'a> WithUTF8 for UTF8Chars<'a> {
+impl<'a> ToUTF8 for UTF8Chars<'a> {
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         f(self.data)
     }
 }
 
-impl WithUTF8 for UTF8Buf {
+impl ToUTF8 for UTF8Buf {
 
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         f(self.data as *const gchar)
     }
 }
 
-impl WithUTF8 for UTF8Str {
+impl ToUTF8 for UTF8Str {
 
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         self.buf.with_utf8_c_str(f)
     }
 }
 
-impl WithUTF8 for str {
+impl ToUTF8 for str {
     #[inline]
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         self.with_c_str(f)
     }
 }
 
-impl<'a, Sized? T: WithUTF8> WithUTF8 for &'a T {
+impl<'a, Sized? T: ToUTF8> ToUTF8 for &'a T {
     #[inline]
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         (**self).with_utf8_c_str(f)
     }
 }
 
-impl WithUTF8 for String {
+impl ToUTF8 for String {
     #[inline]
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T {
         self.with_c_str(f)

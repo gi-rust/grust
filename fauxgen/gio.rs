@@ -212,7 +212,7 @@ pub mod cast {
 
 impl File {
 
-    pub fn new_for_path<T: utf8::WithUTF8>(path: T) -> refcount::Ref<File> {
+    pub fn new_for_path<T: utf8::ToUTF8>(path: T) -> refcount::Ref<File> {
         let ret = path.with_utf8_c_str(|p| {
             unsafe {
                 raw::g_file_new_for_path(p)
