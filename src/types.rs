@@ -48,5 +48,5 @@ pub type gssize         = libc::ssize_t;
 pub type gpointer       = *mut   libc::c_void;
 pub type gconstpointer  = *const libc::c_void;
 
-pub static FALSE: gboolean = 0;
-pub static TRUE : gboolean = 1;
+pub const FALSE: gboolean = 0;
+pub const TRUE : gboolean = 1;
