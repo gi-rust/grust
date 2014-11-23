@@ -82,11 +82,11 @@ pub mod enums {
         }
 
         impl fmt::Show for IOErrorEnum {
-            fn fmt(&self, format: &mut fmt::Formatter) -> Result<(), fmt::FormatError> {
+            fn fmt(&self, format: &mut fmt::Formatter) -> fmt::Result {
                 let s: &'static str = match *self {
-                    Failed   => "failed",
-                    NotFound => "not-found",
-                    Exists   => "exists",
+                    IOErrorEnum::Failed   => "failed",
+                    IOErrorEnum::NotFound => "not-found",
+                    IOErrorEnum::Exists   => "exists",
                     // ...
                 };
                 s.fmt(format)
@@ -158,10 +158,9 @@ pub mod async {
     use gobject;
 
     pub type AsyncReadyCallback =
-                proc<'a>(&'a mut gobject::Object,
-                         &'a mut super::AsyncResult)
-                        : Send;
-
+                for<'a> proc(&'a mut gobject::Object,
+                             &'a mut super::AsyncResult)
+                            : Send;
 }
 
 mod async_shim {

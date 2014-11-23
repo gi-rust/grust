@@ -155,12 +155,12 @@ impl Error {
     pub fn to_domain<E: ErrorDomain + FromPrimitive>(&self) -> ErrorMatch<E> {
         let (domain, code) = self.key();
         if domain != ErrorDomain::error_domain(None::<E>) {
-            return NotInDomain;
+            return ErrorMatch::NotInDomain;
         }
         let maybe_enum: Option<E> = FromPrimitive::from_int(code);
         match maybe_enum {
-            Some(m) => Known(m),
-            None    => Unknown(code)
+            Some(m) => ErrorMatch::Known(m),
+            None    => ErrorMatch::Unknown(code)
         }
     }
 }
