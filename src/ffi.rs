@@ -25,15 +25,11 @@ use gtype::GType;
 
 use error;
 use mainloop;
-use native;
 use quark;
 
 pub type GError = error::raw::GError;
-
 pub type GMainContext = mainloop::MainContext;
-
-pub type GMainLoop = native::MainLoop;
-
+pub type GMainLoop = mainloop::MainLoop;
 pub type GQuark = quark::Quark;
 
 #[repr(C)]
