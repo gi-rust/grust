@@ -25,15 +25,20 @@ extern crate "grust-GLib-2_0" as glib;
 extern crate "grust-GObject-2_0" as gobject;
 extern crate libc;
 
+use grust::error;
 use grust::gtype::GType;
 use grust::marker;
 use grust::object;
+use grust::quark;
 use grust::refcount;
 use grust::types;
 use grust::utf8;
 
 use cast::AsyncResult as _cast_AsyncResult;
 use cast::Cancellable as _cast_Cancellable;
+
+use std::fmt;
+use std::sync::atomic;
 
 #[repr(C)]
 pub struct AsyncResult {
@@ -63,58 +68,47 @@ pub struct FileInputStream {
     _priv: types::gpointer
 }
 
-pub mod enums {
+#[deriving(FromPrimitive,PartialEq,Eq)]
+#[repr(C)]
+pub enum IOErrorEnum {
+    Failed = 0,
+    NotFound = 1,
+    Exists = 2,
+    // ...
+}
 
-    pub mod io_error {
-
-        use grust::error;
-        use grust::quark;
-        use std::fmt;
-        use std::sync::atomic;
-
-        #[deriving(FromPrimitive,PartialEq,Eq)]
-        #[repr(C)]
-        pub enum IOErrorEnum {
-            Failed = 0,
-            NotFound = 1,
-            Exists = 2,
+impl fmt::Show for IOErrorEnum {
+    fn fmt(&self, format: &mut fmt::Formatter) -> fmt::Result {
+        let s: &'static str = match *self {
+            IOErrorEnum::Failed   => "failed",
+            IOErrorEnum::NotFound => "not-found",
+            IOErrorEnum::Exists   => "exists",
             // ...
-        }
+        };
+        s.fmt(format)
+    }
+}
 
-        impl fmt::Show for IOErrorEnum {
-            fn fmt(&self, format: &mut fmt::Formatter) -> fmt::Result {
-                let s: &'static str = match *self {
-                    IOErrorEnum::Failed   => "failed",
-                    IOErrorEnum::NotFound => "not-found",
-                    IOErrorEnum::Exists   => "exists",
-                    // ...
-                };
-                s.fmt(format)
+static mut ERROR_QUARK: atomic::AtomicUint = atomic::INIT_ATOMIC_UINT;
+
+impl error::ErrorDomain for IOErrorEnum {
+    fn error_domain(_: Option<IOErrorEnum>) -> quark::Quark {
+        unsafe {
+            let mut d = ERROR_QUARK.load(atomic::Relaxed)
+                        as quark::Quark;
+            if d == 0 {
+                d = quark::from_static_string("g-io-error-quark\0");
+                ERROR_QUARK.store(d as uint, atomic::Relaxed);
             }
-        }
-
-        static mut ERROR_QUARK: atomic::AtomicUint = atomic::INIT_ATOMIC_UINT;
-
-        impl error::ErrorDomain for IOErrorEnum {
-            fn error_domain(_: Option<IOErrorEnum>) -> quark::Quark {
-                unsafe {
-                    let mut d = ERROR_QUARK.load(atomic::Relaxed)
-                                as quark::Quark;
-                    if d == 0 {
-                        d = quark::from_static_string("g-io-error-quark\0");
-                        ERROR_QUARK.store(d as uint, atomic::Relaxed);
-                    }
-                    d
-                }
-            }
-        }
-
-        impl ToPrimitive for IOErrorEnum {
-            fn to_int(&self) -> Option<int> { Some(*self as int) }
-            fn to_i64(&self) -> Option<i64> { Some(*self as i64) }
-            fn to_u64(&self) -> Option<u64> { Some(*self as u64) }
+            d
         }
     }
+}
+
+impl ToPrimitive for IOErrorEnum {
+    fn to_int(&self) -> Option<int> { Some(*self as int) }
+    fn to_i64(&self) -> Option<i64> { Some(*self as i64) }
+    fn to_u64(&self) -> Option<u64> { Some(*self as u64) }
 }
 
 #[allow(improper_ctypes)]
