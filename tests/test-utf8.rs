@@ -22,8 +22,6 @@ use grust::types::gchar;
 
 use glib::raw::g_strdup;
 
-use std::string;
-
 static TEST_CSTR: &'static str = "¡Hola, amigos!\0";
 static TEST_STR:  &'static str = "¡Hola, amigos!";
 
@@ -79,7 +77,7 @@ fn buf_to_c_str() {
 fn buf_with_c_str() {
     let buf = new_test_buf(TEST_CSTR);
     buf.with_c_str(|p| {
-        let s = unsafe { string::raw::from_buf(p as *const u8) };
+        let s = unsafe { String::from_raw_buf(p as *const u8) };
         assert_eq!(s, String::from_str(TEST_STR));
     });
 }
@@ -88,7 +86,7 @@ fn buf_with_c_str() {
 fn buf_with_utf8_str() {
     let buf = new_test_buf(TEST_CSTR);
     buf.with_utf8_c_str(|p| {
-        let s = unsafe { string::raw::from_buf(p as *const u8) };
+        let s = unsafe { String::from_raw_buf(p as *const u8) };
         assert_eq!(s, String::from_str(TEST_STR));
     });
 }
@@ -118,7 +116,7 @@ fn str_to_c_str() {
 fn str_with_c_str() {
     let s = new_test_str(TEST_CSTR);
     s.with_c_str(|p| {
-        let s = unsafe { string::raw::from_buf(p as *const u8) };
+        let s = unsafe { String::from_raw_buf(p as *const u8) };
         assert_eq!(s, String::from_str(TEST_STR));
     });
 }
@@ -127,7 +125,7 @@ fn str_with_c_str() {
 fn str_with_utf8_str() {
     let s = new_test_str(TEST_CSTR);
     s.with_utf8_c_str(|p| {
-        let s = unsafe { string::raw::from_buf(p as *const u8) };
+        let s = unsafe { String::from_raw_buf(p as *const u8) };
         assert_eq!(s, String::from_str(TEST_STR));
     });
 }
@@ -148,12 +146,12 @@ fn str_ne() {
 
 #[test]
 fn chars() {
-    let s = new_test_str("A\u0410\u4E00\U00100000.\0");
+    let s = new_test_str("A\u{0410}\u{4E00}\u{100000}.\0");
     let mut chars = s.chars();
     assert_eq!(chars.next().unwrap(), 'A');
-    assert_eq!(chars.next().unwrap(), '\u0410');
-    assert_eq!(chars.next().unwrap(), '\u4E00');
-    assert_eq!(chars.next().unwrap(), '\U00100000');
+    assert_eq!(chars.next().unwrap(), '\u{0410}');
+    assert_eq!(chars.next().unwrap(), '\u{4E00}');
+    assert_eq!(chars.next().unwrap(), '\u{100000}');
     assert_eq!(chars.next().unwrap(), '.');
     assert_eq!(chars.next(), None);
 }

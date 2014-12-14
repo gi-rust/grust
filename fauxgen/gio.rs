@@ -68,7 +68,7 @@ pub struct FileInputStream {
     _priv: types::gpointer
 }
 
-#[deriving(FromPrimitive,PartialEq,Eq)]
+#[deriving(Copy,FromPrimitive,PartialEq,Eq)]
 #[repr(C)]
 pub enum IOErrorEnum {
     Failed = 0,
@@ -250,9 +250,9 @@ impl File {
                                               res.as_mut_gio_async_result(),
                                               err.slot_ptr());
             if err.is_set() {
-                std::result::Err(err)
+                std::result::Result::Err(err)
             } else {
-                std::result::Ok(refcount::raw::ref_from_ptr(ret))
+                std::result::Result::Ok(refcount::raw::ref_from_ptr(ret))
             }
         }
     }

@@ -28,7 +28,6 @@ use std::mem::transmute;
 use std::ptr::copy_nonoverlapping_memory;
 use std::slice;
 use std::str;
-use std::string;
 
 pub struct UTF8Chars<'a> {
     data: *const gchar,
@@ -44,7 +43,7 @@ impl<'a> UTF8Chars<'a> {
 
     pub fn to_string(&self) -> String {
         unsafe {
-            string::raw::from_buf(self.data as *const u8)
+            String::from_raw_buf(self.data as *const u8)
         }
     }
 }
@@ -213,7 +212,7 @@ impl UTF8Str {
 
     pub fn to_string(&self) -> String {
         unsafe {
-            string::raw::from_buf_len(self.buf.data as *const u8, self.len)
+            String::from_raw_buf_len(self.buf.data as *const u8, self.len)
         }
     }
 }
@@ -233,13 +232,9 @@ impl Clone for UTF8Str {
 impl Str for UTF8Str {
     fn as_slice<'a>(&'a self) -> &'a str {
         unsafe {
-            slice::raw::buf_as_slice(
-                self.buf.data as *const u8,
-                self.len,
-                |bytes| {
-                    let s = str::raw::from_utf8(bytes);
-                    transmute(s)
-                })
+            let bytes: &'a [u8] = transmute(
+                    slice::from_raw_buf(&self.buf.data, self.len));
+            str::from_utf8_unchecked(bytes)
         }
     }
 }
@@ -274,12 +269,6 @@ impl PartialEq for UTF8Str {
 }
 
 impl Eq for UTF8Str { }
-
-impl<S: Str> Equiv<S> for UTF8Str {
-    fn equiv(&self, other: &S) -> bool {
-        self.as_slice() == other.as_slice()
-    }
-}
 
 pub trait ToUTF8 for Sized? {
     fn with_utf8_c_str<T>(&self, f: |*const gchar| -> T) -> T;

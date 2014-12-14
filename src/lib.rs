@@ -17,11 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #![crate_name = "grust"]
-
 #![crate_type = "lib"]
-
-#![desc = "GObject introspection bindings"]
-#![license = "LGPL 2.1"]
 
 #![feature(unsafe_destructor)]
 
