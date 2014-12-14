@@ -16,12 +16,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use gio::File;
-use gio::enums::io_error;
+use gio::{File,IOErrorEnum};
 use grust::refcount::{Ref,SyncRef};
-use grust::native::{LoopRunner,MainLoop};
+use grust::mainloop::{LoopRunner,MainLoop};
 use grust::object;
-use grust::error;
+use grust::error::ErrorMatch;
 
 fn run_on_mainloop(setup: |mainloop: &mut MainLoop|) {
     let runner = LoopRunner::new();
@@ -73,7 +72,7 @@ fn error_matches() {
                 match f.read_finish(res) {
                     Ok(_)  => { unreachable!() }
                     Err(e) => {
-                        assert!(e.matches(io_error::NotFound));
+                        assert!(e.matches(IOErrorEnum::NotFound));
                     }
                 }
                 rml.quit();
@@ -92,14 +91,14 @@ fn error_to_domain() {
                 match f.read_finish(res) {
                     Ok(_)  => { unreachable!() }
                     Err(e) => {
-                        match e.to_domain::<io_error::IOErrorEnum>() {
-                            error::NotInDomain => { unreachable!() }
-                            error::Unknown(code) => {
+                        match e.to_domain::<IOErrorEnum>() {
+                            ErrorMatch::Known(code) => {
+                                assert_eq!(code, IOErrorEnum::NotFound);
+                            }
+                            ErrorMatch::Unknown(code) => {
                                 panic!("unknown error code {}", code)
                             }
-                            error::Known(code) => {
-                                assert_eq!(code, io_error::NotFound);
-                            }
+                            _ => { unreachable!() }
                         }
                     }
                 }
