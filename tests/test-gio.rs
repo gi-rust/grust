@@ -16,9 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use gio::{AsyncResult,File,IOErrorEnum};
-use gobject;
-use grust::callback::AsyncCallback as Cb;
+use gio::{File,IOErrorEnum};
 use grust::refcount::{Ref,SyncRef};
 use grust::mainloop::{LoopRunner,MainLoop};
 use grust::object;
@@ -52,15 +50,14 @@ fn async() {
         let mut f = File::new_for_path("/dev/null");
         let mut rml = SyncRef::new(mainloop);
         f.read_async(0, None,
-            Cb::new(
-                move |: obj: &mut gobject::Object, res: &mut AsyncResult| {
-                    let f: &mut File = object::cast_mut(obj);
-                    match f.read_finish(res) {
-                        Ok(_)  => {}
-                        Err(e) => { println!("Error: {}", e.message()) }
-                    }
-                    rml.quit();
-                }));
+            move |: obj, res| {
+                let f: &mut File = object::cast_mut(obj);
+                match f.read_finish(res) {
+                    Ok(_)  => {}
+                    Err(e) => { println!("Error: {}", e.message()) }
+                }
+                rml.quit();
+            });
     })
 }
 
@@ -70,17 +67,16 @@ fn error_matches() {
         let mut rml = SyncRef::new(mainloop);
         let mut f = File::new_for_path("./does-not-exist");
         f.read_async(0, None,
-            Cb::new(
-                move |: obj: &mut gobject::Object, res: &mut AsyncResult| {
-                    let f: &mut File = object::cast_mut(obj);
-                    match f.read_finish(res) {
-                        Ok(_)  => { unreachable!() }
-                        Err(e) => {
-                            assert!(e.matches(IOErrorEnum::NotFound));
-                        }
+            move |: obj, res| {
+                let f: &mut File = object::cast_mut(obj);
+                match f.read_finish(res) {
+                    Ok(_)  => { unreachable!() }
+                    Err(e) => {
+                        assert!(e.matches(IOErrorEnum::NotFound));
                     }
-                    rml.quit();
-                }));
+                }
+                rml.quit();
+            });
     })
 }
 
@@ -90,24 +86,23 @@ fn error_to_domain() {
         let mut rml = SyncRef::new(mainloop);
         let mut f = File::new_for_path("./does-not-exist");
         f.read_async(0, None,
-            Cb::new(
-                move |: obj: &mut gobject::Object, res: &mut AsyncResult| {
-                    let f: &mut File = object::cast_mut(obj);
-                    match f.read_finish(res) {
-                        Ok(_)  => { unreachable!() }
-                        Err(e) => {
-                            match e.to_domain::<IOErrorEnum>() {
-                                ErrorMatch::Known(code) => {
-                                    assert_eq!(code, IOErrorEnum::NotFound);
-                                }
-                                ErrorMatch::Unknown(code) => {
-                                    panic!("unknown error code {}", code)
-                                }
-                                _ => { unreachable!() }
+            move |: obj, res| {
+                let f: &mut File = object::cast_mut(obj);
+                match f.read_finish(res) {
+                    Ok(_)  => { unreachable!() }
+                    Err(e) => {
+                        match e.to_domain::<IOErrorEnum>() {
+                            ErrorMatch::Known(code) => {
+                                assert_eq!(code, IOErrorEnum::NotFound);
                             }
+                            ErrorMatch::Unknown(code) => {
+                                panic!("unknown error code {}", code)
+                            }
+                            _ => { unreachable!() }
                         }
                     }
-                    rml.quit();
-                }));
+                }
+                rml.quit();
+            });
     })
 }

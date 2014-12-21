@@ -151,10 +151,6 @@ pub mod raw {
     }
 }
 
-pub type AsyncReadyCallback<'a> = callback::AsyncCallback<(&'a mut gobject::Object,
-                                                           &'a mut AsyncResult),
-                                                          ()>;
-
 mod async_shim {
 
     use grust::callback;
@@ -217,23 +213,25 @@ impl File {
         }
     }
 
-    pub fn read_async(&mut self,
-                      io_priority: types::gint,
-                      cancellable: Option<&mut Cancellable>,
-                      callback: AsyncReadyCallback)
+    pub fn read_async<F>(&mut self,
+                         io_priority: types::gint,
+                         cancellable: Option<&mut Cancellable>,
+                         callback: F)
+        where F : FnOnce(&mut gobject::Object, &mut AsyncResult) + Send
     {
         unsafe {
-            let raw_cancellable =
+            let cancellable =
                 match cancellable {
                     Some(c) => c.as_mut_gio_cancellable() as *mut raw::GCancellable,
                     None    => std::ptr::null_mut::<raw::GCancellable>()
                 };
+            let callback = callback::AsyncCallback::new(callback).into_raw_ptr();
 
             raw::g_file_read_async(self,
                                    io_priority as libc::c_int,
-                                   raw_cancellable,
+                                   cancellable,
                                    async_shim::async_ready_callback,
-                                   callback.into_raw_ptr());
+                                   callback);
         }
     }
 
