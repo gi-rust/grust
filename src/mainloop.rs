@@ -20,6 +20,7 @@ use ffi;
 use marker;
 use refcount::Refcount;
 use refcount::{RefcountFuncs,RefFunc,UnrefFunc};
+use refcount::SyncRef;
 use types::FALSE;
 
 use std::kinds::marker as std_marker;
@@ -74,12 +75,12 @@ impl LoopRunner {
         }
     }
 
-    pub fn run_after(&self, setup: |&mut MainLoop|) {
+    pub fn run_after(&self, setup: |SyncRef<MainLoop>|) {
         unsafe {
             let ctx = ffi::g_main_loop_get_context(self.mainloop);
             ffi::g_main_context_push_thread_default(ctx);
 
-            setup(&mut *self.mainloop);
+            setup(SyncRef::new(&mut *self.mainloop));
 
             ffi::g_main_loop_run(self.mainloop);
 

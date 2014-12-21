@@ -22,7 +22,7 @@ use grust::mainloop::{LoopRunner,MainLoop};
 use grust::object;
 use grust::error::ErrorMatch;
 
-fn run_on_mainloop(setup: |mainloop: &mut MainLoop|) {
+fn run_on_mainloop(setup: |SyncRef<MainLoop>|) {
     let runner = LoopRunner::new();
     runner.run_after(setup);
 }
@@ -46,9 +46,8 @@ fn clone() {
 
 #[test]
 fn async() {
-    run_on_mainloop(|mainloop| {
+    run_on_mainloop(|mut mainloop| {
         let mut f = File::new_for_path("/dev/null");
-        let mut rml = SyncRef::new(mainloop);
         f.read_async(0, None,
             move |: obj, res| {
                 let f: &mut File = object::cast_mut(obj);
@@ -56,15 +55,14 @@ fn async() {
                     Ok(_)  => {}
                     Err(e) => { println!("Error: {}", e.message()) }
                 }
-                rml.quit();
+                mainloop.quit();
             });
     })
 }
 
 #[test]
 fn error_matches() {
-    run_on_mainloop(|mainloop| {
-        let mut rml = SyncRef::new(mainloop);
+    run_on_mainloop(|mut mainloop| {
         let mut f = File::new_for_path("./does-not-exist");
         f.read_async(0, None,
             move |: obj, res| {
@@ -75,15 +73,14 @@ fn error_matches() {
                         assert!(e.matches(IOErrorEnum::NotFound));
                     }
                 }
-                rml.quit();
+                mainloop.quit();
             });
     })
 }
 
 #[test]
 fn error_to_domain() {
-    run_on_mainloop(|mainloop| {
-        let mut rml = SyncRef::new(mainloop);
+    run_on_mainloop(|mut mainloop| {
         let mut f = File::new_for_path("./does-not-exist");
         f.read_async(0, None,
             move |: obj, res| {
@@ -102,7 +99,7 @@ fn error_to_domain() {
                         }
                     }
                 }
-                rml.quit();
+                mainloop.quit();
             });
     })
 }
