@@ -42,13 +42,6 @@ impl<T: Refcount> Ref<T> {
         unsafe { make_ref(source as *mut T) }
     }
 
-    pub fn borrow<'a>(&'a self) -> &'a T {
-        unsafe { &*self.raw_ptr() }
-    }
-    pub fn borrow_mut<'a>(&'a mut self) -> &'a mut T {
-        unsafe { &mut *self.raw_mut_ptr() }
-    }
-
     pub fn raw_ptr(&self) -> *const T {
         self.plumbing.ptr as gconstpointer as *const T
     }
@@ -60,13 +53,6 @@ impl<T: Refcount> Ref<T> {
 impl<T: Refcount + Send + Sync> SyncRef<T> {
     pub fn new(source: &mut T) -> SyncRef<T> {
         unsafe { make_sync_ref(source as *mut T) }
-    }
-
-    pub fn borrow<'a>(&'a self) -> &'a T {
-        unsafe { &*self.raw_ptr() }
-    }
-    pub fn borrow_mut<'a>(&'a mut self) -> &'a mut T {
-        unsafe { &mut *self.raw_mut_ptr() }
     }
 
     pub fn raw_ptr(&self) -> *const T {

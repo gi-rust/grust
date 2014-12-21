@@ -30,8 +30,8 @@ fn run_on_mainloop(setup: |SyncRef<MainLoop>|) {
 #[test]
 fn new_ref() {
     let mut f = File::new_for_path("/dev/null");
-    let mut g = Ref::new(f.borrow_mut());
-    let path = g.borrow_mut().get_path();
+    let mut g = Ref::new(f.deref_mut());
+    let path = g.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
 }
 
@@ -39,8 +39,7 @@ fn new_ref() {
 fn clone() {
     let rf = File::new_for_path("/dev/null");
     let mut rg = rf.clone();
-    let g = rg.borrow_mut();
-    let path = g.get_path();
+    let path = rg.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
 }
 
