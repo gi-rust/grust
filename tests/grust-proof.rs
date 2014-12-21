@@ -19,9 +19,10 @@
 extern crate grust;
 extern crate "grust-GLib-2_0" as glib;
 extern crate "grust-Gio-2_0" as gio;
+extern crate libc;
 
-#[path = "test-utf8.rs"]
-mod utf8;
+#[path = "test-gstr.rs"]
+mod gstrtest;
 
 #[path = "test-gio.rs"]
 mod giotest;

@@ -26,13 +26,14 @@ extern crate "grust-GObject-2_0" as gobject;
 extern crate libc;
 
 use grust::error;
+use grust::gstr;
+use grust::gstr::IntoUTF8;
 use grust::gtype::GType;
 use grust::marker;
 use grust::object;
 use grust::quark;
 use grust::refcount;
 use grust::types;
-use grust::utf8;
 
 use cast::AsyncResult as _cast_AsyncResult;
 use cast::Cancellable as _cast_Cancellable;
@@ -205,19 +206,21 @@ pub mod cast {
 
 impl File {
 
-    pub fn new_for_path<T: utf8::ToUTF8>(path: T) -> refcount::Ref<File> {
-        let ret = path.with_utf8_c_str(|p| {
-            unsafe {
-                raw::g_file_new_for_path(p)
-            }
-        });
-        unsafe { refcount::raw::ref_from_ptr(ret) }
+    // TODO: need a macro for static UTF8In literals
+    // to make the argument &UTF8In without having to put tedious code
+    // into existing tests
+    pub fn new_for_path(path: &str) -> refcount::Ref<File> {
+        let p = path.into_utf8().unwrap();
+        unsafe {
+            let ret = raw::g_file_new_for_path(p.as_ptr());
+            refcount::raw::ref_from_ptr(ret)
+        }
     }
 
-    pub fn get_path<'a>(&mut self) -> utf8::UTF8Buf {
+    pub fn get_path<'a>(&mut self) -> gstr::GStr {
         unsafe {
             let ret = raw::g_file_get_path(self);
-            utf8::UTF8Buf::wrap(ret)
+            gstr::GStr::from_raw_buf(ret)
         }
     }
 

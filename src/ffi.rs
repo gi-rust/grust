@@ -54,9 +54,9 @@ extern {
     pub fn g_main_loop_get_context(l: *mut GMainLoop) -> *mut GMainContext; 
     pub fn g_main_loop_run(l: *mut GMainLoop);
     pub fn g_main_loop_quit(l: *mut GMainLoop);
-    pub fn g_malloc(n_bytes: gsize) -> gpointer;
     pub fn g_quark_from_static_string(string: *const gchar) -> GQuark;
     pub fn g_strdup(str: *const gchar) -> *mut gchar;
+    pub fn g_utf8_validate(str: *const gchar, max_len: gssize, end: *mut *const gchar) -> gboolean;
 }
 
 #[link(name = "gobject-2.0")]

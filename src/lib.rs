@@ -25,6 +25,7 @@ extern crate libc;
 extern crate alloc;
 
 pub mod error;
+pub mod gstr;
 pub mod gtype;
 pub mod mainloop;
 pub mod marker;
@@ -32,7 +33,6 @@ pub mod object;
 pub mod quark;
 pub mod refcount;
 pub mod types;
-pub mod utf8;
 pub mod util;
 
 mod ffi;

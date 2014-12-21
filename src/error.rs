@@ -18,8 +18,7 @@
 
 use ffi;
 use quark::Quark;
-use types::{gint,gsize,gssize};
-use utf8::UTF8Str;
+use types::{gint,gpointer,gsize,gssize};
 use util::is_true;
 
 use std::default::Default;
@@ -129,9 +128,13 @@ impl Error {
                             &mut bytes_conv as *mut gsize,
                             ptr::null_mut());
             if conv_msg.is_not_null() {
-                let str = UTF8Str::wrap(conv_msg, bytes_conv as uint);
                 if bytes_read as uint == len {
-                    return str.to_string();
+                    let res = String::from_raw_buf_len(
+                            conv_msg as *const u8, bytes_conv as uint);
+                    ffi::g_free(conv_msg as gpointer);
+                    return res;
+                } else {
+                    ffi::g_free(conv_msg as gpointer);
                 }
             }
 
