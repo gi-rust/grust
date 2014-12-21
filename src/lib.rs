@@ -19,11 +19,13 @@
 #![crate_name = "grust"]
 #![crate_type = "lib"]
 
+#![feature(unboxed_closures)]
 #![feature(unsafe_destructor)]
 
 extern crate libc;
 extern crate alloc;
 
+pub mod callback;
 pub mod error;
 pub mod gstr;
 pub mod gtype;

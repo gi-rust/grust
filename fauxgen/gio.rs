@@ -20,11 +20,14 @@
 
 #![crate_type = "lib"]
 
+#![feature(unboxed_closures)]
+
 extern crate grust;
 extern crate "grust-GLib-2_0" as glib;
 extern crate "grust-GObject-2_0" as gobject;
 extern crate libc;
 
+use grust::callback;
 use grust::error;
 use grust::gstr;
 use grust::gstr::IntoUTF8;
@@ -148,32 +151,22 @@ pub mod raw {
     }
 }
 
-pub mod async {
-
-    use gobject;
-
-    pub type AsyncReadyCallback =
-                for<'a> proc(&'a mut gobject::Object,
-                             &'a mut super::AsyncResult)
-                            : Send;
-}
+pub type AsyncReadyCallback<'a> = callback::AsyncCallback<(&'a mut gobject::Object,
+                                                           &'a mut AsyncResult),
+                                                          ()>;
 
 mod async_shim {
 
+    use grust::callback;
     use grust::types;
-    use super::async;
     use super::raw;
     use gobject;
-    use std::mem;
 
     pub extern "C" fn async_ready_callback(source_object: *mut gobject::raw::GObject,
                                            res: *mut raw::GAsyncResult,
                                            user_data: types::gpointer) {
         unsafe {
-            let callback: Box<async::AsyncReadyCallback> =
-                    mem::transmute(user_data);
-
-            (*callback)(&mut *source_object, &mut *res);
+            callback::invoke(user_data, (&mut *source_object, &mut *res))
         }
     }
 }
@@ -227,20 +220,20 @@ impl File {
     pub fn read_async(&mut self,
                       io_priority: types::gint,
                       cancellable: Option<&mut Cancellable>,
-                      callback: Box<async::AsyncReadyCallback>) {
+                      callback: AsyncReadyCallback)
+    {
         unsafe {
             let raw_cancellable =
                 match cancellable {
                     Some(c) => c.as_mut_gio_cancellable() as *mut raw::GCancellable,
                     None    => std::ptr::null_mut::<raw::GCancellable>()
                 };
-            let raw_callback: types::gpointer = std::mem::transmute(callback);
 
             raw::g_file_read_async(self,
                                    io_priority as libc::c_int,
                                    raw_cancellable,
                                    async_shim::async_ready_callback,
-                                   raw_callback);
+                                   callback.into_raw_ptr());
         }
     }
 

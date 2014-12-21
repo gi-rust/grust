@@ -18,6 +18,7 @@
 
 extern crate grust;
 extern crate "grust-GLib-2_0" as glib;
+extern crate "grust-GObject-2_0" as gobject;
 extern crate "grust-Gio-2_0" as gio;
 extern crate libc;
 
