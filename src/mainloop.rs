@@ -57,7 +57,7 @@ pub struct MainLoop {
 }
 
 pub struct LoopRunner {
-    l: *mut MainLoop,
+    mainloop: *mut MainLoop,
 
     // Can't send the runner around due to the thread default stuff
     no_send: std_marker::NoSend
@@ -67,21 +67,21 @@ impl LoopRunner {
     pub fn new() -> LoopRunner {
         unsafe {
             let ctx = ffi::g_main_context_new();
-            let l = ffi::g_main_loop_new(ctx, FALSE);
+            let mainloop = ffi::g_main_loop_new(ctx, FALSE);
             ffi::g_main_context_unref(ctx);
 
-            LoopRunner { l: l, no_send: std_marker::NoSend }
+            LoopRunner { mainloop: mainloop, no_send: std_marker::NoSend }
         }
     }
 
     pub fn run_after(&self, setup: |&mut MainLoop|) {
         unsafe {
-            let ctx = ffi::g_main_loop_get_context(self.l);
+            let ctx = ffi::g_main_loop_get_context(self.mainloop);
             ffi::g_main_context_push_thread_default(ctx);
 
-            setup(&mut *self.l);
+            setup(&mut *self.mainloop);
 
-            ffi::g_main_loop_run(self.l);
+            ffi::g_main_loop_run(self.mainloop);
 
             ffi::g_main_context_pop_thread_default(ctx);
         }
@@ -92,7 +92,7 @@ impl LoopRunner {
 impl Drop for LoopRunner {
     fn drop(&mut self) {
         unsafe {
-            ffi::g_main_loop_unref(self.l);
+            ffi::g_main_loop_unref(self.mainloop);
         }
     }
 }
