@@ -114,9 +114,8 @@ impl Error {
             let len = libc::strlen(raw_msg as *const libc::c_char) as uint;
             let msg_bytes = slice::from_raw_buf(&raw_msg, len);
 
-            match str::from_utf8(msg_bytes) {
-                Some(s) => { return String::from_str(s); }
-                None    => {}
+            if let Ok(s) = str::from_utf8(msg_bytes) {
+                return String::from_str(s);
             }
 
             let mut bytes_read: gsize = 0;
@@ -139,7 +138,7 @@ impl Error {
             }
 
             // As the last resort, try to salvage what we can
-            String::from_utf8_lossy(msg_bytes).into_string()
+            String::from_utf8_lossy(msg_bytes).into_owned()
         }
     }
 
