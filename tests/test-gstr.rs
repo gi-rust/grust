@@ -102,8 +102,8 @@ fn test_g_str_ne() {
 }
 
 #[test]
-fn test_utf8_arg_from_static() {
-    let s = Utf8Arg::from_static(TEST_CSTR);
+fn test_utf8_arg_from_static_str() {
+    let s = Utf8Arg::from_static_str(TEST_CSTR);
     assert_eq!(s.as_ptr(), TEST_CSTR.as_ptr() as *const gchar);
 }
 

@@ -113,7 +113,7 @@ impl Utf8Arg {
         Some(vec_into_utf8(bytes.to_vec()))
     }
 
-    pub fn from_static(s: &'static str) -> Utf8Arg {
+    pub fn from_static_str(s: &'static str) -> Utf8Arg {
         let bytes = s.as_bytes();
         if bytes[bytes.len() - 1] != 0 {
             panic!("static string is not null-terminated: \"{}\"", s);
