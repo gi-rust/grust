@@ -30,7 +30,7 @@ extern crate libc;
 use grust::callback;
 use grust::error;
 use grust::gstr;
-use grust::gstr::IntoUTF8;
+use grust::gstr::IntoUtf8;
 use grust::gtype::GType;
 use grust::marker;
 use grust::object;

@@ -16,7 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use grust::gstr::{GStr,IntoUTF8,UTF8In};
+use grust::gstr::{GStr, IntoUtf8, Utf8Arg};
 
 use grust::types::gchar;
 
@@ -102,15 +102,15 @@ fn test_g_str_ne() {
 }
 
 #[test]
-fn test_utf8_in_from_static() {
-    let s = UTF8In::from_static(TEST_CSTR);
+fn test_utf8_arg_from_static() {
+    let s = Utf8Arg::from_static(TEST_CSTR);
     assert_eq!(s.as_ptr(), TEST_CSTR.as_ptr() as *const gchar);
 }
 
 #[test]
-fn test_utf8_in_from_str() {
+fn test_utf8_arg_from_str() {
     let s = String::from_str(TEST_STR);
-    let c = UTF8In::from_str(s.as_slice()).unwrap();
+    let c = Utf8Arg::from_str(s.as_slice()).unwrap();
     assert!(g_str_equal(c.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
 }
 

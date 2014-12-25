@@ -94,18 +94,18 @@ enum GStrData {
     GLib(GStr)
 }
 
-pub struct UTF8In {
+pub struct Utf8Arg {
     data: GStrData
 }
 
-fn vec_into_utf8(mut v: Vec<u8>) -> UTF8In {
+fn vec_into_utf8(mut v: Vec<u8>) -> Utf8Arg {
     v.push(NUL);
-    UTF8In { data: GStrData::Owned(v) }
+    Utf8Arg { data: GStrData::Owned(v) }
 }
 
-impl UTF8In {
+impl Utf8Arg {
 
-    pub fn from_str(s: &str) -> Option<UTF8In> {
+    pub fn from_str(s: &str) -> Option<Utf8Arg> {
         let bytes = s.as_bytes();
         if bytes.contains(&NUL) {
             return None;
@@ -113,12 +113,12 @@ impl UTF8In {
         Some(vec_into_utf8(bytes.to_vec()))
     }
 
-    pub fn from_static(s: &'static str) -> UTF8In {
+    pub fn from_static(s: &'static str) -> Utf8Arg {
         let bytes = s.as_bytes();
         if bytes[bytes.len() - 1] != 0 {
             panic!("static string is not null-terminated: \"{}\"", s);
         }
-        UTF8In { data: GStrData::Static(bytes) }
+        Utf8Arg { data: GStrData::Static(bytes) }
     }
 
     pub fn as_ptr(&self) -> *const gchar {
@@ -130,32 +130,28 @@ impl UTF8In {
     }
 }
 
-pub trait IntoUTF8 {
+pub trait IntoUtf8 {
 
-    fn into_utf8(self) -> Option<UTF8In>;
+    fn into_utf8(self) -> Option<Utf8Arg>;
 
-    unsafe fn into_utf8_unchecked(self) -> UTF8In;
+    unsafe fn into_utf8_unchecked(self) -> Utf8Arg;
 }
 
-impl<'a> IntoUTF8 for &'a str {
+impl<'a> IntoUtf8 for &'a str {
 
-    fn into_utf8(self) -> Option<UTF8In> {
-        let bytes = self.as_bytes();
-        if bytes.contains(&NUL) {
-            None
-        } else {
-            Some(vec_into_utf8(bytes.to_vec()))
-        }
+    #[inline]
+    fn into_utf8(self) -> Option<Utf8Arg> {
+        Utf8Arg::from_str(self)
     }
 
-    unsafe fn into_utf8_unchecked(self) -> UTF8In {
+    unsafe fn into_utf8_unchecked(self) -> Utf8Arg {
         vec_into_utf8(self.as_bytes().to_vec())
     }
 }
 
-impl IntoUTF8 for String {
+impl IntoUtf8 for String {
 
-    fn into_utf8(self) -> Option<UTF8In> {
+    fn into_utf8(self) -> Option<Utf8Arg> {
         if self.as_bytes().contains(&NUL) {
             None
         } else {
@@ -163,24 +159,24 @@ impl IntoUTF8 for String {
         }
     }
 
-    unsafe fn into_utf8_unchecked(self) -> UTF8In {
+    unsafe fn into_utf8_unchecked(self) -> Utf8Arg {
         vec_into_utf8(self.into_bytes())
     }
 }
 
-impl IntoUTF8 for GStr {
+impl IntoUtf8 for GStr {
 
-    fn into_utf8(self) -> Option<UTF8In> {
+    fn into_utf8(self) -> Option<Utf8Arg> {
         let valid = unsafe {
             ffi::g_utf8_validate(self.ptr, -1, ptr::null_mut())
         };
         if is_false(valid) {
             return None;
         }
-        Some(UTF8In { data: GStrData::GLib(self) })
+        Some(Utf8Arg { data: GStrData::GLib(self) })
     }
 
-    unsafe fn into_utf8_unchecked(self) -> UTF8In {
-        UTF8In { data: GStrData::GLib(self) }
+    unsafe fn into_utf8_unchecked(self) -> Utf8Arg {
+        Utf8Arg { data: GStrData::GLib(self) }
     }
 }
