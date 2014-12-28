@@ -17,16 +17,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use ffi;
+use gstr;
 use quark::Quark;
-use types::{gint,gpointer,gsize,gssize};
-use util::is_true;
 
 use std::default::Default;
+use std::error::Error as ErrorTrait;
+use std::mem;
 use std::ptr;
-use std::slice;
-use std::str;
-
-use libc;
 
 pub mod raw {
 
@@ -52,13 +49,25 @@ pub fn unset() -> Error {
 }
 
 pub trait ErrorDomain {
-    fn error_domain(_: Option<Self>) -> Quark;
+    fn error_domain() -> Quark;
+    fn from_code(code: int) -> Option<Self>;
 }
 
-pub enum ErrorMatch<T> {
+#[deriving(Show)]
+pub enum Match<T> {
     NotInDomain,
     Known(T),
     Unknown(int)
+}
+
+impl<T> PartialEq for Match<T> where T: PartialEq {
+    fn eq(&self, other: &Match<T>) -> bool {
+        match (self, other) {
+            (&Match::Known(ref a), &Match::Known(ref b)) => *a == *b,
+            (&Match::Unknown(a), &Match::Unknown(b)) => a == b,
+            _ => false
+        }
+    }
 }
 
 impl Drop for Error {
@@ -74,8 +83,10 @@ impl Clone for Error {
         if self.ptr.is_null() {
             unset()
         } else {
-            unsafe {
-                Error { ptr: ffi::g_error_copy(self.ptr as *const raw::GError) }
+            Error {
+                ptr: unsafe {
+                    ffi::g_error_copy(self.ptr as *const raw::GError)
+                }
             }
         }
     }
@@ -96,74 +107,59 @@ impl Error {
         if self.ptr.is_null() {
             panic!("use of an unset GError pointer slot");
         }
-        unsafe { ((*self.ptr).domain, (*self.ptr).code as int) }
-    }
-
-    pub fn message(&self) -> String {
-
-        if self.ptr.is_null() {
-            return String::from_str("no error");
-        }
-
-        // GError messages may come in any shape or form, but the best guesses
-        // at the encoding would be: 1) UTF-8; 2) the locale encoding.
-
         unsafe {
-            let raw_msg = (*self.ptr).message as *const u8;
-            assert!(raw_msg.is_not_null());
-            let len = libc::strlen(raw_msg as *const libc::c_char) as uint;
-            let msg_bytes = slice::from_raw_buf(&raw_msg, len);
-
-            if let Ok(s) = str::from_utf8(msg_bytes) {
-                return String::from_str(s);
-            }
-
-            let mut bytes_read: gsize = 0;
-            let mut bytes_conv: gsize = 0;
-            let conv_msg = ffi::g_locale_to_utf8(
-                            raw_msg as *const libc::c_char,
-                            len as gssize,
-                            &mut bytes_read as *mut gsize,
-                            &mut bytes_conv as *mut gsize,
-                            ptr::null_mut());
-            if conv_msg.is_not_null() {
-                if bytes_read as uint == len {
-                    let res = String::from_raw_buf_len(
-                            conv_msg as *const u8, bytes_conv as uint);
-                    ffi::g_free(conv_msg as gpointer);
-                    return res;
-                } else {
-                    ffi::g_free(conv_msg as gpointer);
-                }
-            }
-
-            // As the last resort, try to salvage what we can
-            String::from_utf8_lossy(msg_bytes).into_owned()
+            let raw = &*self.ptr;
+            (Quark::new(raw.domain), raw.code as int)
         }
     }
 
-    pub fn matches<E: ErrorDomain + ToPrimitive + Copy>(&self, expected: E)
-                    -> bool {
-        if self.ptr.is_null() {
-            panic!("use of an unset GError pointer slot");
-        }
-        let domain = ErrorDomain::error_domain(Some(expected));
-        let code = expected.to_int().unwrap() as gint;
-        unsafe {
-            is_true(ffi::g_error_matches(self.ptr as *const raw::GError,
-                                         domain, code))
-        }
-    }
-
-    pub fn to_domain<E: ErrorDomain + FromPrimitive>(&self) -> ErrorMatch<E> {
+    pub fn to_domain<D>(&self) -> Match<D>
+        where D: ErrorDomain
+    {
         let (domain, code) = self.key();
-        if domain != ErrorDomain::error_domain(None::<E>) {
-            return ErrorMatch::NotInDomain;
+        if domain == ErrorDomain::error_domain() {
+            if let Some(v) = ErrorDomain::from_code(code) {
+                Match::Known(v)
+            } else {
+                Match::Unknown(code)
+            }
+        } else {
+            Match::NotInDomain
         }
-        let maybe_enum: Option<E> = FromPrimitive::from_int(code);
-        match maybe_enum {
-            Some(m) => ErrorMatch::Known(m),
-            None    => ErrorMatch::Unknown(code)
+    }
+}
+
+impl ErrorTrait for Error {
+    fn description<'a>(&'a self) -> &'a str {
+        if self.ptr.is_null() {
+            return "no error";
         }
+        let mut os: Option<&'a str> = None;
+        let msg = unsafe { &(*self.ptr).message };
+        if msg.is_not_null() {
+            os = unsafe { gstr::parse_as_utf8(msg).ok() };
+        }
+        if os.is_none() {
+            let domain = unsafe { Quark::new((*self.ptr).domain) };
+            os = domain.to_str().ok().map(|s| {
+                unsafe { mem::copy_lifetime(self, s) }
+            });
+        }
+        if let Some(s) = os {
+            s
+        } else {
+            "[non-UTF-8 message]"
+        }
+    }
+
+    fn detail(&self) -> Option<String> {
+        if self.ptr.is_not_null() {
+            let msg = unsafe { &(*self.ptr).message };
+            if msg.is_not_null() {
+                let msg_bytes = unsafe { gstr::parse_as_bytes(msg) };
+                return Some(String::from_utf8_lossy(msg_bytes).into_owned());
+            }
+        }
+        None
     }
 }

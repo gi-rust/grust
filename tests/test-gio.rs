@@ -20,7 +20,8 @@ use gio::{File,IOErrorEnum};
 use grust::refcount::{Ref,SyncRef};
 use grust::mainloop::{LoopRunner,MainLoop};
 use grust::object;
-use grust::error::ErrorMatch;
+use grust::error::Match as ErrorMatch;
+use std::error::Error;
 
 fn run_on_mainloop(setup: |SyncRef<MainLoop>|) {
     let runner = LoopRunner::new();
@@ -52,25 +53,7 @@ fn async() {
                 let f: &mut File = object::cast_mut(obj);
                 match f.read_finish(res) {
                     Ok(_)  => {}
-                    Err(e) => { println!("Error: {}", e.message()) }
-                }
-                mainloop.quit();
-            });
-    })
-}
-
-#[test]
-fn error_matches() {
-    run_on_mainloop(|mut mainloop| {
-        let mut f = File::new_for_path("./does-not-exist");
-        f.read_async(0, None,
-            move |: obj, res| {
-                let f: &mut File = object::cast_mut(obj);
-                match f.read_finish(res) {
-                    Ok(_)  => { unreachable!() }
-                    Err(e) => {
-                        assert!(e.matches(IOErrorEnum::NotFound));
-                    }
+                    Err(e) => { println!("Error: {}", e.description()) }
                 }
                 mainloop.quit();
             });
@@ -87,15 +70,34 @@ fn error_to_domain() {
                 match f.read_finish(res) {
                     Ok(_)  => { unreachable!() }
                     Err(e) => {
-                        match e.to_domain::<IOErrorEnum>() {
+                        match IOErrorEnum::from_error(&e) {
                             ErrorMatch::Known(code) => {
                                 assert_eq!(code, IOErrorEnum::NotFound);
                             }
                             ErrorMatch::Unknown(code) => {
                                 panic!("unknown error code {}", code)
                             }
-                            _ => { unreachable!() }
+                            _ => unreachable!()
                         }
+                    }
+                }
+                mainloop.quit();
+            });
+    })
+}
+
+#[test]
+fn error_match_partial_eq() {
+    run_on_mainloop(|mut mainloop| {
+        let mut f = File::new_for_path("./does-not-exist");
+        f.read_async(0, None,
+            move |: obj, res| {
+                let f: &mut File = object::cast_mut(obj);
+                match f.read_finish(res) {
+                    Ok(_)  => { unreachable!() }
+                    Err(e) => {
+                        assert_eq!(IOErrorEnum::from_error(&e),
+                                   ErrorMatch::Known(IOErrorEnum::NotFound));
                     }
                 }
                 mainloop.quit();

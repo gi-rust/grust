@@ -72,7 +72,7 @@ pub struct FileInputStream {
     _priv: types::gpointer
 }
 
-#[deriving(Copy,FromPrimitive,PartialEq,Eq)]
+#[deriving(Copy, PartialEq, Eq, FromPrimitive)]
 #[repr(C)]
 pub enum IOErrorEnum {
     Failed = 0,
@@ -93,26 +93,23 @@ impl fmt::Show for IOErrorEnum {
     }
 }
 
-static mut ERROR_QUARK: atomic::AtomicUint = atomic::INIT_ATOMIC_UINT;
-
 impl error::ErrorDomain for IOErrorEnum {
-    fn error_domain(_: Option<IOErrorEnum>) -> quark::Quark {
-        unsafe {
-            let mut d = ERROR_QUARK.load(atomic::Relaxed)
-                        as quark::Quark;
-            if d == 0 {
-                d = quark::from_static_string("g-io-error-quark\0");
-                ERROR_QUARK.store(d as uint, atomic::Relaxed);
-            }
-            d
-        }
+
+    fn error_domain() -> quark::Quark {
+        static DOMAIN: quark::StaticQuark
+            = quark::StaticQuark(b"g-io-error-quark\0", atomic::INIT_ATOMIC_UINT);
+        DOMAIN.get()
+    }
+
+    fn from_code(code: int) -> Option<Self> {
+        FromPrimitive::from_int(code)
     }
 }
 
-impl ToPrimitive for IOErrorEnum {
-    fn to_int(&self) -> Option<int> { Some(*self as int) }
-    fn to_i64(&self) -> Option<i64> { Some(*self as i64) }
-    fn to_u64(&self) -> Option<u64> { Some(*self as u64) }
+impl IOErrorEnum {
+    pub fn from_error(err: &error::Error) -> error::Match<IOErrorEnum> {
+        err.to_domain()
+    }
 }
 
 #[allow(improper_ctypes)]

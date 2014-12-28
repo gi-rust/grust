@@ -17,13 +17,64 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use ffi;
+use gstr;
 use types::gchar;
 
-pub type Quark = u32;
+use std::mem;
+use std::str;
+use std::sync::atomic;
 
-pub fn from_static_string(string: &'static str) -> Quark {
-    debug_assert!(string.ends_with("\0"));
-    unsafe {
-        ffi::g_quark_from_static_string(string.as_ptr() as *const gchar)
+#[deriving(Copy, Eq, PartialEq)]
+pub struct Quark(ffi::GQuark);
+
+pub struct StaticQuark(pub &'static [u8], pub atomic::AtomicUint);
+
+impl Quark {
+
+    pub unsafe fn new(raw: ffi::GQuark) -> Quark {
+        Quark(raw)
+    }
+
+    pub fn from_static_str(s: &'static str) -> Quark {
+        debug_assert!(s.ends_with("\0"));
+        unsafe {
+            let p = s.as_ptr() as *const gchar;
+            Quark::new(ffi::g_quark_from_static_string(p))
+        }
+    }
+
+    pub fn to_uint(&self) -> uint {
+        let Quark(raw) = *self;
+        raw as uint
+    }
+
+    pub fn to_bytes(&self) -> &'static [u8] {
+        let Quark(raw) = *self;
+        unsafe {
+            let s = ffi::g_quark_to_string(raw);
+            let r = mem::copy_lifetime("", &s);
+            gstr::parse_as_bytes(r)
+        }
+    }
+
+    #[inline]
+    pub fn to_str(&self) -> Result<&'static str, str::Utf8Error> {
+        str::from_utf8(self.to_bytes())
+    }
+}
+
+impl StaticQuark {
+
+    pub fn get(&self) -> Quark {
+        let StaticQuark(s, ref cached) = *self;
+        let mut q = cached.load(atomic::Ordering::Relaxed);
+        if q == 0 {
+            unsafe {
+                let p = s.as_ptr() as *const gchar;
+                q = ffi::g_quark_from_static_string(p) as uint;
+            }
+            cached.store(q, atomic::Ordering::Relaxed);
+        }
+        unsafe { Quark::new(q as ffi::GQuark) }
     }
 }
