@@ -16,7 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use grust::gstr::{GStr, IntoUtf8, Utf8Arg};
+use grust::gstr::{GStr, IntoUtf8, StrDataError, Utf8Arg};
 
 use grust::types::gchar;
 
@@ -52,16 +52,20 @@ fn g_str_equal(p1: *const gchar, p2: *const gchar) -> bool {
 #[test]
 fn test_parse_as_utf8() {
     let str = new_g_str(TEST_CSTR);
-    let opt = str.parse_as_utf8();
-    assert!(opt.is_some());
-    assert_eq!(opt.unwrap(), TEST_STR);
+    let res = str.parse_as_utf8();
+    assert!(res.is_ok());
+    assert_eq!(res.unwrap(), TEST_STR);
 }
 
 #[test]
 fn test_parse_as_utf8_invalid() {
-    let str = new_g_str_from_bytes(b"a\x80\0");
-    let opt = str.parse_as_utf8();
-    assert!(opt.is_none());
+    let s = new_g_str_from_bytes(b"a\x80\0");
+    let res = s.parse_as_utf8();
+    assert!(res.is_err());
+    match res {
+        Err(_) => {}
+        _ => unreachable!()
+    }
 }
 
 #[test]
@@ -115,8 +119,34 @@ fn test_utf8_arg_from_str() {
 }
 
 #[test]
+fn test_utf8_arg_from_str_error() {
+    let res = Utf8Arg::from_str("got\0nul");
+    match res {
+        Err(StrDataError::ContainsNul(pos)) => assert_eq!(pos, 3),
+        _ => unreachable!()
+    }
+}
+
+#[test]
 fn test_string_into_utf8() {
     let s = String::from_str(TEST_STR);
     let c = s.into_utf8().unwrap();
     assert!(g_str_equal(c.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
+}
+
+#[test]
+fn test_g_str_into_utf8() {
+    let gs = new_g_str(TEST_CSTR);
+    let arg = gs.into_utf8().unwrap();
+    assert!(g_str_equal(arg.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
+}
+
+#[test]
+fn test_g_str_into_utf8_error() {
+    let gs = new_g_str_from_bytes(b"a\x80\0");
+    let res = gs.into_utf8();
+    match res {
+        Err(StrDataError::InvalidUtf8(pos)) => assert_eq!(pos, 1),
+        _ => unreachable!()
+    }
 }

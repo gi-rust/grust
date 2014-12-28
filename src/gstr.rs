@@ -18,13 +18,15 @@
 
 use ffi;
 use types::{gchar,gpointer};
+use util::is_false;
 
 use libc;
+use std::error::Error;
+use std::fmt;
 use std::mem::transmute;
 use std::ptr;
 use std::slice;
 use std::str;
-use util::is_false;
 
 const NUL: u8 = 0;
 
@@ -46,18 +48,9 @@ impl GStr {
         }
     }
 
-    pub fn parse_as_utf8<'a>(&'a self) -> Option<&'a str> {
-        let mut end: *const gchar = ptr::null();
-        let valid = unsafe { ffi::g_utf8_validate(self.ptr, -1, &mut end) };
-        if is_false(valid) {
-            return None;
-        }
-        unsafe {
-            let r: &'a *const u8 = transmute(&self.ptr);
-            let bytes = slice::from_raw_buf(r,
-                    end as uint - self.ptr as uint);
-            Some(str::from_utf8_unchecked(bytes))
-        }
+    #[inline]
+    pub fn parse_as_utf8<'a>(&'a self) -> Result<&'a str, str::Utf8Error> {
+        str::from_utf8(self.parse_as_bytes())
     }
 
     #[inline]
@@ -88,6 +81,44 @@ impl PartialEq for GStr {
 
 impl Eq for GStr { }
 
+#[deriving(Copy)]
+pub enum StrDataError {
+    ContainsNul(uint),
+    InvalidUtf8(uint)
+}
+
+impl Error for StrDataError {
+
+    fn description(&self) -> &str {
+        match *self {
+            StrDataError::ContainsNul(_)
+                => "invalid data for C string: contains a zero byte",
+            StrDataError::InvalidUtf8(_)
+                => "invalid UTF-8 sequence",
+        }
+    }
+
+    fn detail(&self) -> Option<String> {
+        match *self {
+            StrDataError::ContainsNul(pos)
+                => Some(format!("NUL at position {}", pos)),
+            StrDataError::InvalidUtf8(pos)
+                => Some(format!("Invalid sequence at {}", pos)),
+        }
+    }
+}
+
+impl fmt::Show for StrDataError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            StrDataError::ContainsNul(pos)
+                => write!(f, "invalid data for C string: NUL at position {}", pos),
+            StrDataError::InvalidUtf8(pos)
+                => write!(f, "invalid UTF-8 sequence at position {}", pos),
+        }
+    }
+}
+
 enum GStrData {
     Static(&'static [u8]),
     Owned(Vec<u8>),
@@ -105,12 +136,12 @@ fn vec_into_utf8(mut v: Vec<u8>) -> Utf8Arg {
 
 impl Utf8Arg {
 
-    pub fn from_str(s: &str) -> Option<Utf8Arg> {
+    pub fn from_str(s: &str) -> Result<Utf8Arg, StrDataError> {
         let bytes = s.as_bytes();
-        if bytes.contains(&NUL) {
-            return None;
+        if let Some(pos) = bytes.position_elem(&NUL) {
+            return Err(StrDataError::ContainsNul(pos));
         }
-        Some(vec_into_utf8(bytes.to_vec()))
+        Ok(vec_into_utf8(bytes.to_vec()))
     }
 
     pub fn from_static_str(s: &'static str) -> Utf8Arg {
@@ -132,7 +163,7 @@ impl Utf8Arg {
 
 pub trait IntoUtf8 {
 
-    fn into_utf8(self) -> Option<Utf8Arg>;
+    fn into_utf8(self) -> Result<Utf8Arg, StrDataError>;
 
     unsafe fn into_utf8_unchecked(self) -> Utf8Arg;
 }
@@ -140,7 +171,7 @@ pub trait IntoUtf8 {
 impl<'a> IntoUtf8 for &'a str {
 
     #[inline]
-    fn into_utf8(self) -> Option<Utf8Arg> {
+    fn into_utf8(self) -> Result<Utf8Arg, StrDataError> {
         Utf8Arg::from_str(self)
     }
 
@@ -151,12 +182,11 @@ impl<'a> IntoUtf8 for &'a str {
 
 impl IntoUtf8 for String {
 
-    fn into_utf8(self) -> Option<Utf8Arg> {
-        if self.as_bytes().contains(&NUL) {
-            None
-        } else {
-            Some(vec_into_utf8(self.into_bytes()))
+    fn into_utf8(self) -> Result<Utf8Arg, StrDataError> {
+        if let Some(pos) = self.as_bytes().position_elem(&NUL) {
+            return Err(StrDataError::ContainsNul(pos));
         }
+        Ok(vec_into_utf8(self.into_bytes()))
     }
 
     unsafe fn into_utf8_unchecked(self) -> Utf8Arg {
@@ -166,14 +196,14 @@ impl IntoUtf8 for String {
 
 impl IntoUtf8 for GStr {
 
-    fn into_utf8(self) -> Option<Utf8Arg> {
-        let valid = unsafe {
-            ffi::g_utf8_validate(self.ptr, -1, ptr::null_mut())
-        };
+    fn into_utf8(self) -> Result<Utf8Arg, StrDataError> {
+        let mut end: *const gchar = ptr::null_mut();
+        let valid = unsafe { ffi::g_utf8_validate(self.ptr, -1, &mut end) };
         if is_false(valid) {
-            return None;
+            let pos = end as uint - self.ptr as uint;
+            return Err(StrDataError::InvalidUtf8(pos));
         }
-        Some(Utf8Arg { data: GStrData::GLib(self) })
+        Ok(Utf8Arg { data: GStrData::GLib(self) })
     }
 
     unsafe fn into_utf8_unchecked(self) -> Utf8Arg {
