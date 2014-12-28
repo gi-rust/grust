@@ -23,7 +23,7 @@ use util::is_false;
 use libc;
 use std::error::Error;
 use std::fmt;
-use std::mem::transmute;
+use std::mem;
 use std::ptr;
 use std::slice;
 use std::str;
@@ -32,6 +32,24 @@ const NUL: u8 = 0;
 
 pub struct GStr {
     ptr: *const gchar,
+}
+
+pub unsafe fn parse_as_bytes(raw: & *const gchar) -> &[u8] {
+    assert!(raw.is_not_null());
+    let r = mem::copy_lifetime(raw, &(*raw as *const u8));
+    slice::from_raw_buf(r, libc::strlen(*raw) as uint)
+}
+
+#[inline]
+pub unsafe fn parse_as_utf8(raw: & *const gchar)
+                           -> Result<&str, str::Utf8Error>
+{
+    str::from_utf8(parse_as_bytes(raw))
+}
+
+#[inline]
+pub unsafe fn parse_as_utf8_unchecked(raw: & *const gchar) -> &str {
+    str::from_utf8_unchecked(parse_as_bytes(raw))
 }
 
 impl GStr {
@@ -43,7 +61,7 @@ impl GStr {
 
     pub fn parse_as_bytes<'a>(&'a self) -> &'a [u8] {
         unsafe {
-            let r: &'a *const u8 = transmute(&self.ptr);
+            let r = mem::copy_lifetime(self, &(self.ptr as *const u8));
             slice::from_raw_buf(r, libc::strlen(self.ptr) as uint)
         }
     }
