@@ -135,12 +135,12 @@ impl ErrorTrait for Error {
             return "no error";
         }
         let mut os: Option<&'a str> = None;
-        let msg = unsafe { &(*self.ptr).message };
-        if msg.is_not_null() {
-            os = unsafe { gstr::parse_as_utf8(msg).ok() };
+        let raw = unsafe { &*self.ptr };
+        if raw.message.is_not_null() {
+            os = unsafe { gstr::parse_as_utf8(&raw.message).ok() };
         }
         if os.is_none() {
-            let domain = unsafe { Quark::new((*self.ptr).domain) };
+            let domain = unsafe { Quark::new(raw.domain) };
             os = domain.to_str().ok().map(|s| {
                 unsafe { mem::copy_lifetime(self, s) }
             });
