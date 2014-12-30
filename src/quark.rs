@@ -31,10 +31,12 @@ pub struct StaticQuark(pub &'static [u8], pub atomic::AtomicUint);
 
 impl Quark {
 
+    #[inline]
     pub unsafe fn new(raw: ffi::GQuark) -> Quark {
         Quark(raw)
     }
 
+    #[inline]
     pub fn from_static_str(s: &'static str) -> Quark {
         debug_assert!(s.ends_with("\0"));
         unsafe {
@@ -43,6 +45,7 @@ impl Quark {
         }
     }
 
+    #[inline]
     pub fn to_uint(&self) -> uint {
         let Quark(raw) = *self;
         raw as uint
