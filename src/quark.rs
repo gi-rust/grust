@@ -38,10 +38,15 @@ impl Quark {
 
     #[inline]
     pub fn from_static_str(s: &'static str) -> Quark {
-        debug_assert!(s.ends_with("\0"));
+        Quark::from_static_bytes(s.as_bytes())
+    }
+
+    pub fn from_static_bytes(s: &'static [u8]) -> Quark {
+        assert!(s[s.len() - 1] == 0);
         unsafe {
             let p = s.as_ptr() as *const gchar;
-            Quark::new(ffi::g_quark_from_static_string(p))
+            let q = ffi::g_quark_from_static_string(p);
+            Quark::new(q)
         }
     }
 
