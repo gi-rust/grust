@@ -143,39 +143,94 @@ enum GStrData {
     GLib(GStr)
 }
 
-pub struct Utf8Arg {
+impl GStrData {
+
+    fn as_ptr(&self) -> *const gchar {
+        match *self {
+            GStrData::Static(s) => s.as_ptr() as *const gchar,
+            GStrData::Owned(ref v) => v.as_ptr() as *const gchar,
+            GStrData::GLib(ref g) => g.ptr
+        }
+    }
+
+    fn from_static_str(s: &'static str) -> GStrData {
+        if !s.ends_with("\0") {
+            panic!("static string is not null-terminated: \"{}\"", s);
+        }
+        GStrData::Static(s.as_bytes())
+    }
+
+    fn from_static_bytes(bytes: &'static [u8]) -> GStrData {
+        assert!(!bytes.is_empty());
+        if bytes[bytes.len() - 1] != 0 {
+            panic!("static byte string is not null-terminated: \"{}\"", bytes);
+        }
+        GStrData::Static(bytes)
+    }
+}
+
+fn vec_into_g_str_data(mut v: Vec<u8>) -> GStrData {
+    v.push(NUL);
+    GStrData::Owned(v)
+}
+
+macro_rules! g_str_data_from_bytes(
+    ($inp:expr) => {
+        {
+            let bytes = $inp;
+            if let Some(pos) = bytes.position_elem(&NUL) {
+                return Err(StrDataError::ContainsNul(pos));
+            }
+            vec_into_g_str_data(bytes.to_vec())
+        }
+    }
+);
+
+pub struct GStrArg {
     data: GStrData
 }
 
-fn vec_into_utf8(mut v: Vec<u8>) -> Utf8Arg {
-    v.push(NUL);
-    Utf8Arg { data: GStrData::Owned(v) }
+impl GStrArg {
+
+    #[inline]
+    pub fn from_str(s: &str) -> Result<GStrArg, StrDataError> {
+        GStrArg::from_bytes(s.as_bytes())
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<GStrArg, StrDataError> {
+        Ok(GStrArg { data: g_str_data_from_bytes!(bytes) })
+    }
+
+    pub fn from_static_str(s: &'static str) -> GStrArg {
+        GStrArg { data: GStrData::from_static_str(s) }
+    }
+
+    pub fn from_static_bytes(bytes: &'static [u8]) -> GStrArg {
+        GStrArg { data: GStrData::from_static_bytes(bytes) }
+    }
+
+    pub fn as_ptr(&self) -> *const gchar {
+        self.data.as_ptr()
+    }
+}
+
+pub struct Utf8Arg {
+    data: GStrData
 }
 
 impl Utf8Arg {
 
     pub fn from_str(s: &str) -> Result<Utf8Arg, StrDataError> {
-        let bytes = s.as_bytes();
-        if let Some(pos) = bytes.position_elem(&NUL) {
-            return Err(StrDataError::ContainsNul(pos));
-        }
-        Ok(vec_into_utf8(bytes.to_vec()))
+        Ok(Utf8Arg { data: g_str_data_from_bytes!(s.as_bytes()) })
     }
 
     pub fn from_static_str(s: &'static str) -> Utf8Arg {
-        let bytes = s.as_bytes();
-        if bytes[bytes.len() - 1] != 0 {
-            panic!("static string is not null-terminated: \"{}\"", s);
-        }
-        Utf8Arg { data: GStrData::Static(bytes) }
+        Utf8Arg { data: GStrData::from_static_str(s) }
     }
 
+    #[inline]
     pub fn as_ptr(&self) -> *const gchar {
-        match self.data {
-            GStrData::Static(s) => s.as_ptr() as *const gchar,
-            GStrData::Owned(ref v) => v.as_ptr() as *const gchar,
-            GStrData::GLib(ref g) => g.ptr
-        }
+        self.data.as_ptr()
     }
 }
 
@@ -184,6 +239,10 @@ pub trait IntoUtf8 {
     fn into_utf8(self) -> Result<Utf8Arg, StrDataError>;
 
     unsafe fn into_utf8_unchecked(self) -> Utf8Arg;
+}
+
+fn vec_into_utf8(v: Vec<u8>) -> Utf8Arg {
+    Utf8Arg { data: vec_into_g_str_data(v) }
 }
 
 impl<'a> IntoUtf8 for &'a str {
@@ -201,10 +260,7 @@ impl<'a> IntoUtf8 for &'a str {
 impl IntoUtf8 for String {
 
     fn into_utf8(self) -> Result<Utf8Arg, StrDataError> {
-        if let Some(pos) = self.as_bytes().position_elem(&NUL) {
-            return Err(StrDataError::ContainsNul(pos));
-        }
-        Ok(vec_into_utf8(self.into_bytes()))
+        Ok(Utf8Arg { data: g_str_data_from_bytes!(self.into_bytes()) })
     }
 
     unsafe fn into_utf8_unchecked(self) -> Utf8Arg {
