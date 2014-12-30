@@ -36,18 +36,25 @@ impl Quark {
         Quark(raw)
     }
 
-    #[inline]
     pub fn from_static_str(s: &'static str) -> Quark {
-        Quark::from_static_bytes(s.as_bytes())
+        if !s.ends_with("\0") {
+            panic!("static string is not null-terminated: \"{}\"", s);
+        }
+        unsafe { Quark::from_static_internal(s.as_bytes()) }
     }
 
-    pub fn from_static_bytes(s: &'static [u8]) -> Quark {
-        assert!(s[s.len() - 1] == 0);
-        unsafe {
-            let p = s.as_ptr() as *const gchar;
-            let q = ffi::g_quark_from_static_string(p);
-            Quark::new(q)
+    pub fn from_static_bytes(bytes: &'static [u8]) -> Quark {
+        assert!(!bytes.is_empty());
+        if bytes[bytes.len() - 1] != 0 {
+            panic!("static byte string is not null-terminated: \"{}\"", bytes);
         }
+        unsafe { Quark::from_static_internal(bytes) }
+    }
+
+    unsafe fn from_static_internal(s: &'static [u8]) -> Quark {
+        let p = s.as_ptr() as *const gchar;
+        let q = ffi::g_quark_from_static_string(p);
+        Quark::new(q)
     }
 
     #[inline]
