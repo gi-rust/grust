@@ -160,8 +160,7 @@ impl GStrData {
     }
 
     fn from_static_bytes(bytes: &'static [u8]) -> GStrData {
-        assert!(!bytes.is_empty());
-        assert!(bytes[bytes.len() - 1] == 0,
+        assert!(bytes.last() == Some(&NUL),
                 "static byte string is not null-terminated: {}", bytes);
         GStrData::Static(bytes)
     }
@@ -226,7 +225,6 @@ impl Utf8Arg {
         Utf8Arg { data: GStrData::from_static_str(s) }
     }
 
-    #[inline]
     pub fn as_ptr(&self) -> *const gchar {
         self.data.as_ptr()
     }
