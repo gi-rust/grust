@@ -154,17 +154,15 @@ impl GStrData {
     }
 
     fn from_static_str(s: &'static str) -> GStrData {
-        if !s.ends_with("\0") {
-            panic!("static string is not null-terminated: \"{}\"", s);
-        }
+        assert!(s.ends_with("\0"),
+                "static string is not null-terminated: \"{}\"", s);
         GStrData::Static(s.as_bytes())
     }
 
     fn from_static_bytes(bytes: &'static [u8]) -> GStrData {
         assert!(!bytes.is_empty());
-        if bytes[bytes.len() - 1] != 0 {
-            panic!("static byte string is not null-terminated: \"{}\"", bytes);
-        }
+        assert!(bytes[bytes.len() - 1] == 0,
+                "static byte string is not null-terminated: {}", bytes);
         GStrData::Static(bytes)
     }
 }
