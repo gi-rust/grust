@@ -145,6 +145,7 @@ pub mod raw {
                                   res: *mut GAsyncResult,
                                   error: *mut *mut GError)
                                   -> *mut GFileInputStream;
+        pub fn g_file_input_stream_get_type() -> GType;
     }
 }
 
@@ -265,15 +266,11 @@ impl object::ObjectType for File {
     }
 }
 
-impl refcount::Refcount for File {
-    fn refcount_funcs(&self) -> &'static refcount::RefcountFuncs {
-        &object::REFCOUNT_FUNCS
-    }
-}
-
-impl refcount::Refcount for FileInputStream {
-    fn refcount_funcs(&self) -> &'static refcount::RefcountFuncs {
-        &object::REFCOUNT_FUNCS
+impl object::ObjectType for FileInputStream {
+    fn get_type(&self) -> GType {
+        unsafe {
+            raw::g_file_input_stream_get_type()
+        }
     }
 }
 

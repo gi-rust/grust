@@ -173,6 +173,8 @@ impl<T: Refcount + Send + Sync> Clone for SyncRef<T> {
     }
 }
 
+unsafe impl<T> Send for SyncRef<T> where T: Refcount + Send + Sync { }
+
 impl<T: Refcount> Deref<T> for Ref<T> {
     fn deref<'a>(&'a self) -> &'a T {
         unsafe { &*self.raw_ptr() }

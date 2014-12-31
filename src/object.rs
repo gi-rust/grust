@@ -19,7 +19,7 @@
 use gtype::GType;
 use ffi;
 use ffi::GTypeInstance;
-use refcount::RefcountFuncs;
+use refcount::{Refcount, RefcountFuncs};
 use util::is_false;
 
 use std::c_str::CString;
@@ -29,10 +29,16 @@ pub trait ObjectType {
     fn get_type(&self) -> GType;
 }
 
-pub static REFCOUNT_FUNCS: RefcountFuncs = (
+const REFCOUNT_FUNCS: &'static RefcountFuncs = &(
         &ffi::g_object_ref,
         &ffi::g_object_unref
     );
+
+impl<T> Refcount for T where T: ObjectType {
+    fn refcount_funcs(&self) -> &'static RefcountFuncs {
+        return REFCOUNT_FUNCS;
+    }
+}
 
 pub fn cast<'a, T: ObjectType, U: ObjectType>(source: &'a T)
                                              -> &'a U {

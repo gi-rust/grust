@@ -70,6 +70,8 @@ impl<T> PartialEq for Match<T> where T: PartialEq {
     }
 }
 
+unsafe impl Send for Error { }
+
 impl Drop for Error {
     fn drop(&mut self) {
         if self.ptr.is_not_null() {

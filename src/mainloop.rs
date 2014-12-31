@@ -39,7 +39,7 @@ impl MainContext {
 type MainContextRefFunc   = unsafe extern "C" fn(p: *mut ffi::GMainContext) -> *mut ffi::GMainContext;
 type MainContextUnrefFunc = unsafe extern "C" fn(p: *mut ffi::GMainContext);
 
-static MAIN_CONTEXT_REF_FUNCS: RefcountFuncs = (
+const MAIN_CONTEXT_REF_FUNCS: &'static RefcountFuncs = &(
         &ffi::g_main_context_ref
             as *const MainContextRefFunc as *const RefFunc,
         &ffi::g_main_context_unref
@@ -48,7 +48,7 @@ static MAIN_CONTEXT_REF_FUNCS: RefcountFuncs = (
 
 impl Refcount for MainContext {
     fn refcount_funcs(&self) -> &'static RefcountFuncs {
-        &MAIN_CONTEXT_REF_FUNCS
+        MAIN_CONTEXT_REF_FUNCS
     }
 }
 
@@ -116,7 +116,7 @@ impl MainLoop {
 type MainLoopRefFunc   = unsafe extern "C" fn(p: *mut ffi::GMainLoop) -> *mut ffi::GMainLoop;
 type MainLoopUnrefFunc = unsafe extern "C" fn(p: *mut ffi::GMainLoop);
 
-static MAIN_LOOP_REF_FUNCS: RefcountFuncs = (
+const MAIN_LOOP_REF_FUNCS: &'static RefcountFuncs = &(
         &ffi::g_main_loop_ref
             as *const MainLoopRefFunc as *const RefFunc,
         &ffi::g_main_loop_unref
@@ -125,6 +125,6 @@ static MAIN_LOOP_REF_FUNCS: RefcountFuncs = (
 
 impl Refcount for MainLoop {
     fn refcount_funcs(&self) -> &'static RefcountFuncs {
-        &MAIN_LOOP_REF_FUNCS
+        MAIN_LOOP_REF_FUNCS
     }
 }
