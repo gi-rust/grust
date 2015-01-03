@@ -48,11 +48,6 @@ pub fn unset() -> Error {
     Error { ptr: ptr::null_mut() }
 }
 
-pub trait ErrorDomain {
-    fn error_domain() -> Quark;
-    fn from_code(code: int) -> Option<Self>;
-}
-
 #[deriving(Show)]
 pub enum Match<T> {
     NotInDomain,
@@ -112,21 +107,6 @@ impl Error {
         unsafe {
             let raw = &*self.ptr;
             (Quark::new(raw.domain), raw.code as int)
-        }
-    }
-
-    pub fn to_domain<D>(&self) -> Match<D>
-        where D: ErrorDomain
-    {
-        let (domain, code) = self.key();
-        if domain == ErrorDomain::error_domain() {
-            if let Some(v) = ErrorDomain::from_code(code) {
-                Match::Known(v)
-            } else {
-                Match::Unknown(code)
-            }
-        } else {
-            Match::NotInDomain
         }
     }
 }

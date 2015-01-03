@@ -93,22 +93,25 @@ impl fmt::Show for IOErrorEnum {
     }
 }
 
-impl error::ErrorDomain for IOErrorEnum {
+impl IOErrorEnum {
 
-    fn error_domain() -> quark::Quark {
+    pub fn error_domain() -> quark::Quark {
         static DOMAIN: quark::StaticQuark
-            = quark::StaticQuark(b"g-io-error-quark\0", atomic::INIT_ATOMIC_UINT);
+            = quark::StaticQuark(b"g-io-error-quark\0",
+                                 atomic::INIT_ATOMIC_UINT);
         DOMAIN.get()
     }
 
-    fn from_code(code: int) -> Option<Self> {
-        FromPrimitive::from_int(code)
-    }
-}
-
-impl IOErrorEnum {
     pub fn from_error(err: &error::Error) -> error::Match<IOErrorEnum> {
-        err.to_domain()
+        let (domain, code) = err.key();
+        if domain != IOErrorEnum::error_domain() {
+            return error::Match::NotInDomain;
+        }
+        if let Some(v) = FromPrimitive::from_int(code) {
+            error::Match::Known(v)
+        } else {
+            error::Match::Unknown(code)
+        }
     }
 }
 
