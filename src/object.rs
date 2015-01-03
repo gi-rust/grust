@@ -21,7 +21,7 @@ use gtype::GType;
 use ffi;
 use ffi::GTypeInstance;
 use refcount::{Refcount, RefcountFuncs};
-use util::is_false;
+use util::is_true;
 
 use std::mem::transmute;
 
@@ -60,10 +60,9 @@ pub fn cast<'a, T: ObjectType, U: ObjectType>(source: &'a T)
         let inst = source as *const T as *const GTypeInstance;
         let dest: &'a U = transmute(source);
         let dest_type = dest.get_type();
-        if is_false(ffi::g_type_check_instance_is_a(inst, dest_type)) {
-            panic!("invalid cast to type {}",
-                   gstr::parse_as_utf8(&ffi::g_type_name(dest_type)).unwrap());
-        }
+        assert!(is_true(ffi::g_type_check_instance_is_a(inst, dest_type)),
+                "invalid cast to type {}",
+                gstr::parse_as_utf8(&ffi::g_type_name(dest_type)).unwrap());
         dest
     }
 }
@@ -71,13 +70,12 @@ pub fn cast<'a, T: ObjectType, U: ObjectType>(source: &'a T)
 pub fn cast_mut<'a, T: ObjectType, U: ObjectType>(source: &'a mut T)
                                                   -> &'a mut U {
     unsafe {
-        let inst = source as *mut T as *const T as *const GTypeInstance;
+        let inst = source as *mut T as *const GTypeInstance;
         let dest: &'a mut U = transmute(source);
         let dest_type = dest.get_type();
-        if is_false(ffi::g_type_check_instance_is_a(inst, dest_type)) {
-            panic!("invalid cast to type {}",
-                   gstr::parse_as_utf8(&ffi::g_type_name(dest_type)).unwrap());
-        }
+        assert!(is_true(ffi::g_type_check_instance_is_a(inst, dest_type)),
+                "invalid cast to type {}",
+                gstr::parse_as_utf8(&ffi::g_type_name(dest_type)).unwrap());
         dest
     }
 }
