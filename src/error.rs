@@ -74,7 +74,7 @@ unsafe impl Send for Error { }
 
 impl Drop for Error {
     fn drop(&mut self) {
-        if self.ptr.is_not_null() {
+        if !self.ptr.is_null() {
             unsafe { ffi::g_error_free(self.ptr); }
         }
     }
@@ -103,7 +103,7 @@ impl Error {
         &mut self.ptr as *mut *mut raw::GError
     }
 
-    pub fn is_set(&self) -> bool { self.ptr.is_not_null() }
+    pub fn is_set(&self) -> bool { !self.ptr.is_null() }
 
     pub fn key(&self) -> (Quark, int) {
         if self.ptr.is_null() {
@@ -138,7 +138,7 @@ impl ErrorTrait for Error {
         }
         let mut os: Option<&'a str> = None;
         let raw = unsafe { &*self.ptr };
-        if raw.message.is_not_null() {
+        if !raw.message.is_null() {
             os = unsafe { gstr::parse_as_utf8(&raw.message).ok() };
         }
         if os.is_none() {
@@ -155,9 +155,9 @@ impl ErrorTrait for Error {
     }
 
     fn detail(&self) -> Option<String> {
-        if self.ptr.is_not_null() {
+        if !self.ptr.is_null() {
             let msg = unsafe { &(*self.ptr).message };
-            if msg.is_not_null() {
+            if !msg.is_null() {
                 let msg_bytes = unsafe { gstr::parse_as_bytes(msg) };
                 return Some(String::from_utf8_lossy(msg_bytes).into_owned());
             }

@@ -35,7 +35,7 @@ pub struct GStr {
 }
 
 pub unsafe fn parse_as_bytes(raw: & *const gchar) -> &[u8] {
-    assert!(raw.is_not_null());
+    assert!(!raw.is_null());
     let r = mem::copy_lifetime(raw, &(*raw as *const u8));
     slice::from_raw_buf(r, libc::strlen(*raw) as uint)
 }
@@ -55,7 +55,7 @@ pub unsafe fn parse_as_utf8_unchecked(raw: & *const gchar) -> &str {
 impl GStr {
 
     pub unsafe fn from_raw_buf(ptr: *mut gchar) -> GStr {
-        assert!(ptr.is_not_null());
+        assert!(!ptr.is_null());
         GStr { ptr: ptr as *const gchar }
     }
 
