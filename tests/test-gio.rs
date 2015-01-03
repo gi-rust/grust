@@ -16,7 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use gio::{File,IOErrorEnum};
+use gio::{File, FileInputStream, IOErrorEnum};
 use grust::refcount::{Ref,SyncRef};
 use grust::mainloop::{LoopRunner,MainLoop};
 use grust::object;
@@ -42,6 +42,13 @@ fn clone() {
     let mut rg = rf.clone();
     let path = rg.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
+}
+
+#[test]
+#[should_fail]
+fn cast_fail() {
+    let rf = File::new_for_path("/dev/null");
+    let _: &FileInputStream = object::cast(&*rf);
 }
 
 #[test]

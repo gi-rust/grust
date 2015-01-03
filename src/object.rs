@@ -16,13 +16,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+use gstr;
 use gtype::GType;
 use ffi;
 use ffi::GTypeInstance;
 use refcount::{Refcount, RefcountFuncs};
 use util::is_false;
 
-use std::c_str::CString;
 use std::mem::transmute;
 
 pub trait ObjectType {
@@ -62,7 +62,7 @@ pub fn cast<'a, T: ObjectType, U: ObjectType>(source: &'a T)
         let dest_type = dest.get_type();
         if is_false(ffi::g_type_check_instance_is_a(inst, dest_type)) {
             panic!("invalid cast to type {}",
-                  CString::new(ffi::g_type_name(dest_type), false));
+                   gstr::parse_as_utf8(&ffi::g_type_name(dest_type)).unwrap());
         }
         dest
     }
@@ -76,7 +76,7 @@ pub fn cast_mut<'a, T: ObjectType, U: ObjectType>(source: &'a mut T)
         let dest_type = dest.get_type();
         if is_false(ffi::g_type_check_instance_is_a(inst, dest_type)) {
             panic!("invalid cast to type {}",
-                  CString::new(ffi::g_type_name(dest_type), false));
+                   gstr::parse_as_utf8(&ffi::g_type_name(dest_type)).unwrap());
         }
         dest
     }
