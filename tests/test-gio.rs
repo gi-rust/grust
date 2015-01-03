@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use gio::{File, FileInputStream, IOErrorEnum};
+use gio::cast::AsFile;
 use grust::refcount::{Ref,SyncRef};
 use grust::mainloop::{LoopRunner,MainLoop};
 use grust::object;
@@ -29,9 +30,24 @@ fn run_on_mainloop(setup: |SyncRef<MainLoop>|) {
 }
 
 #[test]
+fn as_file() {
+    let mut f = File::new_for_path("/dev/null");
+    let mut g = f.as_mut_gio_file();
+    let path = g.get_path();
+    assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
+}
+
+#[test]
+fn deref() {
+    let mut f = File::new_for_path("/dev/null");
+    let path = f.get_path();
+    assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
+}
+
+#[test]
 fn new_ref() {
     let mut f = File::new_for_path("/dev/null");
-    let mut g = Ref::new(f.deref_mut());
+    let mut g = Ref::new(&mut *f);
     let path = g.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
 }
