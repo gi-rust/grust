@@ -38,11 +38,12 @@ use grust::quark;
 use grust::refcount;
 use grust::types;
 
-use cast::AsAsyncResult;
-use cast::AsCancellable;
-
 use std::fmt;
 use std::sync::atomic;
+
+use gobject::cast::AsObject as _cast_as_gobject_Object;
+use cast::AsAsyncResult as _cast_as_gio_AsyncResult;
+use cast::AsCancellable as _cast_as_gio_Cancellable;
 
 #[repr(C)]
 pub struct AsyncResult {
@@ -169,6 +170,8 @@ mod async_shim {
 }
 
 pub mod cast {
+    use grust::object;
+
     use gobject;
 
     pub trait AsAsyncResult {
@@ -176,9 +179,37 @@ pub mod cast {
         fn as_mut_gio_async_result(&mut self) -> &mut super::AsyncResult;
     }
 
+    impl<T> AsAsyncResult for T where T: object::Upcast<super::AsyncResult> {
+
+        #[inline]
+        fn as_gio_async_result(&self) -> &super::AsyncResult {
+            self.upcast()
+        }
+
+        #[inline]
+        fn as_mut_gio_async_result(&mut self) -> &mut super::AsyncResult {
+            self.upcast_mut()
+        }
+    }
+
     pub trait AsCancellable : gobject::cast::AsObject {
         fn as_gio_cancellable(&self) -> &super::Cancellable;
         fn as_mut_gio_cancellable(&mut self) -> &mut super::Cancellable;
+    }
+
+    impl<T> AsCancellable for T
+        where T: object::Upcast<super::Cancellable>,
+              T: object::Upcast<gobject::Object>
+    {
+        #[inline]
+        fn as_gio_cancellable(&self) -> &super::Cancellable {
+            self.upcast()
+        }
+
+        #[inline]
+        fn as_mut_gio_cancellable(&mut self) -> &mut super::Cancellable {
+            self.upcast_mut()
+        }
     }
 
     pub trait AsInputStream : gobject::cast::AsObject {
@@ -186,14 +217,58 @@ pub mod cast {
         fn as_mut_gio_input_stream(&mut self) -> &mut super::InputStream;
     }
 
+    impl<T> AsInputStream for T
+        where T: object::Upcast<super::InputStream>,
+              T: object::Upcast<gobject::Object>
+    {
+        #[inline]
+        fn as_gio_input_stream(&self) -> &super::InputStream {
+            self.upcast()
+        }
+
+        #[inline]
+        fn as_mut_gio_input_stream(&mut self) -> &mut super::InputStream {
+            self.upcast_mut()
+        }
+    }
+
     pub trait AsFileInputStream : AsInputStream {
         fn as_gio_file_input_stream(&self) -> &super::FileInputStream;
         fn as_mut_gio_file_input_stream(&mut self) -> &mut super::FileInputStream;
     }
 
+    impl<T> AsFileInputStream for T
+        where T: object::Upcast<super::FileInputStream>,
+              T: object::Upcast<super::InputStream>,
+              T: object::Upcast<gobject::Object>
+    {
+        #[inline]
+        fn as_gio_file_input_stream(&self) -> &super::FileInputStream {
+            self.upcast()
+        }
+
+        #[inline]
+        fn as_mut_gio_file_input_stream(&mut self) -> &mut super::FileInputStream {
+            self.upcast_mut()
+        }
+    }
+
     pub trait AsFile {
         fn as_gio_file(&self) -> &super::File;
         fn as_mut_gio_file(&mut self) -> &mut super::File;
+    }
+
+    impl<T> AsFile for T where T: object::Upcast<super::File> {
+
+        #[inline]
+        fn as_gio_file(&self) -> &super::File {
+            self.upcast()
+        }
+
+        #[inline]
+        fn as_mut_gio_file(&mut self) -> &mut super::File {
+            self.upcast_mut()
+        }
     }
 }
 
@@ -280,68 +355,54 @@ impl object::ObjectType for FileInputStream {
     }
 }
 
-impl cast::AsAsyncResult for AsyncResult {
+impl object::Upcast<gobject::Object> for Cancellable {
 
     #[inline]
-    fn as_gio_async_result(&self) -> &AsyncResult { self }
-
-    #[inline]
-    fn as_mut_gio_async_result(&mut self) -> &mut AsyncResult { self }
-}
-
-impl gobject::cast::AsObject for Cancellable {
-
-    #[inline]
-    fn as_gobject_object(&self) -> &gobject::Object {
+    fn upcast(&self) -> &gobject::Object {
         &self.parent_instance
     }
 
     #[inline]
-    fn as_mut_gobject_object(&mut self) -> &mut gobject::Object {
+    fn upcast_mut(&mut self) -> &mut gobject::Object {
         &mut self.parent_instance
     }
 }
 
-impl cast::AsCancellable for Cancellable {
+impl object::Upcast<gobject::Object> for InputStream {
 
     #[inline]
-    fn as_gio_cancellable(&self) -> &Cancellable { self }
-
-    #[inline]
-    fn as_mut_gio_cancellable(&mut self) -> &mut Cancellable { self }
-}
-
-impl cast::AsFile for File {
-
-    #[inline]
-    fn as_gio_file(&self) -> &File { self }
-
-    #[inline]
-    fn as_mut_gio_file(&mut self) -> &mut File { self }
-}
-
-impl gobject::cast::AsObject for InputStream {
-
-    #[inline]
-    fn as_gobject_object(&self) -> &gobject::Object {
+    fn upcast(&self) -> &gobject::Object {
         &self.parent_instance
     }
 
     #[inline]
-    fn as_mut_gobject_object<'a>(&mut self) -> &mut gobject::Object {
+    fn upcast_mut(&mut self) -> &mut gobject::Object {
         &mut self.parent_instance
     }
 }
 
-impl gobject::cast::AsObject for FileInputStream {
+impl object::Upcast<gobject::Object> for FileInputStream {
 
     #[inline]
-    fn as_gobject_object(&self) -> &gobject::Object {
+    fn upcast(&self) -> &gobject::Object {
         self.parent_instance.as_gobject_object()
     }
 
     #[inline]
-    fn as_mut_gobject_object(&mut self) -> &mut gobject::Object {
+    fn upcast_mut(&mut self) -> &mut gobject::Object {
         self.parent_instance.as_mut_gobject_object()
+    }
+}
+
+impl object::Upcast<InputStream> for FileInputStream {
+
+    #[inline]
+    fn upcast(&self) -> &InputStream {
+        &self.parent_instance
+    }
+
+    #[inline]
+    fn upcast_mut(&mut self) -> &mut InputStream {
+        &mut self.parent_instance
     }
 }

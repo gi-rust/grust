@@ -43,10 +43,20 @@ pub struct Object {
 }
 
 pub mod cast {
+    use grust::object;
 
     pub trait AsObject {
         fn as_gobject_object(&self) -> &super::Object;
         fn as_mut_gobject_object(&mut self) -> &mut super::Object;
+    }
+
+    impl<T> AsObject for T where T: object::Upcast<super::Object> {
+
+        #[inline]
+        fn as_gobject_object(&self) -> &super::Object { self.upcast() }
+
+        #[inline]
+        fn as_mut_gobject_object(&mut self) -> &mut super::Object { self.upcast_mut() }
     }
 }
 
@@ -68,13 +78,4 @@ impl object::ObjectType for Object {
             raw::g_object_get_type()
         }
     }
-}
-
-impl cast::AsObject for Object {
-
-    #[inline]
-    fn as_gobject_object(&self) -> &Object { self }
-
-    #[inline]
-    fn as_mut_gobject_object(&mut self) -> &mut Object { self }
 }

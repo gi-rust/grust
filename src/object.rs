@@ -40,6 +40,20 @@ impl<T> Refcount for T where T: ObjectType {
     }
 }
 
+pub trait Upcast<T> {
+    fn upcast(&self) -> &T;
+    fn upcast_mut(&mut self) -> &mut T;
+}
+
+impl<T> Upcast<T> for T {
+
+    #[inline]
+    fn upcast(&self) -> &T { self }
+
+    #[inline]
+    fn upcast_mut(&mut self) -> &mut T { self }
+}
+
 pub fn cast<'a, T: ObjectType, U: ObjectType>(source: &'a T)
                                              -> &'a U {
     unsafe {
