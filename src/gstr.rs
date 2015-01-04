@@ -75,6 +75,12 @@ impl GStr {
     pub unsafe fn parse_as_utf8_unchecked<'a>(&'a self) -> &'a str {
         str::from_utf8_unchecked(self.parse_as_bytes())
     }
+
+    pub unsafe fn into_inner(self) -> *mut gchar {
+        let ret = self.ptr as *mut gchar;
+        mem::forget(self);
+        ret
+    }
 }
 
 impl Drop for GStr {

@@ -106,6 +106,16 @@ fn test_g_str_ne() {
 }
 
 #[test]
+fn test_g_str_into_inner() {
+    let s = new_g_str(TEST_CSTR);
+    let p = unsafe { s.into_inner() };
+    assert!(g_str_equal(p, TEST_CSTR.as_ptr() as *const gchar));
+
+    // Wrap the pointer again so it does not get leaked
+    let _ = unsafe { GStr::from_raw_buf(p) };
+}
+
+#[test]
 fn test_utf8_arg_from_static_str() {
     let s = Utf8Arg::from_static_str(TEST_CSTR);
     assert_eq!(s.as_ptr(), TEST_CSTR.as_ptr() as *const gchar);
