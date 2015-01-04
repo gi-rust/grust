@@ -39,6 +39,7 @@ use grust::refcount;
 use grust::types;
 
 use std::fmt;
+use std::num::FromPrimitive;
 use std::sync::atomic;
 
 use gobject::cast::AsObject as _cast_as_gobject_Object;
@@ -73,7 +74,7 @@ pub struct FileInputStream {
     _priv: types::gpointer
 }
 
-#[deriving(Copy, PartialEq, Eq, FromPrimitive)]
+#[derive(Copy, PartialEq, Eq, FromPrimitive)]
 #[repr(C)]
 pub enum IOErrorEnum {
     Failed = 0,
@@ -99,7 +100,7 @@ impl IOErrorEnum {
     pub fn error_domain() -> quark::Quark {
         static DOMAIN: quark::StaticQuark
             = quark::StaticQuark(b"g-io-error-quark\0",
-                                 atomic::INIT_ATOMIC_UINT);
+                                 atomic::ATOMIC_UINT_INIT);
         DOMAIN.get()
     }
 

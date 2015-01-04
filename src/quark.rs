@@ -24,7 +24,7 @@ use std::mem;
 use std::str;
 use std::sync::atomic;
 
-#[deriving(Copy, Eq, PartialEq)]
+#[derive(Copy, Eq, PartialEq)]
 pub struct Quark(ffi::GQuark);
 
 pub struct StaticQuark(pub &'static [u8], pub atomic::AtomicUint);

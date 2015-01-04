@@ -48,7 +48,7 @@ pub fn unset() -> Error {
     Error { ptr: ptr::null_mut() }
 }
 
-#[deriving(Show)]
+#[derive(Show)]
 pub enum Match<T> {
     NotInDomain,
     Known(T),

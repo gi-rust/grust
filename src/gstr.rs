@@ -105,7 +105,7 @@ impl PartialEq for GStr {
 
 impl Eq for GStr { }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub enum StrDataError {
     ContainsNul(uint),
     InvalidUtf8(uint)

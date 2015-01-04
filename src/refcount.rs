@@ -17,7 +17,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use types::{gpointer,gconstpointer};
+
 use std::kinds::marker;
+use std::ops::{Deref, DerefMut};
 
 pub type RefFunc = unsafe extern "C" fn(gpointer) -> gpointer;
 pub type UnrefFunc = unsafe extern "C" fn(gpointer);
@@ -175,26 +177,32 @@ impl<T: Refcount + Send + Sync> Clone for SyncRef<T> {
 
 unsafe impl<T> Send for SyncRef<T> where T: Refcount + Send + Sync { }
 
-impl<T: Refcount> Deref<T> for Ref<T> {
-    fn deref<'a>(&'a self) -> &'a T {
+impl<T> Deref for Ref<T> where T: Refcount {
+
+    type Target = T;
+
+    fn deref(&self) -> &T {
         unsafe { &*self.raw_ptr() }
     }
 }
 
-impl<T: Refcount + Send + Sync> Deref<T> for SyncRef<T> {
-    fn deref<'a>(&'a self) -> &'a T {
+impl<T> Deref for SyncRef<T> where T: Refcount + Send + Sync {
+
+    type Target = T;
+
+    fn deref(&self) -> &T {
         unsafe { &*self.raw_ptr() }
     }
 }
 
-impl<T: Refcount> DerefMut<T> for Ref<T> {
-    fn deref_mut<'a>(&'a mut self) -> &'a mut T {
+impl<T> DerefMut for Ref<T> where T: Refcount {
+    fn deref_mut(&mut self) -> &mut T {
         unsafe { &mut *self.raw_mut_ptr() }
     }
 }
 
-impl<T: Refcount + Send + Sync> DerefMut<T> for SyncRef<T> {
-    fn deref_mut<'a>(&'a mut self) -> &'a mut T {
+impl<T> DerefMut for SyncRef<T> where T: Refcount + Send + Sync {
+    fn deref_mut(&mut self) -> &mut T {
         unsafe { &mut *self.raw_mut_ptr() }
     }
 }

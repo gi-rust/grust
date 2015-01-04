@@ -19,6 +19,7 @@
 #![crate_name = "grust"]
 #![crate_type = "lib"]
 
+#![feature(associated_types)]
 #![feature(macro_rules)]
 #![feature(unboxed_closures)]
 #![feature(unsafe_destructor)]
