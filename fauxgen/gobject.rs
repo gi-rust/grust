@@ -72,7 +72,7 @@ pub mod raw {
     }
 }
 
-impl object::ObjectType for Object {
+unsafe impl object::ObjectType for Object {
     fn get_type(&self) -> gtype::GType {
         unsafe {
             raw::g_object_get_type()

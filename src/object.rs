@@ -25,7 +25,7 @@ use util::is_true;
 
 use std::mem::transmute;
 
-pub trait ObjectType {
+pub unsafe trait ObjectType {
     fn get_type(&self) -> GType;
 }
 

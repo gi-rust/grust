@@ -331,7 +331,7 @@ impl File {
     }
 }
 
-impl object::ObjectType for AsyncResult {
+unsafe impl object::ObjectType for AsyncResult {
     fn get_type(&self) -> GType {
         unsafe {
             raw::g_async_result_get_type()
@@ -339,7 +339,7 @@ impl object::ObjectType for AsyncResult {
     }
 }
 
-impl object::ObjectType for File {
+unsafe impl object::ObjectType for File {
     fn get_type(&self) -> GType {
         unsafe {
             raw::g_file_get_type()
@@ -347,7 +347,7 @@ impl object::ObjectType for File {
     }
 }
 
-impl object::ObjectType for FileInputStream {
+unsafe impl object::ObjectType for FileInputStream {
     fn get_type(&self) -> GType {
         unsafe {
             raw::g_file_input_stream_get_type()
