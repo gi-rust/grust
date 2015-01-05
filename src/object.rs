@@ -16,12 +16,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use gstr;
+use gtype;
 use gtype::GType;
 use ffi;
-use ffi::GTypeInstance;
 use refcount::{Refcount, RefcountFuncs};
-use util::is_true;
 
 use std::mem::transmute;
 
@@ -61,28 +59,30 @@ pub fn type_of<T>() -> GType
     ObjectType::get_type(fixme_ufcs)
 }
 
+pub fn is_instance_of<T, U>(object: &T) -> bool
+    where T: ObjectType, U: ObjectType
+{
+    gtype::check_instance_is_a(object, type_of::<U>())
+}
+
+fn assert_instance_of<T, U>(object: &T)
+    where T: ObjectType, U: ObjectType
+{
+    let dest_type = type_of::<U>();
+    assert!(gtype::check_instance_is_a(object, dest_type),
+            "invalid cast to type {}", dest_type)
+}
+
 pub fn cast<T, U>(source: &T) -> &U
     where T: ObjectType, U: ObjectType
 {
-    unsafe {
-        let inst = source as *const T as *const GTypeInstance;
-        let dest_type = type_of::<U>();
-        assert!(is_true(ffi::g_type_check_instance_is_a(inst, dest_type)),
-                "invalid cast to type {}",
-                gstr::parse_as_utf8(&ffi::g_type_name(dest_type)).unwrap());
-        transmute(source)
-    }
+    assert_instance_of::<T, U>(source);
+    unsafe { transmute(source) }
 }
 
 pub fn cast_mut<T, U>(source: &mut T) -> &mut U
     where T: ObjectType, U: ObjectType
 {
-    unsafe {
-        let inst = source as *mut T as *const GTypeInstance;
-        let dest_type = type_of::<U>();
-        assert!(is_true(ffi::g_type_check_instance_is_a(inst, dest_type)),
-                "invalid cast to type {}",
-                gstr::parse_as_utf8(&ffi::g_type_name(dest_type)).unwrap());
-        transmute(source)
-    }
+    assert_instance_of::<T, U>(source);
+    unsafe { transmute(source) }
 }

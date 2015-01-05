@@ -25,7 +25,7 @@
 extern crate grust;
 extern crate "grust-GLib-2_0" as glib;
 
-use grust::gtype;
+use grust::gtype::GType;
 use grust::marker;
 use grust::object;
 use grust::wrap;
@@ -70,7 +70,7 @@ pub mod cast {
 
 #[allow(missing_copy_implementations)]
 pub mod raw {
-    use grust::gtype::GType;
+    use grust::gtype::raw::GType;
     use grust::types::{gpointer, guint};
 
     #[repr(C)]
@@ -92,9 +92,9 @@ pub mod raw {
 }
 
 unsafe impl object::ObjectType for Object {
-    fn get_type(_: Option<&Self>) -> gtype::GType {
+    fn get_type(_: Option<&Self>) -> GType {
         unsafe {
-            raw::g_object_get_type()
+            GType::new(raw::g_object_get_type())
         }
     }
 }

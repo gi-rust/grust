@@ -76,8 +76,7 @@ extern {
 extern {
     pub fn g_object_ref(obj: gpointer) -> gpointer;
     pub fn g_object_unref(obj: gpointer);
-    pub fn g_type_check_instance_is_a(instance  : *const GTypeInstance,
-                                  iface_type: GType) -> gboolean;
+    pub fn g_type_check_instance_is_a(instance: *const GTypeInstance, iface_type: GType) -> gboolean;
     pub fn g_type_name(t: GType) -> *const gchar;
     pub fn g_value_copy(src: *const GValue, dst: *mut GValue);
     pub fn g_value_get_boolean(value: *const GValue) -> gboolean;

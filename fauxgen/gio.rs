@@ -140,7 +140,7 @@ impl IOErrorEnum {
 #[allow(missing_copy_implementations)]
 pub mod raw {
     use grust::types::{gchar, gint, gpointer};
-    use grust::gtype::GType;
+    use grust::gtype::raw::GType;
     use grust::error::raw::GError;
     use gobject;
     use libc;
@@ -376,7 +376,7 @@ impl File {
 unsafe impl object::ObjectType for AsyncResult {
     fn get_type(_: Option<&Self>) -> GType {
         unsafe {
-            raw::g_async_result_get_type()
+            GType::new(raw::g_async_result_get_type())
         }
     }
 }
@@ -384,7 +384,7 @@ unsafe impl object::ObjectType for AsyncResult {
 unsafe impl object::ObjectType for File {
     fn get_type(_: Option<&Self>) -> GType {
         unsafe {
-            raw::g_file_get_type()
+            GType::new(raw::g_file_get_type())
         }
     }
 }
@@ -392,7 +392,7 @@ unsafe impl object::ObjectType for File {
 unsafe impl object::ObjectType for FileInputStream {
     fn get_type(_: Option<&Self>) -> GType {
         unsafe {
-            raw::g_file_input_stream_get_type()
+            GType::new(raw::g_file_input_stream_get_type())
         }
     }
 }

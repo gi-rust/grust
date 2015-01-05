@@ -51,14 +51,14 @@ impl Value {
     pub fn new(g_type: GType) -> Value {
         unsafe {
             let mut val: Value = mem::zeroed();
-            ffi::g_value_init(&mut val, g_type);
+            ffi::g_value_init(&mut val, g_type.to_raw());
             val
         }
     }
 
     #[inline]
     pub fn value_type(&self) -> GType {
-        self.g_type
+        unsafe { GType::new(self.g_type) }
     }
 
     pub fn get_boolean(&self) -> bool {
