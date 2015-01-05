@@ -19,6 +19,7 @@
 #[macro_use]
 extern crate grust;
 
+use grust::boxed;
 use grust::gtype;
 use grust::value::Value;
 
@@ -28,4 +29,27 @@ fn test_string() {
     value.set_string(g_str!("Hello"));
     let s = value.get_string().unwrap().to_bytes();
     assert_eq!(s, b"Hello");
+}
+
+#[test]
+fn test_boxed() {
+    let mut value = Value::new(boxed::type_of::<Box<String>>());
+    {
+        let os = value.deref_boxed::<Box<String>>();
+        assert_eq!(os, None);
+    }
+    {
+        let ob = value.dup_boxed::<Box<String>>();
+        assert_eq!(ob, None);
+    }
+    value.take_boxed(Box::new("Hello!".to_string()));
+    let value = value.clone();
+    {
+        let s = value.deref_boxed::<Box<String>>().unwrap();
+        assert_eq!(&s[], "Hello!");
+    }
+    {
+        let b = value.dup_boxed::<Box<String>>().unwrap();
+        assert_eq!(*b, "Hello!");
+    }
 }

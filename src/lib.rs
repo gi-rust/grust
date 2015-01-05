@@ -21,8 +21,10 @@
 
 #![allow(unstable_features)]
 
+#![feature(alloc)]
 #![feature(collections)]
 #![feature(core)]
+#![feature(io)]
 #![feature(libc)]
 #![feature(std_misc)]
 #![feature(unsafe_destructor)]
@@ -31,6 +33,7 @@ extern crate libc;
 extern crate "glib-2_0-sys" as glib;
 extern crate "gobject-2_0-sys" as gobject;
 
+pub mod boxed;
 pub mod error;
 pub mod gstr;
 pub mod gtype;

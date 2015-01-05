@@ -16,7 +16,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use gobject as ffi;
+use boxed;
+use boxed::BoxedType;
 use gstr::{GStr, OwnedGStr};
 use gtype::GType;
 use object;
@@ -25,7 +26,10 @@ use types::{gboolean, gchar, gdouble, gfloat, gint, glong, gpointer};
 use types::{guchar, guint, gulong};
 use util::is_true;
 
+use gobject as ffi;
+
 use std::mem;
+use std::ops::Deref;
 
 pub struct Value(ffi::GValue);
 
@@ -37,12 +41,12 @@ impl Drop for Value {
 
 impl Clone for Value {
     fn clone(&self) -> Value {
-        unsafe {
-            let mut val: Value = mem::zeroed();
-            ffi::g_value_init(val.as_mut_raw(), self.as_raw().g_type);
-            ffi::g_value_copy(self.as_raw(), val.as_mut_raw());
-            val
-        }
+        Value(unsafe {
+            let mut raw: ffi::GValue = mem::zeroed();
+            ffi::g_value_init(&mut raw, self.as_raw().g_type);
+            ffi::g_value_copy(self.as_raw(), &mut raw);
+            raw
+        })
     }
 }
 
@@ -67,7 +71,7 @@ impl Value {
 
     #[inline]
     pub fn value_type(&self) -> GType {
-        unsafe { GType::new(self.as_raw().g_type) }
+        unsafe { GType::from_raw(self.as_raw().g_type) }
     }
 
     pub fn get_boolean(&self) -> bool {
@@ -212,5 +216,54 @@ impl Value {
     {
         let p = val as *const T;
         unsafe { ffi::g_value_set_object(self.as_mut_raw(), p as gpointer) }
+    }
+
+    fn assert_boxed_type<T>(&self)
+        where T: BoxedType
+    {
+        assert!(self.value_type() == boxed::type_of::<T>(),
+                "GValue does not have the boxed type {:?}", boxed::type_of::<T>());
+    }
+
+    pub fn dup_boxed<T>(&self) -> Option<T>
+        where T: BoxedType
+    {
+        self.assert_boxed_type::<T>();
+        let p = unsafe { ffi::g_value_dup_boxed(self.as_raw()) };
+        if p.is_null() {
+            return None;
+        }
+        Some(unsafe {
+            let boxed: T = BoxedType::from_ptr(p);
+            boxed
+        })
+    }
+
+    pub fn deref_boxed<T>(&self) -> Option<&<T as Deref>::Target>
+        where T: BoxedType + Deref
+    {
+        self.assert_boxed_type::<T>();
+        let p = unsafe { ffi::g_value_get_boxed(self.as_raw()) };
+        if p.is_null() {
+            return None;
+        }
+        unsafe {
+            let boxed: T = BoxedType::from_ptr(p);
+            let ret = Some(mem::copy_lifetime(self, &*boxed));
+
+            // Lose the box by "subliming" it back into the raw pointer
+            let q = boxed.into_ptr();
+            debug_assert!(q == p,
+                "BoxedType invariant violation: into_ptr does not reverse from_ptr");
+
+            ret
+        }
+    }
+
+    pub fn take_boxed<T>(&mut self, val: T) where T: BoxedType {
+        unsafe {
+            let p = val.into_ptr();
+            ffi::g_value_take_boxed(self.as_mut_raw(), p);
+        }
     }
 }

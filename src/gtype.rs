@@ -56,7 +56,7 @@ pub const VARIANT   : GType = g_type_fundamental!(21);
 impl GType {
 
     #[inline]
-    pub unsafe fn new(type_id: ffi::GType) -> GType {
+    pub unsafe fn from_raw(type_id: ffi::GType) -> GType {
         GType(type_id)
     }
 
