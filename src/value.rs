@@ -20,7 +20,9 @@ use ffi;
 use gstr;
 use gstr::{GStr, GStrArg};
 use gtype::GType;
-use types::{gboolean, gchar, gdouble, gfloat, gint, glong};
+use object;
+use object::ObjectType;
+use types::{gboolean, gchar, gdouble, gfloat, gint, glong, gpointer};
 use types::{guchar, guint, gulong};
 use util;
 
@@ -58,6 +60,11 @@ impl Value {
             ffi::g_value_init(&mut val, g_type);
             val
         }
+    }
+
+    #[inline]
+    pub fn value_type(&self) -> GType {
+        self.g_type
     }
 
     pub fn get_boolean(&self) -> bool {
@@ -187,5 +194,24 @@ impl Value {
 
     pub fn take_string(&mut self, consumed: GStr) {
         unsafe { ffi::g_value_take_string(self, consumed.into_inner()) }
+    }
+
+    pub fn get_object<T>(&self) -> Option<&T>
+        where T: ObjectType
+    {
+        assert!(self.value_type() == object::type_of::<T>(),
+                "GValue does not have the object type");  // FIXME: format the expected type
+        let p = unsafe { ffi::g_value_get_object(self) as *const T };
+        if p.is_null() {
+            return None;
+        }
+        Some(unsafe { mem::copy_lifetime(self, &*p) })
+    }
+
+    pub fn set_object<T>(&mut self, val: &T)
+        where T: ObjectType
+    {
+        let p = val as *const T;
+        unsafe { ffi::g_value_set_object(self, p as gpointer) }
     }
 }

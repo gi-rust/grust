@@ -74,6 +74,7 @@ extern {
     pub fn g_value_get_int(value: *const GValue) -> gint;
     pub fn g_value_get_int64(value: *const GValue) -> i64;
     pub fn g_value_get_long(value: *const GValue) -> glong;
+    pub fn g_value_get_object(value: *const GValue) -> gpointer;
     pub fn g_value_get_schar(value: *const GValue) -> i8;
     pub fn g_value_get_string(value: *const GValue) -> *const gchar;
     pub fn g_value_get_uchar(value: *const GValue) -> guchar;
@@ -88,6 +89,7 @@ extern {
     pub fn g_value_set_int(value: *mut GValue, v_int: gint);
     pub fn g_value_set_int64(value: *mut GValue, v_int: i64);
     pub fn g_value_set_long(value: *mut GValue, v_long: glong);
+    pub fn g_value_set_object(value: *mut GValue, v_object: gpointer);
     pub fn g_value_set_schar(value: *mut GValue, v_char: i8);
     pub fn g_value_set_string(value: *mut GValue, v_string: *const gchar);
     pub fn g_value_set_static_string(value: *mut GValue, v_string: *const gchar);
