@@ -26,7 +26,7 @@ use util::is_true;
 use std::mem::transmute;
 
 pub unsafe trait ObjectType {
-    fn get_type(&self) -> GType;
+    fn get_type(_fixme_ufcs: Option<&Self>) -> GType;
 }
 
 const REFCOUNT_FUNCS: &'static RefcountFuncs = &(
@@ -54,28 +54,35 @@ impl<T> Upcast<T> for T {
     fn upcast_mut(&mut self) -> &mut T { self }
 }
 
-pub fn cast<'a, T: ObjectType, U: ObjectType>(source: &'a T)
-                                             -> &'a U {
+pub fn type_of<T>() -> GType
+    where T: ObjectType
+{
+    let fixme_ufcs: Option<&T> = None;
+    ObjectType::get_type(fixme_ufcs)
+}
+
+pub fn cast<T, U>(source: &T) -> &U
+    where T: ObjectType, U: ObjectType
+{
     unsafe {
         let inst = source as *const T as *const GTypeInstance;
-        let dest: &'a U = transmute(source);
-        let dest_type = dest.get_type();
+        let dest_type = type_of::<U>();
         assert!(is_true(ffi::g_type_check_instance_is_a(inst, dest_type)),
                 "invalid cast to type {}",
                 gstr::parse_as_utf8(&ffi::g_type_name(dest_type)).unwrap());
-        dest
+        transmute(source)
     }
 }
 
-pub fn cast_mut<'a, T: ObjectType, U: ObjectType>(source: &'a mut T)
-                                                  -> &'a mut U {
+pub fn cast_mut<T, U>(source: &mut T) -> &mut U
+    where T: ObjectType, U: ObjectType
+{
     unsafe {
         let inst = source as *mut T as *const GTypeInstance;
-        let dest: &'a mut U = transmute(source);
-        let dest_type = dest.get_type();
+        let dest_type = type_of::<U>();
         assert!(is_true(ffi::g_type_check_instance_is_a(inst, dest_type)),
                 "invalid cast to type {}",
                 gstr::parse_as_utf8(&ffi::g_type_name(dest_type)).unwrap());
-        dest
+        transmute(source)
     }
 }
