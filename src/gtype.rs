@@ -30,6 +30,33 @@ pub mod raw {
 #[derive(Copy, Eq, PartialEq)]
 pub struct GType(raw::GType);
 
+macro_rules! g_type_fundamental {
+    ($num:expr) => (GType($num << 2));
+}
+
+pub const INVALID   : GType = g_type_fundamental!(0);
+pub const NONE      : GType = g_type_fundamental!(1);
+pub const INTERFACE : GType = g_type_fundamental!(2);
+pub const CHAR      : GType = g_type_fundamental!(3);
+pub const UCHAR     : GType = g_type_fundamental!(4);
+pub const BOOLEAN   : GType = g_type_fundamental!(5);
+pub const INT       : GType = g_type_fundamental!(6);
+pub const UINT      : GType = g_type_fundamental!(7);
+pub const LONG      : GType = g_type_fundamental!(8);
+pub const ULONG     : GType = g_type_fundamental!(9);
+pub const INT64     : GType = g_type_fundamental!(10);
+pub const UINT64    : GType = g_type_fundamental!(11);
+pub const ENUM      : GType = g_type_fundamental!(12);
+pub const FLAGS     : GType = g_type_fundamental!(13);
+pub const FLOAT     : GType = g_type_fundamental!(14);
+pub const DOUBLE    : GType = g_type_fundamental!(15);
+pub const STRING    : GType = g_type_fundamental!(16);
+pub const POINTER   : GType = g_type_fundamental!(17);
+pub const BOXED     : GType = g_type_fundamental!(18);
+pub const PARAM     : GType = g_type_fundamental!(19);
+pub const OBJECT    : GType = g_type_fundamental!(20);
+pub const VARIANT   : GType = g_type_fundamental!(21);
+
 impl GType {
 
     #[inline]
