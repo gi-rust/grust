@@ -39,5 +39,6 @@ pub mod refcount;
 pub mod types;
 pub mod util;
 pub mod value;
+pub mod wrap;
 
 mod ffi;

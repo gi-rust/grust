@@ -16,25 +16,38 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// https://github.com/rust-lang/rust/issues/17679
-#![allow(improper_ctypes)]
-
-use gtype::GType;
-use error;
-use mainloop;
-use types::{gboolean, gchar, gdouble, gfloat, gint, glong, gssize};
+use types::{gboolean, gchar, gdouble, gfloat, gint, glong, gsize, gssize};
 use types::{guchar, guint, gulong};
 use types::gpointer;
-use value;
 
-pub type GError = error::raw::GError;
-pub type GMainContext = mainloop::MainContext;
-pub type GMainLoop = mainloop::MainLoop;
-pub type GQuark = u32;
-pub type GValue = value::Value;
+#[allow(missing_copy_implementations)]
+#[repr(C)]
+pub struct GError {
+    pub domain: GQuark,
+    pub code: gint,
+    pub message: *const gchar
+}
+
+#[repr(C)]
+pub struct GMainContext;
+
+#[repr(C)]
+pub struct GMainLoop;
+
+pub type GType = gsize;
 
 #[repr(C)]
 pub struct GTypeInstance;
+
+pub type GQuark = u32;
+
+#[repr(C)]
+pub struct GValue {
+    pub g_type: GType,
+    // If the data enum layout turns out to be different on some arch,
+    // we'd need arch-specific redefinitions
+    data: [u64; 2]
+}
 
 #[link(name = "glib-2.0")]
 extern {

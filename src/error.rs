@@ -26,18 +26,9 @@ use std::mem;
 use std::ptr;
 
 pub mod raw {
-
     use ffi;
-    use types::{gint,gchar};
-    use std::kinds::marker;
 
-    #[repr(C)]
-    pub struct GError {
-        pub domain: ffi::GQuark,
-        pub code: gint,
-        pub message: *const gchar,
-        no_copy: marker::NoCopy
-    }
+    pub type GError = ffi::GError;
 }
 
 pub struct Error {

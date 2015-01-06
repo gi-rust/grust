@@ -24,17 +24,11 @@ use object;
 use object::ObjectType;
 use types::{gboolean, gchar, gdouble, gfloat, gint, glong, gpointer};
 use types::{guchar, guint, gulong};
-use util;
+use util::is_true;
 
 use std::mem;
 
-#[repr(C)]
-pub struct Value {
-    g_type: GType,
-    // If the data enum layout turns out to be different on some arch,
-    // we'd need arch-specific redefinitions
-    data: [u64; 2]
-}
+pub type Value = ffi::GValue;
 
 impl Drop for Value {
     fn drop(&mut self) {
@@ -68,7 +62,7 @@ impl Value {
     }
 
     pub fn get_boolean(&self) -> bool {
-        util::is_true(unsafe { ffi::g_value_get_boolean(self) })
+        is_true(unsafe { ffi::g_value_get_boolean(self) })
     }
 
     pub fn set_boolean(&mut self, val: bool) {

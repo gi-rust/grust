@@ -22,17 +22,25 @@ use refcount::Refcount;
 use refcount::{RefcountFuncs,RefFunc,UnrefFunc};
 use refcount::SyncRef;
 use types::FALSE;
+use wrap;
+use wrap::Wrapper;
 
 use std::kinds::marker as std_marker;
 
 #[repr(C)]
 pub struct MainContext {
+    raw: ffi::GMainContext,
     marker: marker::SyncObjectMarker
+}
+
+unsafe impl Wrapper for MainContext {
+    type Raw = ffi::GMainContext;
 }
 
 impl MainContext {
     pub fn default() -> &'static mut MainContext {
-        unsafe { &mut *ffi::g_main_context_default() }
+        static ANCHOR: () = ();
+        unsafe { wrap::from_raw_mut(ffi::g_main_context_default(), &ANCHOR) }
     }
 }
 
@@ -54,11 +62,16 @@ impl Refcount for MainContext {
 
 #[repr(C)]
 pub struct MainLoop {
+    raw: ffi::GMainLoop,
     marker: marker::SyncObjectMarker
 }
 
+unsafe impl Wrapper for MainLoop {
+    type Raw = ffi::GMainLoop;
+}
+
 pub struct LoopRunner {
-    mainloop: *mut MainLoop,
+    mainloop: *mut ffi::GMainLoop,
 
     // Can't send the runner around due to the thread default stuff
     no_send: std_marker::NoSend
@@ -80,7 +93,7 @@ impl LoopRunner {
             let ctx = ffi::g_main_loop_get_context(self.mainloop);
             ffi::g_main_context_push_thread_default(ctx);
 
-            setup(SyncRef::new(&mut *self.mainloop));
+            setup(SyncRef::from_raw(self.mainloop));
 
             ffi::g_main_loop_run(self.mainloop);
 
@@ -100,15 +113,16 @@ impl Drop for LoopRunner {
 
 impl MainLoop {
 
-    pub fn get_context<'a>(&'a mut self) -> &'a mut MainContext {
+    pub fn get_context(&mut self) -> &mut MainContext {
         unsafe {
-            &mut *ffi::g_main_loop_get_context(self)
+            let ctx = ffi::g_main_loop_get_context(&mut self.raw);
+            wrap::from_raw_mut(ctx, self)
         }
     }
 
     pub fn quit(&mut self) {
         unsafe {
-            ffi::g_main_loop_quit(self);
+            ffi::g_main_loop_quit(&mut self.raw);
         }
     }
 }

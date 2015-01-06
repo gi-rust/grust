@@ -20,26 +20,34 @@
 
 #![crate_type = "lib"]
 
+#![feature(associated_types)]
+
 extern crate grust;
 extern crate "grust-GLib-2_0" as glib;
 
 use grust::gtype;
 use grust::marker;
 use grust::object;
-use grust::types::{gpointer,guint};
+use grust::wrap;
 
 #[repr(C)]
 pub struct TypeInstance {
-    g_class: gpointer,
-
+    raw: raw::GTypeInstance,
     _marker: marker::ObjectMarker
+}
+
+unsafe impl wrap::Wrapper for TypeInstance {
+    type Raw = raw::GTypeInstance;
 }
 
 #[repr(C)]
 pub struct Object {
-    g_type_instance: TypeInstance,
-    ref_count      : guint,
-    data           : gpointer
+    raw: raw::GObject,
+    _marker: marker::ObjectMarker
+}
+
+unsafe impl wrap::Wrapper for Object {
+    type Raw = raw::GObject;
 }
 
 pub mod cast {
@@ -60,11 +68,22 @@ pub mod cast {
     }
 }
 
+#[allow(missing_copy_implementations)]
 pub mod raw {
     use grust::gtype::GType;
+    use grust::types::{gpointer, guint};
 
-    pub type GTypeInstance = super::TypeInstance;
-    pub type GObject = super::Object;
+    #[repr(C)]
+    pub struct GTypeInstance {
+        g_class: gpointer
+    }
+
+    #[repr(C)]
+    pub struct GObject {
+        g_type_instance: GTypeInstance,
+        ref_count: guint,
+        data: gpointer
+    }
 
     #[link_name="gobject-2.0"]
     extern {
