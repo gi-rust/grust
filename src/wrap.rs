@@ -34,18 +34,18 @@ pub unsafe trait Wrapper {
 }
 
 #[inline]
-pub unsafe fn from_raw<'a, T, U>(ptr: *const <T as Wrapper>::Raw,
-                                 life_anchor: &'a U)
-                                -> &'a T
+pub unsafe fn from_raw<'a, T, Sized? U>(ptr: *const <T as Wrapper>::Raw,
+                                        life_anchor: &'a U)
+                                        -> &'a T
     where T: Wrapper
 {
     mem::copy_lifetime(life_anchor, &*(ptr as *const T))
 }
 
 #[inline]
-pub unsafe fn from_raw_mut<'a, T, U>(ptr: *mut <T as Wrapper>::Raw,
-                                     _life_anchor: &'a U)
-                                    -> &'a mut T
+pub unsafe fn from_raw_mut<'a, T, Sized? U>(ptr: *mut <T as Wrapper>::Raw,
+                                            _life_anchor: &'a U)
+                                           -> &'a mut T
     where T: Wrapper
 {
     mem::transmute(&*(ptr as *mut T))
