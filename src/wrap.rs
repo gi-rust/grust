@@ -50,3 +50,5 @@ pub unsafe fn from_raw_mut<'a, T, U>(ptr: *mut <T as Wrapper>::Raw,
 {
     mem::transmute(&*(ptr as *mut T))
 }
+
+pub const STATIC: &'static () = &();

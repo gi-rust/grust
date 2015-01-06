@@ -39,8 +39,9 @@ unsafe impl Wrapper for MainContext {
 
 impl MainContext {
     pub fn default() -> &'static mut MainContext {
-        static ANCHOR: () = ();
-        unsafe { wrap::from_raw_mut(ffi::g_main_context_default(), &ANCHOR) }
+        unsafe {
+            wrap::from_raw_mut(ffi::g_main_context_default(), wrap::STATIC)
+        }
     }
 }
 
