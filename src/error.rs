@@ -35,7 +35,7 @@ pub struct Error {
     ptr: *mut raw::GError
 }
 
-pub fn unset() -> Error {
+pub fn none() -> Error {
     Error { ptr: ptr::null_mut() }
 }
 
@@ -69,7 +69,7 @@ impl Drop for Error {
 impl Clone for Error {
     fn clone(&self) -> Error {
         if self.ptr.is_null() {
-            unset()
+            none()
         } else {
             Error {
                 ptr: unsafe {
@@ -81,7 +81,8 @@ impl Clone for Error {
 }
 
 impl Default for Error {
-    fn default() -> Error { unset() }
+    #[inline]
+    fn default() -> Error { none() }
 }
 
 impl Error {

@@ -360,7 +360,7 @@ impl File {
                                              grust::error::Error> {
         use grust::wrap::Wrapper;
         unsafe {
-            let mut err: grust::error::Error = grust::error::unset();
+            let mut err: grust::error::Error = grust::error::none();
             let ret = raw::g_file_read_finish(&mut self.raw,
                                               res.as_mut_ptr(),
                                               err.slot_ptr());
