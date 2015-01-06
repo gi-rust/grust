@@ -89,7 +89,8 @@ impl LoopRunner {
         }
     }
 
-    pub fn run_after(&self, setup: |SyncRef<MainLoop>|) {
+    pub fn run_after<F>(&self, setup: F) where F: FnOnce(SyncRef<MainLoop>)
+    {
         unsafe {
             let ctx = ffi::g_main_loop_get_context(self.mainloop);
             ffi::g_main_context_push_thread_default(ctx);

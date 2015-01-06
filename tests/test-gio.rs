@@ -24,7 +24,7 @@ use grust::object;
 use grust::error::Match as ErrorMatch;
 use std::error::Error;
 
-fn run_on_mainloop(setup: |SyncRef<MainLoop>|) {
+fn run_on_mainloop<F>(setup: F) where F: FnOnce(SyncRef<MainLoop>) {
     let runner = LoopRunner::new();
     runner.run_after(setup);
 }
