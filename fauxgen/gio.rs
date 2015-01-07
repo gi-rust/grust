@@ -28,7 +28,6 @@ extern crate "grust-GLib-2_0" as glib;
 extern crate "grust-GObject-2_0" as gobject;
 extern crate libc;
 
-use grust::callback;
 use grust::error;
 use grust::gstr;
 use grust::gstr::IntoUtf8;
@@ -37,11 +36,12 @@ use grust::marker;
 use grust::object;
 use grust::quark;
 use grust::refcount;
-use grust::types;
+use grust::types::{gint, gpointer};
 use grust::wrap;
 
 use std::fmt;
 use std::num::FromPrimitive;
+use std::mem;
 use std::sync::atomic;
 
 #[repr(C)]
@@ -192,26 +192,28 @@ pub mod raw {
     }
 }
 
-mod async_shim {
-
-    use grust::callback;
-    use grust::types::gpointer;
-    use grust::wrap;
-
+mod async {
     use super::raw;
     use gobject;
 
-    pub extern "C" fn async_ready_callback(source_object: *mut gobject::raw::GObject,
-                                           res: *mut raw::GAsyncResult,
-                                           user_data: gpointer) {
-        unsafe {
-            let arg1 = wrap::from_raw_mut::<gobject::Object, _>(
-                source_object, &source_object);
-            let arg2 = wrap::from_raw_mut::<super::AsyncResult, _>(
-                res, &res);
+    use grust::types::gpointer;
+    use grust::wrap;
+    use std::mem;
 
-            callback::invoke(user_data, (arg1, arg2))
-        }
+    pub extern "C" fn async_ready_callback<F>(source_object: *mut gobject::raw::GObject,
+                                              res: *mut raw::GAsyncResult,
+                                              user_data: gpointer)
+        where F: FnOnce(&mut gobject::Object, &mut super::AsyncResult) + Send
+    {
+        let cb: Box<F> = unsafe { mem::transmute(user_data) };
+        let arg1 = unsafe {
+            wrap::from_raw_mut::<gobject::Object, _>(source_object,
+                                                     &source_object)
+        };
+        let arg2 = unsafe {
+            wrap::from_raw_mut::<super::AsyncResult, _>(res, &res)
+        };
+        cb(arg1, arg2);
     }
 }
 
@@ -339,7 +341,7 @@ impl File {
     }
 
     pub fn read_async<F>(&mut self,
-                         io_priority: types::gint,
+                         io_priority: gint,
                          cancellable: Option<&mut Cancellable>,
                          callback: Box<F>)
         where F : FnOnce(&mut gobject::Object, &mut AsyncResult) + Send
@@ -352,12 +354,12 @@ impl File {
                     None    => std::ptr::null_mut()
                 }
             };
-            let callback = callback::AsyncCallback::new(callback).into_raw_ptr();
+            let callback: gpointer = mem::transmute(callback);
 
             raw::g_file_read_async(&mut self.raw,
                                    io_priority as libc::c_int,
                                    cancellable,
-                                   async_shim::async_ready_callback,
+                                   async::async_ready_callback::<F>,
                                    callback);
         }
     }

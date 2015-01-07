@@ -27,7 +27,6 @@
 extern crate libc;
 extern crate alloc;
 
-pub mod callback;
 pub mod error;
 pub mod gstr;
 pub mod gtype;
