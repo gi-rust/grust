@@ -341,7 +341,7 @@ impl File {
     pub fn read_async<F>(&mut self,
                          io_priority: types::gint,
                          cancellable: Option<&mut Cancellable>,
-                         callback: F)
+                         callback: Box<F>)
         where F : FnOnce(&mut gobject::Object, &mut AsyncResult) + Send
     {
         unsafe {

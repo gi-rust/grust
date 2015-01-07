@@ -38,10 +38,10 @@ pub struct AsyncCallback<Args, Ret> {
 
 impl<Args, Ret> AsyncCallback<Args, Ret> {
 
-    pub fn new<F>(func: F) -> AsyncCallback<Args, Ret>
+    pub fn new<F>(func: Box<F>) -> AsyncCallback<Args, Ret>
         where F: FnOnce<Args, Ret> + Send
     {
-        AsyncCallback { closure: box func }
+        AsyncCallback { closure: func }
     }
 
     pub fn invoke(self, args: Args) -> Ret {
