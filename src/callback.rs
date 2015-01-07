@@ -55,5 +55,5 @@ impl<Args, Ret> AsyncCallback<Args, Ret> {
 
 pub unsafe fn invoke<Args, Ret>(ptr: gpointer, args: Args) -> Ret {
     let b: Box<AsyncCallback<Args, Ret>> = transmute(ptr);
-    (*b).invoke(args)
+    b.invoke(args)
 }

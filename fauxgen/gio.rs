@@ -195,15 +195,22 @@ pub mod raw {
 mod async_shim {
 
     use grust::callback;
-    use grust::types;
+    use grust::types::gpointer;
+    use grust::wrap;
+
     use super::raw;
     use gobject;
 
     pub extern "C" fn async_ready_callback(source_object: *mut gobject::raw::GObject,
                                            res: *mut raw::GAsyncResult,
-                                           user_data: types::gpointer) {
+                                           user_data: gpointer) {
         unsafe {
-            callback::invoke(user_data, (&mut *source_object, &mut *res))
+            let arg1 = wrap::from_raw_mut::<gobject::Object, _>(
+                source_object, &source_object);
+            let arg2 = wrap::from_raw_mut::<super::AsyncResult, _>(
+                res, &res);
+
+            callback::invoke(user_data, (arg1, arg2))
         }
     }
 }
