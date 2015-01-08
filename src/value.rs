@@ -163,8 +163,7 @@ impl Value {
             if s.is_null() {
                 return None;
             }
-            let r = mem::copy_lifetime(self, &s);
-            Some(gstr::parse_as_bytes(r))
+            Some(gstr::parse_as_bytes(s, self))
         }
     }
 

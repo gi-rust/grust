@@ -111,7 +111,7 @@ impl ErrorTrait for Error {
         let mut os: Option<&'a str> = None;
         let raw = unsafe { &*self.ptr };
         if !raw.message.is_null() {
-            os = unsafe { gstr::parse_as_utf8(&raw.message).ok() };
+            os = unsafe { gstr::parse_as_utf8(raw.message, self).ok() };
         }
         if os.is_none() {
             let domain = unsafe { Quark::new(raw.domain) };
@@ -128,9 +128,9 @@ impl ErrorTrait for Error {
 
     fn detail(&self) -> Option<String> {
         if !self.ptr.is_null() {
-            let msg = unsafe { &(*self.ptr).message };
+            let msg = unsafe { (*self.ptr).message };
             if !msg.is_null() {
-                let msg_bytes = unsafe { gstr::parse_as_bytes(msg) };
+                let msg_bytes = unsafe { gstr::parse_as_bytes(msg, self) };
                 return Some(String::from_utf8_lossy(msg_bytes).into_owned());
             }
         }

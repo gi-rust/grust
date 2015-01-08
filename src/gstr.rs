@@ -34,22 +34,21 @@ pub struct GStr {
     ptr: *const gchar,
 }
 
-pub unsafe fn parse_as_bytes(raw: & *const gchar) -> &[u8] {
-    assert!(!raw.is_null());
-    let r = mem::copy_lifetime(raw, &(*raw as *const u8));
-    slice::from_raw_buf(r, libc::strlen(*raw) as uint)
-}
-
-#[inline]
-pub unsafe fn parse_as_utf8(raw: & *const gchar)
-                           -> Result<&str, str::Utf8Error>
+pub unsafe fn parse_as_bytes<'a, T: ?Sized>(raw: *const gchar,
+                                            life_anchor: &'a T)
+                                           -> &'a [u8]
 {
-    str::from_utf8(parse_as_bytes(raw))
+    assert!(!raw.is_null());
+    let r = mem::copy_lifetime(life_anchor, &(raw as *const u8));
+    slice::from_raw_buf(r, libc::strlen(raw) as uint)
 }
 
 #[inline]
-pub unsafe fn parse_as_utf8_unchecked(raw: & *const gchar) -> &str {
-    str::from_utf8_unchecked(parse_as_bytes(raw))
+pub unsafe fn parse_as_utf8<'a, T: ?Sized>(raw: *const gchar,
+                                           life_anchor: &'a T)
+                                          -> Result<&'a str, str::Utf8Error>
+{
+    str::from_utf8(parse_as_bytes(raw, life_anchor))
 }
 
 impl GStr {

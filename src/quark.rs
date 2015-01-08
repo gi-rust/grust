@@ -20,7 +20,6 @@ use ffi;
 use gstr;
 use types::gchar;
 
-use std::mem;
 use std::str;
 use std::sync::atomic;
 
@@ -67,8 +66,7 @@ impl Quark {
         let Quark(raw) = *self;
         unsafe {
             let s = ffi::g_quark_to_string(raw);
-            let r = mem::copy_lifetime("", &s);
-            gstr::parse_as_bytes(r)
+            gstr::parse_as_bytes(s, "")
         }
     }
 
