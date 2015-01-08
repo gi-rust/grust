@@ -19,6 +19,7 @@
 use ffi;
 use gstr;
 use quark::Quark;
+use types::gint;
 
 use std::default::Default;
 use std::error::Error as ErrorTrait;
@@ -43,7 +44,7 @@ pub fn none() -> Error {
 pub enum Match<T> {
     NotInDomain,
     Known(T),
-    Unknown(int)
+    Unknown(gint)
 }
 
 impl<T> PartialEq for Match<T> where T: PartialEq {
@@ -92,13 +93,13 @@ impl Error {
 
     pub fn is_set(&self) -> bool { !self.ptr.is_null() }
 
-    pub fn key(&self) -> (Quark, int) {
+    pub fn key(&self) -> (Quark, gint) {
         if self.ptr.is_null() {
             panic!("use of an unset GError pointer slot");
         }
         unsafe {
             let raw = &*self.ptr;
-            (Quark::new(raw.domain), raw.code as int)
+            (Quark::new(raw.domain), raw.code)
         }
     }
 }

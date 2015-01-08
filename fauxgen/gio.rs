@@ -128,7 +128,7 @@ impl IOErrorEnum {
         if domain != IOErrorEnum::error_domain() {
             return error::Match::NotInDomain;
         }
-        if let Some(v) = FromPrimitive::from_int(code) {
+        if let Some(v) = FromPrimitive::from_i64(code as i64) {
             error::Match::Known(v)
         } else {
             error::Match::Unknown(code)
