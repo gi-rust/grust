@@ -38,3 +38,6 @@ pub mod value;
 pub mod wrap;
 
 mod ffi;
+
+#[macro_use]
+mod macros;

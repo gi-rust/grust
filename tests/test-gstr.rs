@@ -116,6 +116,18 @@ fn test_g_str_into_inner() {
 }
 
 #[test]
+fn test_g_str_macro() {
+    let s = g_str!("Hello!");
+    assert!(g_str_equal(s.as_ptr(), "Hello!\0".as_ptr() as *const gchar));
+}
+
+#[test]
+fn test_g_utf8_macro() {
+    let s = g_utf8!("Hello!");
+    assert!(g_str_equal(s.as_ptr(), "Hello!\0".as_ptr() as *const gchar));
+}
+
+#[test]
 fn test_utf8_arg_from_static_str() {
     let s = Utf8Arg::from_static_str(TEST_CSTR);
     assert_eq!(s.as_ptr(), TEST_CSTR.as_ptr() as *const gchar);
