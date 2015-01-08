@@ -20,7 +20,6 @@
 
 #![crate_type = "lib"]
 
-#![feature(associated_types)]
 #![feature(unboxed_closures)]
 
 extern crate grust;

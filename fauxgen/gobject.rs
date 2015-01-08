@@ -20,8 +20,6 @@
 
 #![crate_type = "lib"]
 
-#![feature(associated_types)]
-
 extern crate grust;
 extern crate "grust-GLib-2_0" as glib;
 
