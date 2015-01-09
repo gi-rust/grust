@@ -71,7 +71,7 @@ impl GType {
     }
 }
 
-impl fmt::Show for GType {
+impl fmt::String for GType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = unsafe { ffi::g_type_name(self.to_raw()) };
         match unsafe { gstr::parse_as_utf8(name, "") } {

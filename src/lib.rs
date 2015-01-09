@@ -21,8 +21,9 @@
 
 #![feature(unsafe_destructor)]
 
+#![allow(unstable)]
+
 extern crate libc;
-extern crate alloc;
 
 pub mod error;
 pub mod gstr;

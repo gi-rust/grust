@@ -25,7 +25,7 @@ use types::FALSE;
 use wrap;
 use wrap::Wrapper;
 
-use std::kinds::marker as std_marker;
+use std::marker as std_marker;
 
 #[repr(C)]
 pub struct MainContext {
@@ -104,7 +104,6 @@ impl LoopRunner {
     }
 }
 
-#[unsafe_destructor]
 impl Drop for LoopRunner {
     fn drop(&mut self) {
         unsafe {

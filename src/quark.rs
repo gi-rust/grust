@@ -19,6 +19,7 @@
 use ffi;
 use gstr;
 use types::gchar;
+use util::escape_bytestring;
 
 use std::str;
 use std::sync::atomic;
@@ -45,7 +46,8 @@ impl Quark {
     pub fn from_static_bytes(bytes: &'static [u8]) -> Quark {
         assert!(!bytes.is_empty());
         if bytes[bytes.len() - 1] != 0 {
-            panic!("static byte string is not null-terminated: \"{}\"", bytes);
+            panic!("static byte string is not null-terminated: \"{}\"",
+                   escape_bytestring(bytes));
         }
         unsafe { Quark::from_static_internal(bytes) }
     }
@@ -54,12 +56,6 @@ impl Quark {
         let p = s.as_ptr() as *const gchar;
         let q = ffi::g_quark_from_static_string(p);
         Quark::new(q)
-    }
-
-    #[inline]
-    pub fn to_uint(&self) -> uint {
-        let Quark(raw) = *self;
-        raw as uint
     }
 
     pub fn to_bytes(&self) -> &'static [u8] {
@@ -80,14 +76,14 @@ impl StaticQuark {
 
     pub fn get(&self) -> Quark {
         let StaticQuark(s, ref cached) = *self;
-        let mut q = cached.load(atomic::Ordering::Relaxed);
+        let mut q = cached.load(atomic::Ordering::Relaxed) as ffi::GQuark;
         if q == 0 {
             unsafe {
                 let p = s.as_ptr() as *const gchar;
-                q = ffi::g_quark_from_static_string(p) as uint;
+                q = ffi::g_quark_from_static_string(p);
             }
-            cached.store(q, atomic::Ordering::Relaxed);
+            cached.store(q as usize, atomic::Ordering::Relaxed);
         }
-        unsafe { Quark::new(q as ffi::GQuark) }
+        unsafe { Quark::new(q) }
     }
 }

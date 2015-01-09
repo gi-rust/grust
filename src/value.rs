@@ -24,7 +24,7 @@ use object;
 use object::ObjectType;
 use types::{gboolean, gchar, gdouble, gfloat, gint, glong, gpointer};
 use types::{guchar, guint, gulong};
-use util::is_true;
+use util::{escape_bytestring, is_true};
 
 use std::mem;
 
@@ -180,7 +180,8 @@ impl Value {
 
     pub fn set_static_bytes(&mut self, val: &[u8]) {
         assert!(val.last() == Some(&0u8),
-                "static byte string is not null-terminated: {}", val);
+                "static byte string is not null-terminated: \"{}\"",
+                escape_bytestring(val));
         let p = val.as_ptr() as *const gchar;
         unsafe { ffi::g_value_set_static_string(self, p) }
     }

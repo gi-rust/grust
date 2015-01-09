@@ -18,7 +18,7 @@
 
 use ffi;
 use types::{gchar,gpointer};
-use util::is_false;
+use util::{escape_bytestring, is_false};
 
 use libc;
 use std::error::Error;
@@ -40,7 +40,7 @@ pub unsafe fn parse_as_bytes<'a, T: ?Sized>(raw: *const gchar,
 {
     assert!(!raw.is_null());
     let r = mem::copy_lifetime(life_anchor, &(raw as *const u8));
-    slice::from_raw_buf(r, libc::strlen(raw) as uint)
+    slice::from_raw_buf(r, libc::strlen(raw) as usize)
 }
 
 #[inline]
@@ -61,7 +61,7 @@ impl GStr {
     pub fn parse_as_bytes<'a>(&'a self) -> &'a [u8] {
         unsafe {
             let r = mem::copy_lifetime(self, &(self.ptr as *const u8));
-            slice::from_raw_buf(r, libc::strlen(self.ptr) as uint)
+            slice::from_raw_buf(r, libc::strlen(self.ptr) as usize)
         }
     }
 
@@ -106,8 +106,8 @@ impl Eq for GStr { }
 
 #[derive(Copy)]
 pub enum StrDataError {
-    ContainsNul(uint),
-    InvalidUtf8(uint)
+    ContainsNul(usize),
+    InvalidUtf8(usize)
 }
 
 impl Error for StrDataError {
@@ -166,7 +166,8 @@ impl GStrData {
 
     fn from_static_bytes(bytes: &'static [u8]) -> GStrData {
         assert!(bytes.last() == Some(&NUL),
-                "static byte string is not null-terminated: {}", bytes);
+                "static byte string is not null-terminated: \"{}\"",
+                escape_bytestring(bytes));
         GStrData::Static(bytes)
     }
 }
@@ -275,7 +276,7 @@ impl IntoUtf8 for GStr {
         let mut end: *const gchar = ptr::null_mut();
         let valid = unsafe { ffi::g_utf8_validate(self.ptr, -1, &mut end) };
         if is_false(valid) {
-            let pos = end as uint - self.ptr as uint;
+            let pos = end as usize - self.ptr as usize;
             return Err(StrDataError::InvalidUtf8(pos));
         }
         Ok(Utf8Arg { data: GStrData::GLib(self) })

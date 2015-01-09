@@ -20,7 +20,7 @@ use types::gpointer;
 use wrap;
 use wrap::Wrapper;
 
-use std::kinds::marker;
+use std::marker;
 use std::mem;
 use std::ops::{Deref, DerefMut};
 

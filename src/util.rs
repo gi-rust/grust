@@ -18,8 +18,20 @@
 
 use types::{gboolean,FALSE};
 
+use std::ascii;
+
 #[inline]
 pub fn is_true(v: gboolean) -> bool { v != FALSE }
 
 #[inline]
 pub fn is_false(v: gboolean) -> bool { v == FALSE }
+
+pub fn escape_bytestring(s: &[u8]) -> String {
+    let mut acc = Vec::with_capacity(s.len());
+    for c in s.iter() {
+        ascii::escape_default(*c, |esc| {
+            acc.push(esc);
+        })
+    }
+    unsafe { String::from_utf8_unchecked(acc) }
+}

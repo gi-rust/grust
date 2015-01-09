@@ -22,6 +22,8 @@
 
 #![feature(unboxed_closures)]
 
+#![allow(unstable)]
+
 #[macro_use]
 extern crate grust;
 
