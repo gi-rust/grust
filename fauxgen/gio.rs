@@ -201,7 +201,7 @@ mod async {
     pub extern "C" fn async_ready_callback<F>(source_object: *mut gobject::raw::GObject,
                                               res: *mut raw::GAsyncResult,
                                               user_data: gpointer)
-        where F: FnOnce(&mut gobject::Object, &mut super::AsyncResult) + Send
+        where F: FnOnce(&mut gobject::Object, &mut super::AsyncResult)
     {
         let cb: Box<F> = unsafe { mem::transmute(user_data) };
         let arg1 = unsafe {
@@ -342,7 +342,7 @@ impl File {
                          io_priority: gint,
                          cancellable: Option<&mut Cancellable>,
                          callback: Box<F>)
-        where F : FnOnce(&mut gobject::Object, &mut AsyncResult) + Send
+        where F : FnOnce(&mut gobject::Object, &mut AsyncResult)
     {
         unsafe {
             let cancellable = {
