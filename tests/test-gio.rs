@@ -16,9 +16,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use gio::{AsyncResult, File, FileInputStream, IOErrorEnum};
+use gio::{File, FileInputStream, IOErrorEnum};
 use gio::cast::AsFile;
-use gobject::Object;
 use grust::refcount::{Ref,SyncRef};
 use grust::mainloop::{LoopRunner,MainLoop};
 use grust::object;
@@ -73,14 +72,14 @@ fn async() {
     run_on_mainloop(|mut mainloop| {
         let mut f = File::new_for_path("/dev/null");
         f.read_async(0, None,
-            Box::new(move |: obj: &mut Object, res: &mut AsyncResult| {
+            move |obj, res| {
                 let f: &mut File = object::cast_mut(obj);
                 match f.read_finish(res) {
                     Ok(_)  => {}
                     Err(e) => { println!("Error: {}", e.description()) }
                 }
                 mainloop.quit();
-            }));
+            });
     })
 }
 
@@ -89,7 +88,7 @@ fn error_to_domain() {
     run_on_mainloop(|mut mainloop| {
         let mut f = File::new_for_path("./does-not-exist");
         f.read_async(0, None,
-            Box::new(move |: obj: &mut Object, res: &mut AsyncResult| {
+            move |obj, res| {
                 let f: &mut File = object::cast_mut(obj);
                 match f.read_finish(res) {
                     Ok(_)  => { unreachable!() }
@@ -106,7 +105,7 @@ fn error_to_domain() {
                     }
                 }
                 mainloop.quit();
-            }));
+            });
     })
 }
 
@@ -115,7 +114,7 @@ fn error_match_partial_eq() {
     run_on_mainloop(|mut mainloop| {
         let mut f = File::new_for_path("./does-not-exist");
         f.read_async(0, None,
-            Box::new(move |: obj: &mut Object, res: &mut AsyncResult| {
+            move |obj, res| {
                 let f: &mut File = object::cast_mut(obj);
                 match f.read_finish(res) {
                     Ok(_)  => { unreachable!() }
@@ -125,6 +124,6 @@ fn error_match_partial_eq() {
                     }
                 }
                 mainloop.quit();
-            }));
+            });
     })
 }

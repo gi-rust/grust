@@ -341,7 +341,7 @@ impl File {
     pub fn read_async<F>(&mut self,
                          io_priority: gint,
                          cancellable: Option<&mut Cancellable>,
-                         callback: Box<F>)
+                         callback: F)
         where F : FnOnce(&mut gobject::Object, &mut AsyncResult)
     {
         unsafe {
@@ -352,7 +352,7 @@ impl File {
                     None    => std::ptr::null_mut()
                 }
             };
-            let callback: gpointer = mem::transmute(callback);
+            let callback: gpointer = mem::transmute(Box::new(callback));
 
             raw::g_file_read_async(&mut self.raw,
                                    io_priority as libc::c_int,
