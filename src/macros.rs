@@ -31,3 +31,18 @@ macro_rules! g_utf8 {
         $crate::gstr::Utf8Arg::from_static_str(concat!($lit, "\0"))
     }
 }
+
+#[macro_export]
+macro_rules! g_static_quark {
+    ($lit:expr) => {
+        {
+            use $crate::quark::StaticQuark;
+
+            static QUARK: StaticQuark =
+                StaticQuark($lit,
+                            std::sync::atomic::ATOMIC_UINT_INIT);
+
+            QUARK.get()
+        }
+    }
+}

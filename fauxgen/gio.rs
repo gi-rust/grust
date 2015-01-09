@@ -22,9 +22,12 @@
 
 #![feature(unboxed_closures)]
 
+#[macro_use]
 extern crate grust;
+
 extern crate "grust-GLib-2_0" as glib;
 extern crate "grust-GObject-2_0" as gobject;
+
 extern crate libc;
 
 use grust::error;
@@ -41,7 +44,6 @@ use grust::wrap;
 use std::fmt;
 use std::num::FromPrimitive;
 use std::mem;
-use std::sync::atomic;
 
 #[repr(C)]
 pub struct AsyncResult {
@@ -117,10 +119,7 @@ impl fmt::Show for IOErrorEnum {
 impl IOErrorEnum {
 
     pub fn error_domain() -> quark::Quark {
-        static DOMAIN: quark::StaticQuark
-            = quark::StaticQuark(b"g-io-error-quark\0",
-                                 atomic::ATOMIC_UINT_INIT);
-        DOMAIN.get()
+        g_static_quark!(b"g-io-error-quark\0")
     }
 
     pub fn from_error(err: &error::Error) -> error::Match<IOErrorEnum> {
