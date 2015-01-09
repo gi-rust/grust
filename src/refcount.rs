@@ -42,6 +42,9 @@ pub struct SyncRef<T: Refcount + Send + Sync> {
     plumbing: RefImpl
 }
 
+unsafe impl<T> Send for SyncRef<T> where T: Refcount + Send + Sync { }
+unsafe impl<T> Sync for SyncRef<T> where T: Refcount + Send + Sync { }
+
 impl<T> Ref<T> where T: Refcount {
 
     pub fn new(source: &mut T) -> Ref<T> {
@@ -166,8 +169,6 @@ impl<T: Refcount + Send + Sync> Clone for SyncRef<T> {
         }
     }
 }
-
-unsafe impl<T> Send for SyncRef<T> where T: Refcount + Send + Sync { }
 
 impl<T> Deref for Ref<T> where T: Refcount {
 
