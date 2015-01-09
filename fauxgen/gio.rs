@@ -20,8 +20,6 @@
 
 #![crate_type = "lib"]
 
-#![feature(unboxed_closures)]
-
 #![allow(unstable)]
 
 #[macro_use]
