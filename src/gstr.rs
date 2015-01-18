@@ -18,19 +18,20 @@
 
 use ffi;
 use types::{gchar,gpointer};
-use util::{escape_bytestring, is_false};
+use util::escape_bytestring;
 
 use libc;
 use std::error::Error;
 use std::fmt;
+use std::marker;
 use std::mem;
-use std::ptr;
+use std::ops::Deref;
 use std::slice;
 use std::str;
 
 const NUL: u8 = 0;
 
-pub struct GStr {
+pub struct OwnedGStr {
     ptr: *const gchar,
 }
 
@@ -51,11 +52,11 @@ pub unsafe fn parse_as_utf8<'a, T: ?Sized>(raw: *const gchar,
     str::from_utf8(parse_as_bytes(raw, life_anchor))
 }
 
-impl GStr {
+impl OwnedGStr {
 
-    pub unsafe fn from_raw_buf(ptr: *mut gchar) -> GStr {
+    pub unsafe fn from_raw_buf(ptr: *mut gchar) -> OwnedGStr {
         assert!(!ptr.is_null());
-        GStr { ptr: ptr as *const gchar }
+        OwnedGStr { ptr: ptr as *const gchar }
     }
 
     pub fn parse_as_bytes<'a>(&'a self) -> &'a [u8] {
@@ -74,215 +75,221 @@ impl GStr {
     pub unsafe fn parse_as_utf8_unchecked<'a>(&'a self) -> &'a str {
         str::from_utf8_unchecked(self.parse_as_bytes())
     }
+}
 
-    pub unsafe fn into_inner(self) -> *mut gchar {
-        let ret = self.ptr as *mut gchar;
-        mem::forget(self);
-        ret
+impl Deref for OwnedGStr {
+
+    type Target = GStr;
+
+    fn deref(&self) -> &GStr {
+        unsafe { g_str_from_ptr_internal(self.ptr as *const u8, self) }
     }
 }
 
-impl Drop for GStr {
+impl Drop for OwnedGStr {
     fn drop(&mut self) {
         unsafe { ffi::g_free(self.ptr as gpointer) }
     }
 }
 
-impl Clone for GStr {
-    fn clone(&self) -> GStr {
+impl Clone for OwnedGStr {
+    fn clone(&self) -> OwnedGStr {
         unsafe {
-            GStr::from_raw_buf(ffi::g_strdup(self.ptr))
+            OwnedGStr::from_raw_buf(ffi::g_strdup(self.ptr))
         }
     }
 }
 
-impl PartialEq for GStr {
-    fn eq(&self, other: &GStr) -> bool {
+impl PartialEq for OwnedGStr {
+    fn eq(&self, other: &OwnedGStr) -> bool {
         unsafe { libc::strcmp(self.ptr, other.ptr) == 0 }
     }
 }
 
-impl Eq for GStr { }
+impl Eq for OwnedGStr { }
 
 #[derive(Copy)]
-pub enum StrDataError {
-    ContainsNul(usize),
-    InvalidUtf8(usize)
+pub struct NulError {
+    pub position: usize
 }
 
-impl Error for StrDataError {
+impl Error for NulError {
 
     fn description(&self) -> &str {
-        match *self {
-            StrDataError::ContainsNul(_)
-                => "invalid data for C string: contains a zero byte",
-            StrDataError::InvalidUtf8(_)
-                => "invalid UTF-8 sequence",
-        }
+        "invalid data for C string: contains a NUL byte"
     }
 
     fn detail(&self) -> Option<String> {
-        match *self {
-            StrDataError::ContainsNul(pos)
-                => Some(format!("NUL at position {}", pos)),
-            StrDataError::InvalidUtf8(pos)
-                => Some(format!("Invalid sequence at {}", pos)),
-        }
+        Some(format!("NUL at position {}", self.position))
     }
 }
 
-impl fmt::Show for StrDataError {
+impl fmt::Show for NulError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            StrDataError::ContainsNul(pos)
-                => write!(f, "invalid data for C string: NUL at position {}", pos),
-            StrDataError::InvalidUtf8(pos)
-                => write!(f, "invalid UTF-8 sequence at position {}", pos),
-        }
+        write!(f, "invalid data for C string: NUL at position {}",
+               self.position)
     }
 }
 
-enum GStrData {
-    Static(&'static [u8]),
-    Owned(Vec<u8>),
-    GLib(GStr)
+pub struct IntoGStrError {
+    cause: NulError,
+    bytes: Vec<u8>
 }
 
-impl GStrData {
+impl IntoGStrError {
 
-    fn as_ptr(&self) -> *const gchar {
-        match *self {
-            GStrData::Static(s) => s.as_ptr() as *const gchar,
-            GStrData::Owned(ref v) => v.as_ptr() as *const gchar,
-            GStrData::GLib(ref g) => g.ptr
-        }
+    pub fn nul_error(&self) -> &NulError {
+        &self.cause
     }
 
-    fn from_static_str(s: &'static str) -> GStrData {
-        assert!(s.ends_with("\0"),
-                "static string is not null-terminated: \"{}\"", s);
-        GStrData::Static(s.as_bytes())
-    }
-
-    fn from_static_bytes(bytes: &'static [u8]) -> GStrData {
-        assert!(bytes.last() == Some(&NUL),
-                "static byte string is not null-terminated: \"{}\"",
-                escape_bytestring(bytes));
-        GStrData::Static(bytes)
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.bytes
     }
 }
 
-fn vec_into_g_str_data(mut v: Vec<u8>) -> GStrData {
+impl Error for IntoGStrError {
+
+    fn description(&self) -> &str {
+        self.cause.description()
+    }
+
+    fn detail(&self) -> Option<String> {
+        self.cause.detail()
+    }
+}
+
+impl fmt::Show for IntoGStrError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.cause)
+    }
+}
+
+#[repr(C)]
+pub struct GStr {
+    head: gchar,
+    marker: marker::NoCopy
+}
+
+#[repr(C)]
+pub struct Utf8 {
+    gstr: GStr
+}
+
+impl GStr {
+    #[inline]
+    pub fn as_ptr(&self) -> *const gchar {
+        &self.head as *const gchar
+    }
+}
+
+impl Utf8 {
+    #[inline]
+    pub fn as_ptr(&self) -> *const gchar {
+        self.gstr.as_ptr()
+    }
+
+    #[inline]
+    pub fn as_g_str(&self) -> &GStr {
+        &self.gstr
+    }
+}
+
+unsafe fn g_str_from_ptr_internal<'a, T: ?Sized>(ptr: *const u8,
+                                                 life_anchor: &'a T)
+                                                -> &'a GStr
+{
+    mem::copy_lifetime(life_anchor, &*(ptr as *const GStr))
+}
+
+unsafe fn utf8_from_ptr_internal<'a, T: ?Sized>(ptr: *const u8,
+                                                life_anchor: &'a T)
+                                               -> &'a Utf8
+{
+    mem::copy_lifetime(life_anchor, &*(ptr as *const Utf8))
+}
+
+pub fn from_static_bytes(bytes: &'static [u8]) -> &'static GStr {
+    assert!(bytes.last() == Some(&NUL),
+            "static byte string is not null-terminated: \"{}\"",
+            escape_bytestring(bytes));
+    unsafe { g_str_from_ptr_internal(bytes.as_ptr(), bytes) }
+}
+
+pub fn from_static_str(s: &'static str) -> &'static Utf8 {
+    assert!(s.ends_with("\0"),
+            "static string is not null-terminated: \"{}\"", s);
+    unsafe { utf8_from_ptr_internal(s.as_ptr(), s) }
+}
+
+fn vec_into_g_str_buf(mut v: Vec<u8>) -> GStrBuf {
     v.push(NUL);
-    GStrData::Owned(v)
+    GStrBuf { data: v }
 }
 
-macro_rules! g_str_data_from_bytes(
-    ($inp:expr) => {
-        {
-            let bytes = $inp;
-            if let Some(pos) = bytes.position_elem(&NUL) {
-                return Err(StrDataError::ContainsNul(pos));
-            }
-            vec_into_g_str_data(bytes.to_vec())
-        }
+pub struct GStrBuf {
+    data: Vec<u8>
+}
+
+impl Deref for GStrBuf {
+
+    type Target = GStr;
+
+    fn deref(&self) -> &GStr {
+        unsafe { g_str_from_ptr_internal(self.data.as_ptr(), self) }
     }
-);
-
-pub struct GStrArg {
-    data: GStrData
 }
 
-impl GStrArg {
+impl GStrBuf {
 
     #[inline]
-    pub fn from_str(s: &str) -> Result<GStrArg, StrDataError> {
-        GStrArg::from_bytes(s.as_bytes())
+    pub fn from_str(s: &str) -> Result<GStrBuf, NulError> {
+        GStrBuf::from_bytes(s.as_bytes())
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<GStrArg, StrDataError> {
-        Ok(GStrArg { data: g_str_data_from_bytes!(bytes) })
-    }
-
-    pub fn from_static_str(s: &'static str) -> GStrArg {
-        GStrArg { data: GStrData::from_static_str(s) }
-    }
-
-    pub fn from_static_bytes(bytes: &'static [u8]) -> GStrArg {
-        GStrArg { data: GStrData::from_static_bytes(bytes) }
-    }
-
-    pub fn as_ptr(&self) -> *const gchar {
-        self.data.as_ptr()
-    }
-}
-
-pub struct Utf8Arg {
-    data: GStrData
-}
-
-impl Utf8Arg {
-
-    pub fn from_str(s: &str) -> Result<Utf8Arg, StrDataError> {
-        Ok(Utf8Arg { data: g_str_data_from_bytes!(s.as_bytes()) })
-    }
-
-    pub fn from_static_str(s: &'static str) -> Utf8Arg {
-        Utf8Arg { data: GStrData::from_static_str(s) }
-    }
-
-    pub fn as_ptr(&self) -> *const gchar {
-        self.data.as_ptr()
-    }
-}
-
-pub trait IntoUtf8 {
-
-    fn into_utf8(self) -> Result<Utf8Arg, StrDataError>;
-
-    unsafe fn into_utf8_unchecked(self) -> Utf8Arg;
-}
-
-fn vec_into_utf8(v: Vec<u8>) -> Utf8Arg {
-    Utf8Arg { data: vec_into_g_str_data(v) }
-}
-
-impl<'a> IntoUtf8 for &'a str {
-
-    #[inline]
-    fn into_utf8(self) -> Result<Utf8Arg, StrDataError> {
-        Utf8Arg::from_str(self)
-    }
-
-    unsafe fn into_utf8_unchecked(self) -> Utf8Arg {
-        vec_into_utf8(self.as_bytes().to_vec())
-    }
-}
-
-impl IntoUtf8 for String {
-
-    fn into_utf8(self) -> Result<Utf8Arg, StrDataError> {
-        Ok(Utf8Arg { data: g_str_data_from_bytes!(self.into_bytes()) })
-    }
-
-    unsafe fn into_utf8_unchecked(self) -> Utf8Arg {
-        vec_into_utf8(self.into_bytes())
-    }
-}
-
-impl IntoUtf8 for GStr {
-
-    fn into_utf8(self) -> Result<Utf8Arg, StrDataError> {
-        let mut end: *const gchar = ptr::null_mut();
-        let valid = unsafe { ffi::g_utf8_validate(self.ptr, -1, &mut end) };
-        if is_false(valid) {
-            let pos = end as usize - self.ptr as usize;
-            return Err(StrDataError::InvalidUtf8(pos));
+    pub fn from_bytes(bytes: &[u8]) -> Result<GStrBuf, NulError> {
+        if let Some(pos) = bytes.position_elem(&NUL) {
+            return Err(NulError { position: pos });
         }
-        Ok(Utf8Arg { data: GStrData::GLib(self) })
+        Ok(vec_into_g_str_buf(bytes.to_vec()))
     }
 
-    unsafe fn into_utf8_unchecked(self) -> Utf8Arg {
-        Utf8Arg { data: GStrData::GLib(self) }
+    pub fn from_vec(vec: Vec<u8>) -> Result<GStrBuf, IntoGStrError> {
+        if let Some(pos) = vec.position_elem(&NUL) {
+            return Err(IntoGStrError {
+                cause: NulError { position: pos },
+                bytes: vec
+            });
+        }
+        Ok(vec_into_g_str_buf(vec))
+    }
+}
+
+pub struct Utf8Buf {
+    inner: GStrBuf
+}
+
+impl Deref for Utf8Buf {
+
+    type Target = Utf8;
+
+    fn deref(&self) -> &Utf8 {
+        unsafe { utf8_from_ptr_internal(self.inner.data.as_ptr(), self) }
+    }
+}
+
+fn utf8_wrap_g_str_result<E>(res: Result<GStrBuf, E>) -> Result<Utf8Buf, E> {
+    res.map(|buf| {
+        Utf8Buf { inner: buf }
+    })
+}
+
+impl Utf8Buf {
+
+    pub fn from_str(s: &str) -> Result<Utf8Buf, NulError> {
+        utf8_wrap_g_str_result(GStrBuf::from_bytes(s.as_bytes()))
+    }
+
+    pub fn from_string(s: String) -> Result<Utf8Buf, IntoGStrError> {
+        utf8_wrap_g_str_result(GStrBuf::from_vec(s.into_bytes()))
     }
 }

@@ -16,7 +16,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use grust::gstr::{GStr, IntoUtf8, StrDataError, Utf8Arg};
+use grust::gstr;
+use grust::gstr::{Utf8Buf, OwnedGStr};
 
 use grust::types::gchar;
 
@@ -28,19 +29,19 @@ use libc;
 static TEST_CSTR: &'static str = "¡Hola, amigos!\0";
 static TEST_STR:  &'static str = "¡Hola, amigos!";
 
-fn new_g_str(source: &str) -> GStr {
+fn new_g_str(source: &str) -> OwnedGStr {
     assert!(source.ends_with("\0"));
     unsafe {
         let p = source.as_ptr();
-        GStr::from_raw_buf(g_strdup(p as *const gchar))
+        OwnedGStr::from_raw_buf(g_strdup(p as *const gchar))
     }
 }
 
-fn new_g_str_from_bytes(source: &[u8]) -> GStr {
-    assert!(source[source.len() - 1] == 0);
+fn new_g_str_from_bytes(source: &[u8]) -> OwnedGStr {
+    assert!(source.last() == Some(&0u8));
     unsafe {
         let p = source.as_ptr();
-        GStr::from_raw_buf(g_strdup(p as *const gchar))
+        OwnedGStr::from_raw_buf(g_strdup(p as *const gchar))
     }
 }
 
@@ -80,7 +81,7 @@ fn test_parse_as_bytes() {
 #[test]
 #[should_fail]
 fn test_str_from_null() {
-    let _ = unsafe { GStr::from_raw_buf(ptr::null_mut()) };
+    let _ = unsafe { OwnedGStr::from_raw_buf(ptr::null_mut()) };
 }
 
 #[test]
@@ -106,13 +107,10 @@ fn test_g_str_ne() {
 }
 
 #[test]
-fn test_g_str_into_inner() {
+fn test_g_str_deref() {
     let s = new_g_str(TEST_CSTR);
-    let p = unsafe { s.into_inner() };
+    let p = s.as_ptr();
     assert!(g_str_equal(p, TEST_CSTR.as_ptr() as *const gchar));
-
-    // Wrap the pointer again so it does not get leaked
-    let _ = unsafe { GStr::from_raw_buf(p) };
 }
 
 #[test]
@@ -128,47 +126,30 @@ fn test_g_utf8_macro() {
 }
 
 #[test]
-fn test_utf8_arg_from_static_str() {
-    let s = Utf8Arg::from_static_str(TEST_CSTR);
+fn test_from_static_str() {
+    let s = gstr::from_static_str(TEST_CSTR);
     assert_eq!(s.as_ptr(), TEST_CSTR.as_ptr() as *const gchar);
 }
 
 #[test]
-fn test_utf8_arg_from_str() {
+fn test_utf8_buf_from_str() {
     let s = String::from_str(TEST_STR);
-    let c = Utf8Arg::from_str(s.as_slice()).unwrap();
-    assert!(g_str_equal(c.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
+    let buf = Utf8Buf::from_str(s.as_slice()).unwrap();
+    assert!(g_str_equal(buf.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
+
+    let res = Utf8Buf::from_str("got\0nul");
+    let err = res.err().unwrap();
+    assert_eq!(err.position, 3);
 }
 
 #[test]
-fn test_utf8_arg_from_str_error() {
-    let res = Utf8Arg::from_str("got\0nul");
-    match res {
-        Err(StrDataError::ContainsNul(pos)) => assert_eq!(pos, 3),
-        _ => unreachable!()
-    }
-}
-
-#[test]
-fn test_string_into_utf8() {
+fn test_utf8_buf_from_string() {
     let s = String::from_str(TEST_STR);
-    let c = s.into_utf8().unwrap();
-    assert!(g_str_equal(c.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
-}
+    let buf = Utf8Buf::from_string(s).unwrap();
+    assert!(g_str_equal(buf.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
 
-#[test]
-fn test_g_str_into_utf8() {
-    let gs = new_g_str(TEST_CSTR);
-    let arg = gs.into_utf8().unwrap();
-    assert!(g_str_equal(arg.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
-}
-
-#[test]
-fn test_g_str_into_utf8_error() {
-    let gs = new_g_str_from_bytes(b"a\x80\0");
-    let res = gs.into_utf8();
-    match res {
-        Err(StrDataError::InvalidUtf8(pos)) => assert_eq!(pos, 1),
-        _ => unreachable!()
-    }
+    let s = String::from_str("got\0nul");
+    let res = Utf8Buf::from_string(s);
+    let err = res.err().unwrap();
+    assert_eq!(err.nul_error().position, 3);
 }

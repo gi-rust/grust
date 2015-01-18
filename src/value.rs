@@ -18,13 +18,13 @@
 
 use ffi;
 use gstr;
-use gstr::{GStr, GStrArg};
+use gstr::{GStr, OwnedGStr};
 use gtype::GType;
 use object;
 use object::ObjectType;
 use types::{gboolean, gchar, gdouble, gfloat, gint, glong, gpointer};
 use types::{guchar, guint, gulong};
-use util::{escape_bytestring, is_true};
+use util::is_true;
 
 use std::mem;
 
@@ -167,27 +167,19 @@ impl Value {
         }
     }
 
-    pub fn set_string(&mut self, val: &GStrArg) {
+    pub fn set_string(&mut self, val: &GStr) {
         unsafe { ffi::g_value_set_string(self, val.as_ptr()) }
     }
 
-    pub fn set_static_string(&mut self, val: &str) {
-        assert!(val.ends_with("\0"),
-                "static string is not null-terminated: \"{}\"", val);
-        let p = val.as_ptr() as *const gchar;
-        unsafe { ffi::g_value_set_static_string(self, p) }
+    pub fn set_static_string(&mut self, val: &'static GStr) {
+        unsafe { ffi::g_value_set_static_string(self, val.as_ptr()) }
     }
 
-    pub fn set_static_bytes(&mut self, val: &[u8]) {
-        assert!(val.last() == Some(&0u8),
-                "static byte string is not null-terminated: \"{}\"",
-                escape_bytestring(val));
-        let p = val.as_ptr() as *const gchar;
-        unsafe { ffi::g_value_set_static_string(self, p) }
-    }
-
-    pub fn take_string(&mut self, consumed: GStr) {
-        unsafe { ffi::g_value_take_string(self, consumed.into_inner()) }
+    pub fn take_string(&mut self, consumed: OwnedGStr) {
+        unsafe {
+            ffi::g_value_take_string(self, consumed.as_ptr() as *mut gchar);
+            mem::forget(consumed);
+        }
     }
 
     pub fn get_object<T>(&self) -> Option<&T>

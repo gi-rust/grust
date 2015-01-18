@@ -32,7 +32,6 @@ extern crate libc;
 
 use grust::error;
 use grust::gstr;
-use grust::gstr::IntoUtf8;
 use grust::gtype::GType;
 use grust::marker;
 use grust::object;
@@ -320,21 +319,17 @@ pub mod cast {
 
 impl File {
 
-    // TODO: need a macro for static UTF8In literals
-    // to make the argument &UTF8In without having to put tedious code
-    // into existing tests
-    pub fn new_for_path(path: &str) -> refcount::Ref<File> {
-        let p = path.into_utf8().unwrap();
+    pub fn new_for_path(path: &gstr::Utf8) -> refcount::Ref<File> {
         unsafe {
-            let ret = raw::g_file_new_for_path(p.as_ptr());
+            let ret = raw::g_file_new_for_path(path.as_ptr());
             refcount::Ref::from_raw(ret)
         }
     }
 
-    pub fn get_path<'a>(&mut self) -> gstr::GStr {
+    pub fn get_path(&mut self) -> gstr::OwnedGStr {
         unsafe {
             let ret = raw::g_file_get_path(&mut self.raw);
-            gstr::GStr::from_raw_buf(ret)
+            gstr::OwnedGStr::from_raw_buf(ret)
         }
     }
 

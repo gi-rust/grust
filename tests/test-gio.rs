@@ -31,7 +31,7 @@ fn run_on_mainloop<F>(setup: F) where F: FnOnce(SyncRef<MainLoop>) {
 
 #[test]
 fn as_file() {
-    let mut f = File::new_for_path("/dev/null");
+    let mut f = File::new_for_path(g_utf8!("/dev/null"));
     let mut g = f.as_mut_gio_file();
     let path = g.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
@@ -39,14 +39,14 @@ fn as_file() {
 
 #[test]
 fn deref() {
-    let mut f = File::new_for_path("/dev/null");
+    let mut f = File::new_for_path(g_utf8!("/dev/null"));
     let path = f.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
 }
 
 #[test]
 fn new_ref() {
-    let mut f = File::new_for_path("/dev/null");
+    let mut f = File::new_for_path(g_utf8!("/dev/null"));
     let mut g = Ref::new(&mut *f);
     let path = g.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
@@ -54,7 +54,7 @@ fn new_ref() {
 
 #[test]
 fn clone() {
-    let rf = File::new_for_path("/dev/null");
+    let rf = File::new_for_path(g_utf8!("/dev/null"));
     let mut rg = rf.clone();
     let path = rg.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
@@ -63,14 +63,14 @@ fn clone() {
 #[test]
 #[should_fail]
 fn cast_fail() {
-    let rf = File::new_for_path("/dev/null");
+    let rf = File::new_for_path(g_utf8!("/dev/null"));
     let _: &FileInputStream = object::cast(&*rf);
 }
 
 #[test]
 fn async() {
     run_on_mainloop(|mut mainloop| {
-        let mut f = File::new_for_path("/dev/null");
+        let mut f = File::new_for_path(g_utf8!("/dev/null"));
         f.read_async(0, None,
             move |obj, res| {
                 let f: &mut File = object::cast_mut(obj);
@@ -86,7 +86,7 @@ fn async() {
 #[test]
 fn error_to_domain() {
     run_on_mainloop(|mut mainloop| {
-        let mut f = File::new_for_path("./does-not-exist");
+        let mut f = File::new_for_path(g_utf8!("./does-not-exist"));
         f.read_async(0, None,
             |obj, res| {
                 let f: &mut File = object::cast_mut(obj);
@@ -112,7 +112,7 @@ fn error_to_domain() {
 #[test]
 fn error_match_partial_eq() {
     run_on_mainloop(|mut mainloop| {
-        let mut f = File::new_for_path("./does-not-exist");
+        let mut f = File::new_for_path(g_utf8!("./does-not-exist"));
         f.read_async(0, None,
             |obj, res| {
                 let f: &mut File = object::cast_mut(obj);

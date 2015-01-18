@@ -19,16 +19,14 @@
 #[macro_export]
 macro_rules! g_str {
     ($lit:expr) => {
-        // Currently, there is no working way to concatenate a byte string
-        // literal out of bytestring or string literals
-        $crate::gstr::GStrArg::from_static_str(concat!($lit, "\0"))
+        $crate::gstr::from_static_bytes(concat!($lit, "\0").as_bytes())
     }
 }
 
 #[macro_export]
 macro_rules! g_utf8 {
     ($lit:expr) => {
-        $crate::gstr::Utf8Arg::from_static_str(concat!($lit, "\0"))
+        $crate::gstr::from_static_str(concat!($lit, "\0"))
     }
 }
 

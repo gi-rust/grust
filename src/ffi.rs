@@ -16,7 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use types::{gboolean, gchar, gdouble, gfloat, gint, glong, gsize, gssize};
+use types::{gboolean, gchar, gdouble, gfloat, gint, glong, gsize};
 use types::{guchar, guint, gulong};
 use types::gpointer;
 
@@ -69,7 +69,6 @@ extern {
     pub fn g_quark_from_static_string(string: *const gchar) -> GQuark;
     pub fn g_quark_to_string(quark: GQuark) -> *const gchar;
     pub fn g_strdup(str: *const gchar) -> *mut gchar;
-    pub fn g_utf8_validate(str: *const gchar, max_len: gssize, end: *mut *const gchar) -> gboolean;
 }
 
 #[link(name = "gobject-2.0")]
