@@ -19,14 +19,14 @@
 #[macro_export]
 macro_rules! g_str {
     ($lit:expr) => {
-        $crate::gstr::from_static_bytes(concat!($lit, "\0").as_bytes())
+        $crate::gstr::GStr::from_static_bytes(concat!($lit, "\0").as_bytes())
     }
 }
 
 #[macro_export]
 macro_rules! g_utf8 {
     ($lit:expr) => {
-        $crate::gstr::from_static_str(concat!($lit, "\0"))
+        $crate::gstr::Utf8::from_static_str(concat!($lit, "\0"))
     }
 }
 

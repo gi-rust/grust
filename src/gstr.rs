@@ -54,7 +54,7 @@ pub unsafe fn parse_as_utf8<'a, T: ?Sized>(raw: *const gchar,
 
 impl OwnedGStr {
 
-    pub unsafe fn from_raw_buf(ptr: *mut gchar) -> OwnedGStr {
+    pub unsafe fn from_raw(ptr: *mut gchar) -> OwnedGStr {
         assert!(!ptr.is_null());
         OwnedGStr { ptr: ptr as *const gchar }
     }
@@ -95,7 +95,7 @@ impl Drop for OwnedGStr {
 impl Clone for OwnedGStr {
     fn clone(&self) -> OwnedGStr {
         unsafe {
-            OwnedGStr::from_raw_buf(ffi::g_strdup(self.ptr))
+            OwnedGStr::from_raw(ffi::g_strdup(self.ptr))
         }
     }
 }
@@ -180,6 +180,21 @@ impl GStr {
     pub fn as_ptr(&self) -> *const gchar {
         &self.head as *const gchar
     }
+
+    pub fn from_static_bytes(bytes: &'static [u8]) -> &'static GStr {
+        assert!(bytes.last() == Some(&NUL),
+                "static byte string is not null-terminated: \"{}\"",
+                escape_bytestring(bytes));
+        unsafe { g_str_from_ptr_internal(bytes.as_ptr(), bytes) }
+    }
+
+    pub unsafe fn from_raw<'a, T: ?Sized>(ptr: *const gchar,
+                                          life_anchor: &'a T)
+                                         -> &'a GStr
+    {
+        assert!(!ptr.is_null());
+        g_str_from_ptr_internal(ptr as *const u8, life_anchor)
+    }
 }
 
 impl Utf8 {
@@ -191,6 +206,20 @@ impl Utf8 {
     #[inline]
     pub fn as_g_str(&self) -> &GStr {
         &self.gstr
+    }
+
+    pub fn from_static_str(s: &'static str) -> &'static Utf8 {
+        assert!(s.ends_with("\0"),
+                "static string is not null-terminated: \"{}\"", s);
+        unsafe { utf8_from_ptr_internal(s.as_ptr(), s) }
+    }
+
+    pub unsafe fn from_raw<'a, T: ?Sized>(ptr: *const gchar,
+                                          life_anchor: &'a T)
+                                         -> &'a Utf8
+    {
+        assert!(!ptr.is_null());
+        utf8_from_ptr_internal(ptr as *const u8, life_anchor)
     }
 }
 
@@ -206,19 +235,6 @@ unsafe fn utf8_from_ptr_internal<'a, T: ?Sized>(ptr: *const u8,
                                                -> &'a Utf8
 {
     mem::copy_lifetime(life_anchor, &*(ptr as *const Utf8))
-}
-
-pub fn from_static_bytes(bytes: &'static [u8]) -> &'static GStr {
-    assert!(bytes.last() == Some(&NUL),
-            "static byte string is not null-terminated: \"{}\"",
-            escape_bytestring(bytes));
-    unsafe { g_str_from_ptr_internal(bytes.as_ptr(), bytes) }
-}
-
-pub fn from_static_str(s: &'static str) -> &'static Utf8 {
-    assert!(s.ends_with("\0"),
-            "static string is not null-terminated: \"{}\"", s);
-    unsafe { utf8_from_ptr_internal(s.as_ptr(), s) }
 }
 
 fn vec_into_g_str_buf(mut v: Vec<u8>) -> GStrBuf {

@@ -29,19 +29,19 @@ use libc;
 static TEST_CSTR: &'static str = "¡Hola, amigos!\0";
 static TEST_STR:  &'static str = "¡Hola, amigos!";
 
-fn new_g_str(source: &str) -> OwnedGStr {
+fn owned_g_str(source: &str) -> OwnedGStr {
     assert!(source.ends_with("\0"));
     unsafe {
         let p = source.as_ptr();
-        OwnedGStr::from_raw_buf(g_strdup(p as *const gchar))
+        OwnedGStr::from_raw(g_strdup(p as *const gchar))
     }
 }
 
-fn new_g_str_from_bytes(source: &[u8]) -> OwnedGStr {
+fn owned_g_str_from_bytes(source: &[u8]) -> OwnedGStr {
     assert!(source.last() == Some(&0u8));
     unsafe {
         let p = source.as_ptr();
-        OwnedGStr::from_raw_buf(g_strdup(p as *const gchar))
+        OwnedGStr::from_raw(g_strdup(p as *const gchar))
     }
 }
 
@@ -51,16 +51,16 @@ fn g_str_equal(p1: *const gchar, p2: *const gchar) -> bool {
 }
 
 #[test]
-fn test_parse_as_utf8() {
-    let str = new_g_str(TEST_CSTR);
+fn test_owned_g_str_parse_as_utf8() {
+    let str = owned_g_str(TEST_CSTR);
     let res = str.parse_as_utf8();
     assert!(res.is_ok());
     assert_eq!(res.unwrap(), TEST_STR);
 }
 
 #[test]
-fn test_parse_as_utf8_invalid() {
-    let s = new_g_str_from_bytes(b"a\x80\0");
+fn test_owned_g_str_parse_as_utf8_invalid() {
+    let s = owned_g_str_from_bytes(b"a\x80\0");
     let res = s.parse_as_utf8();
     assert!(res.is_err());
     match res {
@@ -70,8 +70,8 @@ fn test_parse_as_utf8_invalid() {
 }
 
 #[test]
-fn test_parse_as_bytes() {
-    let str = new_g_str_from_bytes(b"a\x80\0");
+fn test_owned_g_str_parse_as_bytes() {
+    let str = owned_g_str_from_bytes(b"a\x80\0");
     let bytes = str.parse_as_bytes();
     assert_eq!(bytes.len(), 2);
     assert_eq!(bytes[0], b'a');
@@ -80,35 +80,35 @@ fn test_parse_as_bytes() {
 
 #[test]
 #[should_fail]
-fn test_str_from_null() {
-    let _ = unsafe { OwnedGStr::from_raw_buf(ptr::null_mut()) };
+fn test_owned_g_str_from_null() {
+    let _ = unsafe { OwnedGStr::from_raw(ptr::null_mut()) };
 }
 
 #[test]
-fn test_g_str_clone() {
-    let str1 = new_g_str(TEST_CSTR);
+fn test_owned_g_str_clone() {
+    let str1 = owned_g_str(TEST_CSTR);
     let str2 = str1.clone();
     let s = str2.parse_as_utf8().unwrap();
     assert_eq!(s, String::from_str(TEST_STR));
 }
 
 #[test]
-fn test_g_str_eq() {
-    let s1 = new_g_str(TEST_CSTR);
-    let s2 = new_g_str(TEST_CSTR);
+fn test_owned_g_str_eq() {
+    let s1 = owned_g_str(TEST_CSTR);
+    let s2 = owned_g_str(TEST_CSTR);
     assert!(s1 == s2);
 }
 
 #[test]
-fn test_g_str_ne() {
-    let s1 = new_g_str(TEST_CSTR);
-    let s2 = new_g_str("This is not the string you are looking for\0");
+fn test_owned_g_str_ne() {
+    let s1 = owned_g_str(TEST_CSTR);
+    let s2 = owned_g_str("This is not the string you are looking for\0");
     assert!(s1 != s2);
 }
 
 #[test]
-fn test_g_str_deref() {
-    let s = new_g_str(TEST_CSTR);
+fn test_owned_g_str_deref() {
+    let s = owned_g_str(TEST_CSTR);
     let p = s.as_ptr();
     assert!(g_str_equal(p, TEST_CSTR.as_ptr() as *const gchar));
 }
@@ -126,8 +126,8 @@ fn test_g_utf8_macro() {
 }
 
 #[test]
-fn test_from_static_str() {
-    let s = gstr::from_static_str(TEST_CSTR);
+fn test_utf8_from_static_str() {
+    let s = gstr::Utf8::from_static_str(TEST_CSTR);
     assert_eq!(s.as_ptr(), TEST_CSTR.as_ptr() as *const gchar);
 }
 

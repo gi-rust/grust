@@ -329,7 +329,7 @@ impl File {
     pub fn get_path(&mut self) -> gstr::OwnedGStr {
         unsafe {
             let ret = raw::g_file_get_path(&mut self.raw);
-            gstr::OwnedGStr::from_raw_buf(ret)
+            gstr::OwnedGStr::from_raw(ret)
         }
     }
 
