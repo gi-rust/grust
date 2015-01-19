@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use ffi;
-use gstr;
 use gstr::{GStr, OwnedGStr};
 use gtype::GType;
 use object;
@@ -157,13 +156,13 @@ impl Value {
         unsafe { ffi::g_value_set_double(self, val) };
     }
 
-    pub fn get_string(&self) -> Option<&[u8]> {
+    pub fn get_string(&self) -> Option<&GStr> {
         unsafe {
-            let s = ffi::g_value_get_string(self);
-            if s.is_null() {
+            let ptr = ffi::g_value_get_string(self);
+            if ptr.is_null() {
                 return None;
             }
-            Some(gstr::parse_as_bytes(s, self))
+            Some(GStr::from_raw(ptr, self))
         }
     }
 
