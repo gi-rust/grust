@@ -58,23 +58,6 @@ impl OwnedGStr {
         assert!(!ptr.is_null());
         OwnedGStr { ptr: ptr as *const gchar }
     }
-
-    pub fn parse_as_bytes<'a>(&'a self) -> &'a [u8] {
-        unsafe {
-            let r = mem::copy_lifetime(self, &(self.ptr as *const u8));
-            slice::from_raw_buf(r, libc::strlen(self.ptr) as usize)
-        }
-    }
-
-    #[inline]
-    pub fn parse_as_utf8<'a>(&'a self) -> Result<&'a str, str::Utf8Error> {
-        str::from_utf8(self.parse_as_bytes())
-    }
-
-    #[inline]
-    pub unsafe fn parse_as_utf8_unchecked<'a>(&'a self) -> &'a str {
-        str::from_utf8_unchecked(self.parse_as_bytes())
-    }
 }
 
 impl Deref for OwnedGStr {
@@ -181,6 +164,23 @@ impl GStr {
         &self.head as *const gchar
     }
 
+    pub fn parse_as_bytes(&self) -> &[u8] {
+        unsafe {
+            let r = mem::copy_lifetime(self, &(self.as_ptr() as *const u8));
+            slice::from_raw_buf(r, libc::strlen(self.as_ptr()) as usize)
+        }
+    }
+
+    #[inline]
+    pub fn parse_as_utf8(&self) -> Result<&str, str::Utf8Error> {
+        str::from_utf8(self.parse_as_bytes())
+    }
+
+    #[inline]
+    pub unsafe fn parse_as_utf8_unchecked(&self) -> &str {
+        str::from_utf8_unchecked(self.parse_as_bytes())
+    }
+
     pub fn from_static_bytes(bytes: &'static [u8]) -> &'static GStr {
         assert!(bytes.last() == Some(&NUL),
                 "static byte string is not null-terminated: \"{}\"",
@@ -198,6 +198,7 @@ impl GStr {
 }
 
 impl Utf8 {
+
     #[inline]
     pub fn as_ptr(&self) -> *const gchar {
         self.gstr.as_ptr()
@@ -206,6 +207,11 @@ impl Utf8 {
     #[inline]
     pub fn as_g_str(&self) -> &GStr {
         &self.gstr
+    }
+
+    #[inline]
+    pub fn parse_as_str(&self) -> &str {
+        unsafe { str::from_utf8_unchecked(self.gstr.parse_as_bytes()) }
     }
 
     pub fn from_static_str(s: &'static str) -> &'static Utf8 {
