@@ -88,7 +88,7 @@ fn error_to_domain() {
     run_on_mainloop(|mut mainloop| {
         let mut f = File::new_for_path(g_utf8!("./does-not-exist"));
         f.read_async(0, None,
-            |obj, res| {
+            move |obj, res| {
                 let f: &mut File = object::cast_mut(obj);
                 match f.read_finish(res) {
                     Ok(_)  => { unreachable!() }
@@ -114,7 +114,7 @@ fn error_match_partial_eq() {
     run_on_mainloop(|mut mainloop| {
         let mut f = File::new_for_path(g_utf8!("./does-not-exist"));
         f.read_async(0, None,
-            |obj, res| {
+            move |obj, res| {
                 let f: &mut File = object::cast_mut(obj);
                 match f.read_finish(res) {
                     Ok(_)  => { unreachable!() }

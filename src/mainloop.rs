@@ -95,7 +95,7 @@ impl LoopRunner {
             let ctx = ffi::g_main_loop_get_context(self.mainloop);
             ffi::g_main_context_push_thread_default(ctx);
 
-            setup(SyncRef::from_raw(self.mainloop));
+            setup(SyncRef::new(wrap::from_raw_mut(self.mainloop, self)));
 
             ffi::g_main_loop_run(self.mainloop);
 

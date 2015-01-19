@@ -337,7 +337,8 @@ impl File {
                          io_priority: gint,
                          cancellable: Option<&mut Cancellable>,
                          callback: F)
-        where F : FnOnce(&mut gobject::Object, &mut AsyncResult)
+        where F: FnOnce(&mut gobject::Object, &mut AsyncResult),
+              F: 'static
     {
         unsafe {
             let cancellable = {
