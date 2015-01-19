@@ -1,6 +1,6 @@
 // This file is part of Grust, GObject introspection bindings for Rust
 //
-// Copyright (C) 2013, 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+// Copyright (C) 2015  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -16,20 +16,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#![allow(unstable)]
+use grust::gtype;
+use grust::value::Value;
 
-#[macro_use]
-extern crate grust;
-
-extern crate "grust-GLib-2_0" as glib;
-extern crate "grust-Gio-2_0" as gio;
-extern crate libc;
-
-#[path = "test-gstr.rs"]
-mod gstrtest;
-
-#[path = "test-gio.rs"]
-mod giotest;
-
-#[path = "test-value.rs"]
-mod valuetest;
+#[test]
+fn test_string() {
+    let mut value = Value::new(gtype::STRING);
+    value.set_string(g_str!("Hello"));
+    let s = value.get_string().unwrap().parse_as_bytes();
+    assert_eq!(s, b"Hello");
+}
