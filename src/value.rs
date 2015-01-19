@@ -27,11 +27,11 @@ use util::is_true;
 
 use std::mem;
 
-pub type Value = ffi::GValue;
+pub struct Value(ffi::GValue);
 
 impl Drop for Value {
     fn drop(&mut self) {
-        unsafe { ffi::g_value_unset(self) };
+        unsafe { ffi::g_value_unset(self.as_mut_raw()) };
     }
 }
 
@@ -39,8 +39,8 @@ impl Clone for Value {
     fn clone(&self) -> Value {
         unsafe {
             let mut val: Value = mem::zeroed();
-            ffi::g_value_init(&mut val, self.g_type);
-            ffi::g_value_copy(self, &mut val);
+            ffi::g_value_init(val.as_mut_raw(), self.as_raw().g_type);
+            ffi::g_value_copy(self.as_raw(), val.as_mut_raw());
             val
         }
     }
@@ -48,117 +48,127 @@ impl Clone for Value {
 
 impl Value {
     pub fn new(g_type: GType) -> Value {
-        unsafe {
-            let mut val: Value = mem::zeroed();
-            ffi::g_value_init(&mut val, g_type.to_raw());
-            val
-        }
+        Value(unsafe {
+            let mut raw: ffi::GValue = mem::zeroed();
+            ffi::g_value_init(&mut raw, g_type.to_raw());
+            raw
+        })
+    }
+
+    #[inline]
+    fn as_raw(&self) -> &ffi::GValue {
+        &self.0
+    }
+
+    #[inline]
+    fn as_mut_raw(&mut self) -> &mut ffi::GValue {
+        &mut self.0
     }
 
     #[inline]
     pub fn value_type(&self) -> GType {
-        unsafe { GType::new(self.g_type) }
+        unsafe { GType::new(self.as_raw().g_type) }
     }
 
     pub fn get_boolean(&self) -> bool {
-        is_true(unsafe { ffi::g_value_get_boolean(self) })
+        is_true(unsafe { ffi::g_value_get_boolean(self.as_raw()) })
     }
 
     pub fn set_boolean(&mut self, val: bool) {
-        unsafe { ffi::g_value_set_boolean(self, val as gboolean) };
+        unsafe { ffi::g_value_set_boolean(self.as_mut_raw(), val as gboolean) };
     }
 
     pub fn get_char(&self) -> gchar {
-        unsafe { ffi::g_value_get_char(self) }
+        unsafe { ffi::g_value_get_char(self.as_raw()) }
     }
 
     pub fn set_char(&mut self, val: gchar) {
-        unsafe { ffi::g_value_set_char(self, val) };
+        unsafe { ffi::g_value_set_char(self.as_mut_raw(), val) };
     }
 
     pub fn get_schar(&self) -> i8 {
-        unsafe { ffi::g_value_get_schar(self) }
+        unsafe { ffi::g_value_get_schar(self.as_raw()) }
     }
 
     pub fn set_schar(&mut self, val: i8) {
-        unsafe { ffi::g_value_set_schar(self, val) };
+        unsafe { ffi::g_value_set_schar(self.as_mut_raw(), val) };
     }
 
     pub fn get_uchar(&self) -> guchar {
-        unsafe { ffi::g_value_get_uchar(self) }
+        unsafe { ffi::g_value_get_uchar(self.as_raw()) }
     }
 
     pub fn set_uchar(&mut self, val: guchar) {
-        unsafe { ffi::g_value_set_uchar(self, val) };
+        unsafe { ffi::g_value_set_uchar(self.as_mut_raw(), val) };
     }
 
     pub fn get_int(&self) -> gint {
-        unsafe { ffi::g_value_get_int(self) }
+        unsafe { ffi::g_value_get_int(self.as_raw()) }
     }
 
     pub fn set_int(&mut self, val: gint) {
-        unsafe { ffi::g_value_set_int(self, val) };
+        unsafe { ffi::g_value_set_int(self.as_mut_raw(), val) };
     }
 
     pub fn get_uint(&self) -> guint {
-        unsafe { ffi::g_value_get_uint(self) }
+        unsafe { ffi::g_value_get_uint(self.as_raw()) }
     }
 
     pub fn set_uint(&mut self, val: guint) {
-        unsafe { ffi::g_value_set_uint(self, val) };
+        unsafe { ffi::g_value_set_uint(self.as_mut_raw(), val) };
     }
 
     pub fn get_long(&self) -> glong {
-        unsafe { ffi::g_value_get_long(self) }
+        unsafe { ffi::g_value_get_long(self.as_raw()) }
     }
 
     pub fn set_long(&mut self, val: glong) {
-        unsafe { ffi::g_value_set_long(self, val) };
+        unsafe { ffi::g_value_set_long(self.as_mut_raw(), val) };
     }
 
     pub fn get_ulong(&self) -> gulong {
-        unsafe { ffi::g_value_get_ulong(self) }
+        unsafe { ffi::g_value_get_ulong(self.as_raw()) }
     }
 
     pub fn set_ulong(&mut self, val: gulong) {
-        unsafe { ffi::g_value_set_ulong(self, val) };
+        unsafe { ffi::g_value_set_ulong(self.as_mut_raw(), val) };
     }
 
     pub fn get_int64(&self) -> i64 {
-        unsafe { ffi::g_value_get_int64(self) }
+        unsafe { ffi::g_value_get_int64(self.as_raw()) }
     }
 
     pub fn set_int64(&mut self, val: i64) {
-        unsafe { ffi::g_value_set_int64(self, val) };
+        unsafe { ffi::g_value_set_int64(self.as_mut_raw(), val) };
     }
 
     pub fn get_uint64(&self) -> u64 {
-        unsafe { ffi::g_value_get_uint64(self) }
+        unsafe { ffi::g_value_get_uint64(self.as_raw()) }
     }
 
     pub fn set_uint64(&mut self, val: u64) {
-        unsafe { ffi::g_value_set_uint64(self, val) };
+        unsafe { ffi::g_value_set_uint64(self.as_mut_raw(), val) };
     }
 
     pub fn get_float(&self) -> gfloat {
-        unsafe { ffi::g_value_get_float(self) }
+        unsafe { ffi::g_value_get_float(self.as_raw()) }
     }
 
     pub fn set_float(&mut self, val: gfloat) {
-        unsafe { ffi::g_value_set_float(self, val) };
+        unsafe { ffi::g_value_set_float(self.as_mut_raw(), val) };
     }
 
     pub fn get_double(&self) -> gdouble {
-        unsafe { ffi::g_value_get_double(self) }
+        unsafe { ffi::g_value_get_double(self.as_raw()) }
     }
 
     pub fn set_double(&mut self, val: gdouble) {
-        unsafe { ffi::g_value_set_double(self, val) };
+        unsafe { ffi::g_value_set_double(self.as_mut_raw(), val) };
     }
 
     pub fn get_string(&self) -> Option<&GStr> {
         unsafe {
-            let ptr = ffi::g_value_get_string(self);
+            let ptr = ffi::g_value_get_string(self.as_raw());
             if ptr.is_null() {
                 return None;
             }
@@ -167,16 +177,19 @@ impl Value {
     }
 
     pub fn set_string(&mut self, val: &GStr) {
-        unsafe { ffi::g_value_set_string(self, val.as_ptr()) }
+        unsafe { ffi::g_value_set_string(self.as_mut_raw(), val.as_ptr()) }
     }
 
     pub fn set_static_string(&mut self, val: &'static GStr) {
-        unsafe { ffi::g_value_set_static_string(self, val.as_ptr()) }
+        unsafe {
+            ffi::g_value_set_static_string(self.as_mut_raw(), val.as_ptr())
+        }
     }
 
     pub fn take_string(&mut self, consumed: OwnedGStr) {
         unsafe {
-            ffi::g_value_take_string(self, consumed.as_ptr() as *mut gchar);
+            let ptr = consumed.as_ptr() as *mut gchar;
+            ffi::g_value_take_string(self.as_mut_raw(), ptr);
             mem::forget(consumed);
         }
     }
@@ -186,7 +199,7 @@ impl Value {
     {
         assert!(self.value_type() == object::type_of::<T>(),
                 "GValue does not have the object type");  // FIXME: format the expected type
-        let p = unsafe { ffi::g_value_get_object(self) as *const T };
+        let p = unsafe { ffi::g_value_get_object(self.as_raw()) as *const T };
         if p.is_null() {
             return None;
         }
@@ -197,6 +210,6 @@ impl Value {
         where T: ObjectType
     {
         let p = val as *const T;
-        unsafe { ffi::g_value_set_object(self, p as gpointer) }
+        unsafe { ffi::g_value_set_object(self.as_mut_raw(), p as gpointer) }
     }
 }
