@@ -350,7 +350,7 @@ impl File {
 }
 
 unsafe impl object::ObjectType for AsyncResult {
-    fn get_type(_: Option<&Self>) -> GType {
+    fn get_type() -> GType {
         unsafe {
             GType::new(raw::g_async_result_get_type())
         }
@@ -358,7 +358,7 @@ unsafe impl object::ObjectType for AsyncResult {
 }
 
 unsafe impl object::ObjectType for File {
-    fn get_type(_: Option<&Self>) -> GType {
+    fn get_type() -> GType {
         unsafe {
             GType::new(raw::g_file_get_type())
         }
@@ -366,7 +366,7 @@ unsafe impl object::ObjectType for File {
 }
 
 unsafe impl object::ObjectType for FileInputStream {
-    fn get_type(_: Option<&Self>) -> GType {
+    fn get_type() -> GType {
         unsafe {
             GType::new(raw::g_file_input_stream_get_type())
         }

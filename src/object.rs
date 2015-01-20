@@ -26,7 +26,7 @@ use wrap::Wrapper;
 use std::mem::transmute;
 
 pub unsafe trait ObjectType {
-    fn get_type(_fixme_ufcs: Option<&Self>) -> GType;
+    fn get_type() -> GType;
 }
 
 impl<T> Refcount for T where T: ObjectType + Wrapper {
@@ -50,11 +50,8 @@ impl<T> Upcast<T> for T {
     fn upcast(&self) -> &T { self }
 }
 
-pub fn type_of<T>() -> GType
-    where T: ObjectType
-{
-    let fixme_ufcs: Option<&T> = None;
-    ObjectType::get_type(fixme_ufcs)
+pub fn type_of<T>() -> GType where T: ObjectType {
+    <T as ObjectType>::get_type()
 }
 
 pub fn is_instance_of<T, U>(object: &T) -> bool
