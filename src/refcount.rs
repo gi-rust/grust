@@ -30,11 +30,11 @@ pub trait Refcount {
     fn refcount_funcs(&self) -> &'static RefcountFuncs;
 }
 
-pub struct Ref<T: Refcount> {
+pub struct Ref<T> where T: Refcount {
     plumbing: RefImpl
 }
 
-pub struct SyncRef<T: Refcount + Send + Sync> {
+pub struct SyncRef<T> where T: Refcount {
     plumbing: RefImpl
 }
 
@@ -43,8 +43,12 @@ unsafe impl<T> Sync for SyncRef<T> where T: Refcount + Send + Sync { }
 
 impl<T> Ref<T> where T: Refcount {
 
-    pub fn new(source: &mut T) -> Ref<T> {
-        new_ref(source)
+    pub fn new(source: &T) -> Ref<T> {
+        let p = source as *const T as gpointer;
+        let funcs = source.refcount_funcs();
+        Ref {
+            plumbing: unsafe { RefImpl::new(p, funcs) }
+        }
     }
 }
 
@@ -59,8 +63,12 @@ impl<T> Ref<T> where T: Refcount + Wrapper {
 
 impl<T> SyncRef<T> where T: Refcount + Send + Sync {
 
-    pub fn new(source: &mut T) -> SyncRef<T> {
-        new_sync_ref(source)
+    pub fn new(source: &T) -> SyncRef<T> {
+        let p = source as *const T as gpointer;
+        let funcs = source.refcount_funcs();
+        SyncRef {
+            plumbing: unsafe { RefImpl::new(p, funcs) }
+        }
     }
 }
 
@@ -79,44 +87,25 @@ struct RefImpl {
 
 impl RefImpl {
 
-    unsafe fn impl_drop(&mut self, (_, dec_ref): RefcountFuncs) {
+    unsafe fn new(p: gpointer, funcs: &RefcountFuncs) -> RefImpl {
+        let (inc_ref, _) = *funcs;
+        (*inc_ref)(p);
+        RefImpl { ptr: p }
+    }
+
+    unsafe fn impl_drop(&mut self, funcs: &RefcountFuncs) {
+        let (_, dec_ref) = *funcs;
         (*dec_ref)(self.ptr);
     }
 
-    unsafe fn impl_clone_from(&mut self, source: &RefImpl,
-                              (inc_ref, dec_ref): RefcountFuncs)
+    unsafe fn impl_clone_from(&mut self,
+                              source: &RefImpl,
+                              funcs: &RefcountFuncs)
     {
-        if self.ptr == source.ptr {
-            return;
-        }
+        let (inc_ref, dec_ref) = *funcs;
         (*inc_ref)(source.ptr);
         (*dec_ref)(self.ptr);
         self.ptr = source.ptr;
-    }
-}
-
-unsafe fn new_ref_impl(p: gpointer, (inc_ref, _): RefcountFuncs) -> RefImpl {
-    (*inc_ref)(p);
-    RefImpl { ptr: p }
-}
-
-fn new_ref<T>(source: &T) -> Ref<T>
-    where T: Refcount
-{
-    let p = source as *const T as gpointer;
-    let funcs = source.refcount_funcs();
-    Ref {
-        plumbing: unsafe { new_ref_impl(p, *funcs) }
-    }
-}
-
-fn new_sync_ref<T>(source: &T) -> SyncRef<T>
-    where T: Refcount + Send + Sync
-{
-    let p = source as *const T as gpointer;
-    let funcs = source.refcount_funcs();
-    SyncRef {
-        plumbing: unsafe { new_ref_impl(p, *funcs) }
     }
 }
 
@@ -125,50 +114,50 @@ impl<T> Drop for Ref<T> where T: Refcount {
     fn drop(&mut self) {
         let funcs = self.refcount_funcs();
         unsafe {
-            self.plumbing.impl_drop(*funcs);
+            self.plumbing.impl_drop(funcs);
         }
     }
 }
 
 #[unsafe_destructor]
-impl<T> Drop for SyncRef<T> where T: Refcount + Send + Sync {
+impl<T> Drop for SyncRef<T> where T: Refcount {
     fn drop(&mut self) {
         let funcs = self.refcount_funcs();
         unsafe {
-            self.plumbing.impl_drop(*funcs);
+            self.plumbing.impl_drop(funcs);
         }
     }
 }
 
-impl<T: Refcount> Clone for Ref<T> {
+impl<T> Clone for Ref<T> where T: Refcount {
 
     fn clone(&self) -> Ref<T> {
-        new_ref(self.deref())
+        Ref::new(self.deref())
     }
 
     fn clone_from(&mut self, source: &Ref<T>) {
         let funcs = self.refcount_funcs();
         unsafe {
-            self.plumbing.impl_clone_from(&source.plumbing, *funcs);
+            self.plumbing.impl_clone_from(&source.plumbing, funcs);
         }
     }
 }
 
-impl<T: Refcount + Send + Sync> Clone for SyncRef<T> {
+impl<T> Clone for SyncRef<T> where T: Refcount + Send + Sync {
 
     fn clone(&self) -> SyncRef<T> {
-        new_sync_ref(self.deref())
+        SyncRef::new(self.deref())
     }
 
     fn clone_from(&mut self, source: &SyncRef<T>) {
         let funcs = self.refcount_funcs();
         unsafe {
-            self.plumbing.impl_clone_from(&source.plumbing, *funcs);
+            self.plumbing.impl_clone_from(&source.plumbing, funcs);
         }
     }
 }
 
-impl<T> Deref for Ref<T> where T: Refcount {
+impl<T> Deref for Ref<T> {
 
     type Target = T;
 
@@ -178,7 +167,7 @@ impl<T> Deref for Ref<T> where T: Refcount {
     }
 }
 
-impl<T> Deref for SyncRef<T> where T: Refcount + Send + Sync {
+impl<T> Deref for SyncRef<T> {
 
     type Target = T;
 
@@ -188,7 +177,7 @@ impl<T> Deref for SyncRef<T> where T: Refcount + Send + Sync {
     }
 }
 
-impl<T> DerefMut for Ref<T> where T: Refcount {
+impl<T> DerefMut for Ref<T> {
 
     fn deref_mut(&mut self) -> &mut T {
         let p = self.plumbing.ptr as *mut T;
@@ -196,7 +185,7 @@ impl<T> DerefMut for Ref<T> where T: Refcount {
     }
 }
 
-impl<T> DerefMut for SyncRef<T> where T: Refcount + Send + Sync {
+impl<T> DerefMut for SyncRef<T> {
 
     fn deref_mut(&mut self) -> &mut T {
         let p = self.plumbing.ptr as *mut T;
