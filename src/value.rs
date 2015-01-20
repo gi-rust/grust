@@ -198,7 +198,8 @@ impl Value {
         where T: ObjectType
     {
         assert!(self.value_type() == object::type_of::<T>(),
-                "GValue does not have the object type");  // FIXME: format the expected type
+                "GValue does not have the object type {:?}",
+                object::type_of::<T>());
         let p = unsafe { ffi::g_value_get_object(self.as_raw()) as *const T };
         if p.is_null() {
             return None;

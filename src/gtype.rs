@@ -71,13 +71,13 @@ impl GType {
     }
 }
 
-impl fmt::String for GType {
+impl fmt::Show for GType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let name = unsafe { ffi::g_type_name(self.to_raw()) };
-        match unsafe { gstr::parse_as_utf8(name, "") } {
-            Ok(s) => write!(f, "{}", s),
-            Err(..) => Err(fmt::Error)
-        }
+        let name_bytes = unsafe {
+            let name = ffi::g_type_name(self.to_raw());
+            gstr::parse_as_bytes(name, "")
+        };
+        write!(f, "{}", String::from_utf8_lossy(name_bytes))
     }
 }
 
