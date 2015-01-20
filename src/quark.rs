@@ -21,7 +21,6 @@ use gstr;
 use types::gchar;
 use util::escape_bytestring;
 
-use std::str;
 use std::sync::atomic;
 
 #[derive(Copy, Eq, PartialEq)]
@@ -58,17 +57,12 @@ impl Quark {
         Quark::new(q)
     }
 
-    pub fn to_bytes(&self) -> &'static [u8] {
+    pub fn as_bytes(&self) -> &'static [u8] {
         let Quark(raw) = *self;
         unsafe {
             let s = ffi::g_quark_to_string(raw);
             gstr::parse_as_bytes(s, "")
         }
-    }
-
-    #[inline]
-    pub fn to_str(&self) -> Result<&'static str, str::Utf8Error> {
-        str::from_utf8(self.to_bytes())
     }
 }
 

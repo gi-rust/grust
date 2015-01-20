@@ -25,6 +25,7 @@ use std::default::Default;
 use std::error::Error as ErrorTrait;
 use std::mem;
 use std::ptr;
+use std::str;
 
 pub mod raw {
     use ffi;
@@ -116,7 +117,7 @@ impl ErrorTrait for Error {
         }
         if os.is_none() {
             let domain = unsafe { Quark::new(raw.domain) };
-            os = domain.to_str().ok().map(|s| {
+            os = str::from_utf8(domain.as_bytes()).ok().map(|s| {
                 unsafe { mem::copy_lifetime(self, s) }
             });
         }
