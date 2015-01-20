@@ -20,7 +20,7 @@ use types::gpointer;
 use wrap::Wrapper;
 
 use std::mem;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 pub type RefFunc = unsafe extern "C" fn(gpointer) -> gpointer;
 pub type UnrefFunc = unsafe extern "C" fn(gpointer);
@@ -174,21 +174,5 @@ impl<T> Deref for SyncRef<T> {
     fn deref(&self) -> &T {
         let p = self.plumbing.ptr as *const T;
         unsafe { mem::copy_lifetime(self, &*p) }
-    }
-}
-
-impl<T> DerefMut for Ref<T> {
-
-    fn deref_mut(&mut self) -> &mut T {
-        let p = self.plumbing.ptr as *mut T;
-        unsafe { mem::copy_mut_lifetime(self, &mut *p) }
-    }
-}
-
-impl<T> DerefMut for SyncRef<T> {
-
-    fn deref_mut(&mut self) -> &mut T {
-        let p = self.plumbing.ptr as *mut T;
-        unsafe { mem::copy_mut_lifetime(self, &mut *p) }
     }
 }

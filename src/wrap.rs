@@ -23,13 +23,13 @@ pub unsafe trait Wrapper {
     type Raw : Sized;
 
     #[inline]
-    fn as_ptr<'a>(&'a self) -> *const <Self as Wrapper>::Raw {
+    fn as_ptr(&self) -> *const <Self as Wrapper>::Raw {
         self as *const Self as *const <Self as Wrapper>::Raw
     }
 
     #[inline]
-    fn as_mut_ptr(&mut self) -> *mut <Self as Wrapper>::Raw {
-        self as *mut Self as *mut <Self as Wrapper>::Raw
+    fn as_mut_ptr(&self) -> *mut <Self as Wrapper>::Raw {
+        self as *const Self as *mut <Self as Wrapper>::Raw
     }
 }
 
@@ -40,15 +40,6 @@ pub unsafe fn from_raw<'a, T, U: ?Sized>(ptr: *const <T as Wrapper>::Raw,
     where T: Wrapper
 {
     mem::copy_lifetime(life_anchor, &*(ptr as *const T))
-}
-
-#[inline]
-pub unsafe fn from_raw_mut<'a, T, U: ?Sized>(ptr: *mut <T as Wrapper>::Raw,
-                                             _life_anchor: &'a U)
-                                            -> &'a mut T
-    where T: Wrapper
-{
-    mem::transmute(&*(ptr as *mut T))
 }
 
 pub const STATIC: &'static () = &();

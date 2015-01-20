@@ -31,23 +31,23 @@ fn run_on_mainloop<F>(setup: F) where F: FnOnce(SyncRef<MainLoop>) {
 
 #[test]
 fn as_file() {
-    let mut f = File::new_for_path(g_utf8!("/dev/null"));
-    let mut g = f.as_mut_gio_file();
+    let f = File::new_for_path(g_utf8!("/dev/null"));
+    let g = f.as_gio_file();
     let path = g.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
 }
 
 #[test]
 fn deref() {
-    let mut f = File::new_for_path(g_utf8!("/dev/null"));
+    let f = File::new_for_path(g_utf8!("/dev/null"));
     let path = f.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
 }
 
 #[test]
 fn new_ref() {
-    let mut f = File::new_for_path(g_utf8!("/dev/null"));
-    let mut g = Ref::new(&mut *f);
+    let f = File::new_for_path(g_utf8!("/dev/null"));
+    let g = Ref::new(&*f);
     let path = g.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
 }
@@ -55,7 +55,7 @@ fn new_ref() {
 #[test]
 fn clone() {
     let rf = File::new_for_path(g_utf8!("/dev/null"));
-    let mut rg = rf.clone();
+    let rg = rf.clone();
     let path = rg.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
 }
@@ -69,11 +69,11 @@ fn cast_fail() {
 
 #[test]
 fn async() {
-    run_on_mainloop(|mut mainloop| {
-        let mut f = File::new_for_path(g_utf8!("/dev/null"));
+    run_on_mainloop(|mainloop| {
+        let f = File::new_for_path(g_utf8!("/dev/null"));
         f.read_async(0, None,
             move |obj, res| {
-                let f: &mut File = object::cast_mut(obj);
+                let f: &File = object::cast(obj);
                 match f.read_finish(res) {
                     Ok(_)  => {}
                     Err(e) => { println!("Error: {}", e.description()) }
@@ -85,11 +85,11 @@ fn async() {
 
 #[test]
 fn error_to_domain() {
-    run_on_mainloop(|mut mainloop| {
-        let mut f = File::new_for_path(g_utf8!("./does-not-exist"));
+    run_on_mainloop(|mainloop| {
+        let f = File::new_for_path(g_utf8!("./does-not-exist"));
         f.read_async(0, None,
             move |obj, res| {
-                let f: &mut File = object::cast_mut(obj);
+                let f: &File = object::cast(obj);
                 match f.read_finish(res) {
                     Ok(_)  => { unreachable!() }
                     Err(e) => {
@@ -111,11 +111,11 @@ fn error_to_domain() {
 
 #[test]
 fn error_match_partial_eq() {
-    run_on_mainloop(|mut mainloop| {
-        let mut f = File::new_for_path(g_utf8!("./does-not-exist"));
+    run_on_mainloop(|mainloop| {
+        let f = File::new_for_path(g_utf8!("./does-not-exist"));
         f.read_async(0, None,
             move |obj, res| {
-                let f: &mut File = object::cast_mut(obj);
+                let f: &File = object::cast(obj);
                 match f.read_finish(res) {
                     Ok(_)  => { unreachable!() }
                     Err(e) => {

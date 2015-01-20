@@ -38,9 +38,9 @@ unsafe impl Wrapper for MainContext {
 }
 
 impl MainContext {
-    pub fn default() -> &'static mut MainContext {
+    pub fn default() -> &'static MainContext {
         unsafe {
-            wrap::from_raw_mut(ffi::g_main_context_default(), wrap::STATIC)
+            wrap::from_raw(ffi::g_main_context_default(), wrap::STATIC)
         }
     }
 }
@@ -94,7 +94,7 @@ impl LoopRunner {
             let ctx = ffi::g_main_loop_get_context(self.mainloop);
             ffi::g_main_context_push_thread_default(ctx);
 
-            setup(SyncRef::new(wrap::from_raw_mut(self.mainloop, self)));
+            setup(SyncRef::new(wrap::from_raw(self.mainloop, self)));
 
             ffi::g_main_loop_run(self.mainloop);
 
@@ -113,16 +113,16 @@ impl Drop for LoopRunner {
 
 impl MainLoop {
 
-    pub fn get_context(&mut self) -> &mut MainContext {
+    pub fn get_context(&self) -> &MainContext {
         unsafe {
-            let ctx = ffi::g_main_loop_get_context(&mut self.raw);
-            wrap::from_raw_mut(ctx, self)
+            let ctx = ffi::g_main_loop_get_context(self.as_mut_ptr());
+            wrap::from_raw(ctx, self)
         }
     }
 
-    pub fn quit(&mut self) {
+    pub fn quit(&self) {
         unsafe {
-            ffi::g_main_loop_quit(&mut self.raw);
+            ffi::g_main_loop_quit(self.as_mut_ptr());
         }
     }
 }

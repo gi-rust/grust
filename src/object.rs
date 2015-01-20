@@ -40,16 +40,12 @@ unsafe impl<T> Refcount for T where T: ObjectType {
 
 pub trait Upcast<T> {
     fn upcast(&self) -> &T;
-    fn upcast_mut(&mut self) -> &mut T;
 }
 
 impl<T> Upcast<T> for T {
 
     #[inline]
     fn upcast(&self) -> &T { self }
-
-    #[inline]
-    fn upcast_mut(&mut self) -> &mut T { self }
 }
 
 pub fn type_of<T>() -> GType
@@ -74,13 +70,6 @@ fn assert_instance_of<T, U>(object: &T)
 }
 
 pub fn cast<T, U>(source: &T) -> &U
-    where T: ObjectType, U: ObjectType
-{
-    assert_instance_of::<T, U>(source);
-    unsafe { transmute(source) }
-}
-
-pub fn cast_mut<T, U>(source: &mut T) -> &mut U
     where T: ObjectType, U: ObjectType
 {
     assert_instance_of::<T, U>(source);

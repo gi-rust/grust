@@ -39,6 +39,7 @@ use grust::quark;
 use grust::refcount;
 use grust::types::{gint, gpointer};
 use grust::wrap;
+use grust::wrap::Wrapper;
 
 use std::fmt;
 use std::num::FromPrimitive;
@@ -202,15 +203,15 @@ mod async {
     pub extern "C" fn async_ready_callback<F>(source_object: *mut gobject::raw::GObject,
                                               res: *mut raw::GAsyncResult,
                                               user_data: gpointer)
-        where F: FnOnce(&mut gobject::Object, &mut super::AsyncResult)
+        where F: FnOnce(&gobject::Object, &super::AsyncResult)
     {
         let cb: Box<F> = unsafe { mem::transmute(user_data) };
         let arg1 = unsafe {
-            wrap::from_raw_mut::<gobject::Object, _>(source_object,
+            wrap::from_raw::<gobject::Object, _>(source_object,
                                                      &source_object)
         };
         let arg2 = unsafe {
-            wrap::from_raw_mut::<super::AsyncResult, _>(res, &res)
+            wrap::from_raw::<super::AsyncResult, _>(res, &res)
         };
         cb(arg1, arg2);
     }
@@ -223,7 +224,6 @@ pub mod cast {
 
     pub trait AsAsyncResult {
         fn as_gio_async_result(&self) -> &super::AsyncResult;
-        fn as_mut_gio_async_result(&mut self) -> &mut super::AsyncResult;
     }
 
     impl<T> AsAsyncResult for T where T: object::Upcast<super::AsyncResult> {
@@ -232,16 +232,10 @@ pub mod cast {
         fn as_gio_async_result(&self) -> &super::AsyncResult {
             self.upcast()
         }
-
-        #[inline]
-        fn as_mut_gio_async_result(&mut self) -> &mut super::AsyncResult {
-            self.upcast_mut()
-        }
     }
 
     pub trait AsCancellable : gobject::cast::AsObject {
         fn as_gio_cancellable(&self) -> &super::Cancellable;
-        fn as_mut_gio_cancellable(&mut self) -> &mut super::Cancellable;
     }
 
     impl<T> AsCancellable for T
@@ -252,16 +246,10 @@ pub mod cast {
         fn as_gio_cancellable(&self) -> &super::Cancellable {
             self.upcast()
         }
-
-        #[inline]
-        fn as_mut_gio_cancellable(&mut self) -> &mut super::Cancellable {
-            self.upcast_mut()
-        }
     }
 
     pub trait AsInputStream : gobject::cast::AsObject {
         fn as_gio_input_stream(&self) -> &super::InputStream;
-        fn as_mut_gio_input_stream(&mut self) -> &mut super::InputStream;
     }
 
     impl<T> AsInputStream for T
@@ -272,16 +260,10 @@ pub mod cast {
         fn as_gio_input_stream(&self) -> &super::InputStream {
             self.upcast()
         }
-
-        #[inline]
-        fn as_mut_gio_input_stream(&mut self) -> &mut super::InputStream {
-            self.upcast_mut()
-        }
     }
 
     pub trait AsFileInputStream : AsInputStream {
         fn as_gio_file_input_stream(&self) -> &super::FileInputStream;
-        fn as_mut_gio_file_input_stream(&mut self) -> &mut super::FileInputStream;
     }
 
     impl<T> AsFileInputStream for T
@@ -293,16 +275,10 @@ pub mod cast {
         fn as_gio_file_input_stream(&self) -> &super::FileInputStream {
             self.upcast()
         }
-
-        #[inline]
-        fn as_mut_gio_file_input_stream(&mut self) -> &mut super::FileInputStream {
-            self.upcast_mut()
-        }
     }
 
     pub trait AsFile {
         fn as_gio_file(&self) -> &super::File;
-        fn as_mut_gio_file(&mut self) -> &mut super::File;
     }
 
     impl<T> AsFile for T where T: object::Upcast<super::File> {
@@ -310,11 +286,6 @@ pub mod cast {
         #[inline]
         fn as_gio_file(&self) -> &super::File {
             self.upcast()
-        }
-
-        #[inline]
-        fn as_mut_gio_file(&mut self) -> &mut super::File {
-            self.upcast_mut()
         }
     }
 }
@@ -328,18 +299,18 @@ impl File {
         }
     }
 
-    pub fn get_path(&mut self) -> gstr::OwnedGStr {
+    pub fn get_path(&self) -> gstr::OwnedGStr {
         unsafe {
-            let ret = raw::g_file_get_path(&mut self.raw);
+            let ret = raw::g_file_get_path(self.as_mut_ptr());
             gstr::OwnedGStr::from_raw(ret)
         }
     }
 
-    pub fn read_async<F>(&mut self,
+    pub fn read_async<F>(&self,
                          io_priority: gint,
-                         cancellable: Option<&mut Cancellable>,
+                         cancellable: Option<&Cancellable>,
                          callback: F)
-        where F: FnOnce(&mut gobject::Object, &mut AsyncResult),
+        where F: FnOnce(&gobject::Object, &AsyncResult),
               F: 'static
     {
         unsafe {
@@ -352,7 +323,7 @@ impl File {
             };
             let callback: gpointer = mem::transmute(Box::new(callback));
 
-            raw::g_file_read_async(&mut self.raw,
+            raw::g_file_read_async(self.as_mut_ptr(),
                                    io_priority as libc::c_int,
                                    cancellable,
                                    async::async_ready_callback::<F>,
@@ -360,13 +331,13 @@ impl File {
         }
     }
 
-    pub fn read_finish(&mut self, res: &mut AsyncResult)
+    pub fn read_finish(&self, res: &AsyncResult)
                       -> std::result::Result<refcount::Ref<FileInputStream>,
                                              grust::error::Error> {
         use grust::wrap::Wrapper;
         unsafe {
             let mut err: grust::error::Error = grust::error::none();
-            let ret = raw::g_file_read_finish(&mut self.raw,
+            let ret = raw::g_file_read_finish(self.as_mut_ptr(),
                                               res.as_mut_ptr(),
                                               err.slot_ptr());
             if err.is_set() {
@@ -410,13 +381,6 @@ impl object::Upcast<gobject::Object> for Cancellable {
             wrap::from_raw(&self.raw.parent_instance, self)
         }
     }
-
-    #[inline]
-    fn upcast_mut(&mut self) -> &mut gobject::Object {
-        unsafe {
-            wrap::from_raw_mut(&mut self.raw.parent_instance, self)
-        }
-    }
 }
 
 impl object::Upcast<gobject::Object> for InputStream {
@@ -425,13 +389,6 @@ impl object::Upcast<gobject::Object> for InputStream {
     fn upcast(&self) -> &gobject::Object {
         unsafe {
             wrap::from_raw(&self.raw.parent_instance, self)
-        }
-    }
-
-    #[inline]
-    fn upcast_mut(&mut self) -> &mut gobject::Object {
-        unsafe {
-            wrap::from_raw_mut(&mut self.raw.parent_instance, self)
         }
     }
 }
@@ -444,13 +401,6 @@ impl object::Upcast<InputStream> for FileInputStream {
             wrap::from_raw(&self.raw.parent_instance, self)
         }
     }
-
-    #[inline]
-    fn upcast_mut(&mut self) -> &mut InputStream {
-        unsafe {
-            wrap::from_raw_mut(&mut self.raw.parent_instance, self)
-        }
-    }
 }
 
 impl object::Upcast<gobject::Object> for FileInputStream {
@@ -459,11 +409,5 @@ impl object::Upcast<gobject::Object> for FileInputStream {
     fn upcast(&self) -> &gobject::Object {
         use cast::AsInputStream;
         self.as_gio_input_stream().upcast()
-    }
-
-    #[inline]
-    fn upcast_mut(&mut self) -> &mut gobject::Object {
-        use cast::AsInputStream;
-        self.as_mut_gio_input_stream().upcast_mut()
     }
 }

@@ -53,16 +53,12 @@ pub mod cast {
 
     pub trait AsObject {
         fn as_gobject_object(&self) -> &super::Object;
-        fn as_mut_gobject_object(&mut self) -> &mut super::Object;
     }
 
     impl<T> AsObject for T where T: object::Upcast<super::Object> {
 
         #[inline]
         fn as_gobject_object(&self) -> &super::Object { self.upcast() }
-
-        #[inline]
-        fn as_mut_gobject_object(&mut self) -> &mut super::Object { self.upcast_mut() }
     }
 }
 
