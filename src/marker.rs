@@ -20,9 +20,7 @@ use std::marker;
 
 #[repr(C)]
 pub struct ObjectMarker {
-    no_copy: marker::NoCopy,
-    no_send: marker::NoSend,
-    no_sync: marker::NoSync
+    no_copy: marker::NoCopy
 }
 
 #[repr(C)]

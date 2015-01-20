@@ -20,7 +20,6 @@ use types::gpointer;
 use wrap;
 use wrap::Wrapper;
 
-use std::marker;
 use std::mem;
 use std::ops::{Deref, DerefMut};
 
@@ -33,9 +32,7 @@ pub trait Refcount {
 }
 
 pub struct Ref<T: Refcount> {
-    plumbing: RefImpl,
-    no_send: marker::NoSend,
-    no_sync: marker::NoSync
+    plumbing: RefImpl
 }
 
 pub struct SyncRef<T: Refcount + Send + Sync> {
@@ -103,19 +100,17 @@ unsafe fn new_ref_impl(p: gpointer, (inc_ref, _): RefcountFuncs) -> RefImpl {
 fn new_ref<T>(source: &T) -> Ref<T>
     where T: Refcount
 {
-    let p = source as *const T as *mut T as gpointer;
+    let p = source as *const T as gpointer;
     let funcs = source.refcount_funcs();
     Ref {
-        plumbing: unsafe { new_ref_impl(p, *funcs) },
-        no_send: marker::NoSend,
-        no_sync: marker::NoSync
+        plumbing: unsafe { new_ref_impl(p, *funcs) }
     }
 }
 
 fn new_sync_ref<T>(source: &T) -> SyncRef<T>
     where T: Refcount + Send + Sync
 {
-    let p = source as *const T as *mut T as gpointer;
+    let p = source as *const T as gpointer;
     let funcs = source.refcount_funcs();
     SyncRef {
         plumbing: unsafe { new_ref_impl(p, *funcs) }

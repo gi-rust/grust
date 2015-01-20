@@ -25,8 +25,6 @@ use types::FALSE;
 use wrap;
 use wrap::Wrapper;
 
-use std::marker as std_marker;
-
 #[repr(C)]
 pub struct MainContext {
     raw: ffi::GMainContext,
@@ -73,9 +71,6 @@ unsafe impl Wrapper for MainLoop {
 
 pub struct LoopRunner {
     mainloop: *mut ffi::GMainLoop,
-
-    // Can't send the runner around due to the thread default stuff
-    no_send: std_marker::NoSend
 }
 
 impl LoopRunner {
@@ -85,7 +80,7 @@ impl LoopRunner {
             let mainloop = ffi::g_main_loop_new(ctx, FALSE);
             ffi::g_main_context_unref(ctx);
 
-            LoopRunner { mainloop: mainloop, no_send: std_marker::NoSend }
+            LoopRunner { mainloop: mainloop }
         }
     }
 
