@@ -19,7 +19,9 @@
 use gtype;
 use gtype::GType;
 use ffi;
-use refcount::{Refcount, RefcountFuncs};
+use refcount::Refcount;
+use types::gpointer;
+use wrap::Wrapper;
 
 use std::mem::transmute;
 
@@ -27,14 +29,14 @@ pub unsafe trait ObjectType {
     fn get_type(_fixme_ufcs: Option<&Self>) -> GType;
 }
 
-const REFCOUNT_FUNCS: &'static RefcountFuncs = &(
-        &ffi::g_object_ref,
-        &ffi::g_object_unref
-    );
+impl<T> Refcount for T where T: ObjectType + Wrapper {
 
-unsafe impl<T> Refcount for T where T: ObjectType {
-    fn refcount_funcs(&self) -> &'static RefcountFuncs {
-        return REFCOUNT_FUNCS;
+    unsafe fn inc_ref(&self) {
+        ffi::g_object_ref(self.as_mut_ptr() as gpointer);
+    }
+
+    unsafe fn dec_ref(&self) {
+        ffi::g_object_unref(self.as_mut_ptr() as gpointer);
     }
 }
 

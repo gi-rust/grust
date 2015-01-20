@@ -20,7 +20,7 @@ use std::mem;
 
 pub unsafe trait Wrapper {
 
-    type Raw : Sized;
+    type Raw: Sized;
 
     #[inline]
     fn as_ptr(&self) -> *const <Self as Wrapper>::Raw {

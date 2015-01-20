@@ -18,13 +18,13 @@
 
 use gio::{File, FileInputStream, IOErrorEnum};
 use gio::cast::AsFile;
-use grust::refcount::{Ref,SyncRef};
+use grust::refcount::Ref;
 use grust::mainloop::{LoopRunner,MainLoop};
 use grust::object;
 use grust::error::Match as ErrorMatch;
 use std::error::Error;
 
-fn run_on_mainloop<F>(setup: F) where F: FnOnce(SyncRef<MainLoop>) {
+fn run_on_mainloop<F>(setup: F) where F: FnOnce(Ref<MainLoop>) {
     let runner = LoopRunner::new();
     runner.run_after(setup);
 }

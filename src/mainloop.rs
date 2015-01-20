@@ -18,9 +18,7 @@
 
 use ffi;
 use marker;
-use refcount::Refcount;
-use refcount::{RefcountFuncs,RefFunc,UnrefFunc};
-use refcount::SyncRef;
+use refcount::{Refcount, Ref};
 use types::FALSE;
 use wrap;
 use wrap::Wrapper;
@@ -45,19 +43,14 @@ impl MainContext {
     }
 }
 
-type MainContextRefFunc   = unsafe extern "C" fn(p: *mut ffi::GMainContext) -> *mut ffi::GMainContext;
-type MainContextUnrefFunc = unsafe extern "C" fn(p: *mut ffi::GMainContext);
+impl Refcount for MainContext {
 
-const MAIN_CONTEXT_REF_FUNCS: &'static RefcountFuncs = &(
-        &ffi::g_main_context_ref
-            as *const MainContextRefFunc as *const RefFunc,
-        &ffi::g_main_context_unref
-            as *const MainContextUnrefFunc as *const UnrefFunc
-    );
+    unsafe fn inc_ref(&self) {
+        ffi::g_main_context_ref(self.as_mut_ptr());
+    }
 
-unsafe impl Refcount for MainContext {
-    fn refcount_funcs(&self) -> &'static RefcountFuncs {
-        MAIN_CONTEXT_REF_FUNCS
+    unsafe fn dec_ref(&self) {
+        ffi::g_main_context_unref(self.as_mut_ptr());
     }
 }
 
@@ -88,13 +81,13 @@ impl LoopRunner {
         }
     }
 
-    pub fn run_after<F>(&self, setup: F) where F: FnOnce(SyncRef<MainLoop>)
+    pub fn run_after<F>(&self, setup: F) where F: FnOnce(Ref<MainLoop>)
     {
         unsafe {
             let ctx = ffi::g_main_loop_get_context(self.mainloop);
             ffi::g_main_context_push_thread_default(ctx);
 
-            setup(SyncRef::new(wrap::from_raw(self.mainloop, self)));
+            setup(Ref::new(wrap::from_raw(self.mainloop, self)));
 
             ffi::g_main_loop_run(self.mainloop);
 
@@ -127,18 +120,13 @@ impl MainLoop {
     }
 }
 
-type MainLoopRefFunc   = unsafe extern "C" fn(p: *mut ffi::GMainLoop) -> *mut ffi::GMainLoop;
-type MainLoopUnrefFunc = unsafe extern "C" fn(p: *mut ffi::GMainLoop);
+impl Refcount for MainLoop {
 
-const MAIN_LOOP_REF_FUNCS: &'static RefcountFuncs = &(
-        &ffi::g_main_loop_ref
-            as *const MainLoopRefFunc as *const RefFunc,
-        &ffi::g_main_loop_unref
-            as *const MainLoopUnrefFunc as *const UnrefFunc
-    );
+    unsafe fn inc_ref(&self) {
+        ffi::g_main_loop_ref(self.as_mut_ptr());
+    }
 
-unsafe impl Refcount for MainLoop {
-    fn refcount_funcs(&self) -> &'static RefcountFuncs {
-        MAIN_LOOP_REF_FUNCS
+    unsafe fn dec_ref(&self) {
+        ffi::g_main_loop_unref(self.as_mut_ptr());
     }
 }
