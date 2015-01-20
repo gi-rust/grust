@@ -28,9 +28,11 @@ use wrap::Wrapper;
 #[repr(C)]
 pub struct MainContext {
     raw: ffi::GMainContext,
-    marker: marker::SyncObjectMarker
+    marker: marker::ObjectMarker
 }
 
+unsafe impl Send for MainContext { }
+unsafe impl Sync for MainContext { }
 unsafe impl Wrapper for MainContext {
     type Raw = ffi::GMainContext;
 }
@@ -62,9 +64,11 @@ impl Refcount for MainContext {
 #[repr(C)]
 pub struct MainLoop {
     raw: ffi::GMainLoop,
-    marker: marker::SyncObjectMarker
+    marker: marker::ObjectMarker
 }
 
+unsafe impl Send for MainLoop { }
+unsafe impl Sync for MainLoop { }
 unsafe impl Wrapper for MainLoop {
     type Raw = ffi::GMainLoop;
 }

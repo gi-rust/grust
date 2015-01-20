@@ -67,9 +67,11 @@ unsafe impl wrap::Wrapper for File {
 #[repr(C)]
 pub struct Cancellable {
     raw: raw::GCancellable,
-    _marker: marker::SyncObjectMarker
+    _marker: marker::ObjectMarker
 }
 
+unsafe impl Send for Cancellable { }
+unsafe impl Sync for Cancellable { }
 unsafe impl wrap::Wrapper for Cancellable {
     type Raw = raw::GCancellable;
 }

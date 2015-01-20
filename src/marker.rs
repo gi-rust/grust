@@ -22,8 +22,3 @@ use std::marker;
 pub struct ObjectMarker {
     no_copy: marker::NoCopy
 }
-
-#[repr(C)]
-pub struct SyncObjectMarker {
-    no_copy: marker::NoCopy
-}
