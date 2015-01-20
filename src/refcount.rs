@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use types::gpointer;
-use wrap;
 use wrap::Wrapper;
 
 use std::mem;
@@ -52,7 +51,9 @@ impl<T> Ref<T> where T: Refcount {
 impl<T> Ref<T> where T: Refcount + Wrapper {
 
     pub unsafe fn from_raw(ptr: *mut <T as Wrapper>::Raw) -> Ref<T> {
-        Ref::new(wrap::from_raw_mut(ptr, &ptr))
+        Ref {
+            plumbing: RefImpl { ptr: ptr as gpointer }
+        }
     }
 }
 
@@ -66,7 +67,9 @@ impl<T> SyncRef<T> where T: Refcount + Send + Sync {
 impl<T> SyncRef<T> where T: Refcount + Wrapper + Send + Sync {
 
     pub unsafe fn from_raw(ptr: *mut <T as Wrapper>::Raw) -> SyncRef<T> {
-        SyncRef::new(wrap::from_raw_mut(ptr, &ptr))
+        SyncRef {
+            plumbing: RefImpl { ptr: ptr as gpointer }
+        }
     }
 }
 
