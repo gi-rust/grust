@@ -26,7 +26,7 @@ pub type RefFunc = unsafe extern "C" fn(gpointer) -> gpointer;
 pub type UnrefFunc = unsafe extern "C" fn(gpointer);
 pub type RefcountFuncs = (*const RefFunc, *const UnrefFunc);
 
-pub trait Refcount {
+pub unsafe trait Refcount {
     fn refcount_funcs(&self) -> &'static RefcountFuncs;
 }
 

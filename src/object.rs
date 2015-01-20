@@ -32,7 +32,7 @@ const REFCOUNT_FUNCS: &'static RefcountFuncs = &(
         &ffi::g_object_unref
     );
 
-impl<T> Refcount for T where T: ObjectType {
+unsafe impl<T> Refcount for T where T: ObjectType {
     fn refcount_funcs(&self) -> &'static RefcountFuncs {
         return REFCOUNT_FUNCS;
     }

@@ -55,7 +55,7 @@ const MAIN_CONTEXT_REF_FUNCS: &'static RefcountFuncs = &(
             as *const MainContextUnrefFunc as *const UnrefFunc
     );
 
-impl Refcount for MainContext {
+unsafe impl Refcount for MainContext {
     fn refcount_funcs(&self) -> &'static RefcountFuncs {
         MAIN_CONTEXT_REF_FUNCS
     }
@@ -137,7 +137,7 @@ const MAIN_LOOP_REF_FUNCS: &'static RefcountFuncs = &(
             as *const MainLoopUnrefFunc as *const UnrefFunc
     );
 
-impl Refcount for MainLoop {
+unsafe impl Refcount for MainLoop {
     fn refcount_funcs(&self) -> &'static RefcountFuncs {
         MAIN_LOOP_REF_FUNCS
     }
