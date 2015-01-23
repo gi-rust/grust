@@ -52,13 +52,13 @@ pub mod cast {
     use grust::object;
 
     pub trait AsObject {
-        fn as_gobject_object(&self) -> &super::Object;
+        fn as_object(&self) -> &super::Object;
     }
 
     impl<T> AsObject for T where T: object::Upcast<super::Object> {
 
         #[inline]
-        fn as_gobject_object(&self) -> &super::Object { self.upcast() }
+        fn as_object(&self) -> &super::Object { self.upcast() }
     }
 }
 

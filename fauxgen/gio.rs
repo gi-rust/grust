@@ -223,19 +223,19 @@ pub mod cast {
     use gobject;
 
     pub trait AsAsyncResult {
-        fn as_gio_async_result(&self) -> &super::AsyncResult;
+        fn as_async_result(&self) -> &super::AsyncResult;
     }
 
     impl<T> AsAsyncResult for T where T: object::Upcast<super::AsyncResult> {
 
         #[inline]
-        fn as_gio_async_result(&self) -> &super::AsyncResult {
+        fn as_async_result(&self) -> &super::AsyncResult {
             self.upcast()
         }
     }
 
     pub trait AsCancellable : gobject::cast::AsObject {
-        fn as_gio_cancellable(&self) -> &super::Cancellable;
+        fn as_cancellable(&self) -> &super::Cancellable;
     }
 
     impl<T> AsCancellable for T
@@ -243,13 +243,13 @@ pub mod cast {
               T: object::Upcast<gobject::Object>
     {
         #[inline]
-        fn as_gio_cancellable(&self) -> &super::Cancellable {
+        fn as_cancellable(&self) -> &super::Cancellable {
             self.upcast()
         }
     }
 
     pub trait AsInputStream : gobject::cast::AsObject {
-        fn as_gio_input_stream(&self) -> &super::InputStream;
+        fn as_input_stream(&self) -> &super::InputStream;
     }
 
     impl<T> AsInputStream for T
@@ -257,13 +257,13 @@ pub mod cast {
               T: object::Upcast<gobject::Object>
     {
         #[inline]
-        fn as_gio_input_stream(&self) -> &super::InputStream {
+        fn as_input_stream(&self) -> &super::InputStream {
             self.upcast()
         }
     }
 
     pub trait AsFileInputStream : AsInputStream {
-        fn as_gio_file_input_stream(&self) -> &super::FileInputStream;
+        fn as_file_input_stream(&self) -> &super::FileInputStream;
     }
 
     impl<T> AsFileInputStream for T
@@ -272,19 +272,19 @@ pub mod cast {
               T: object::Upcast<gobject::Object>
     {
         #[inline]
-        fn as_gio_file_input_stream(&self) -> &super::FileInputStream {
+        fn as_file_input_stream(&self) -> &super::FileInputStream {
             self.upcast()
         }
     }
 
     pub trait AsFile {
-        fn as_gio_file(&self) -> &super::File;
+        fn as_file(&self) -> &super::File;
     }
 
     impl<T> AsFile for T where T: object::Upcast<super::File> {
 
         #[inline]
-        fn as_gio_file(&self) -> &super::File {
+        fn as_file(&self) -> &super::File {
             self.upcast()
         }
     }
@@ -408,6 +408,6 @@ impl object::Upcast<gobject::Object> for FileInputStream {
     #[inline]
     fn upcast(&self) -> &gobject::Object {
         use cast::AsInputStream;
-        self.as_gio_input_stream().upcast()
+        self.as_input_stream().upcast()
     }
 }

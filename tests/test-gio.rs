@@ -32,7 +32,7 @@ fn run_on_mainloop<F>(setup: F) where F: FnOnce(Ref<MainLoop>) {
 #[test]
 fn as_file() {
     let f = File::new_for_path(g_utf8!("/dev/null"));
-    let g = f.as_gio_file();
+    let g = f.as_file();
     let path = g.get_path();
     assert_eq!(path.parse_as_utf8().unwrap(), "/dev/null");
 }
