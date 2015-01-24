@@ -106,15 +106,15 @@ pub enum IOErrorEnum {
     // ...
 }
 
-impl fmt::Show for IOErrorEnum {
-    fn fmt(&self, format: &mut fmt::Formatter) -> fmt::Result {
+impl fmt::Debug for IOErrorEnum {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s: &'static str = match *self {
             IOErrorEnum::Failed   => "failed",
             IOErrorEnum::NotFound => "not-found",
             IOErrorEnum::Exists   => "exists",
             // ...
         };
-        s.fmt(format)
+        write!(f, "{}", s)
     }
 }
 

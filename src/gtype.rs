@@ -71,7 +71,7 @@ impl GType {
     }
 }
 
-impl fmt::Show for GType {
+impl fmt::Debug for GType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name_bytes = unsafe {
             let name = ffi::g_type_name(self.to_raw());

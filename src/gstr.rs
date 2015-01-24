@@ -101,13 +101,9 @@ impl Error for NulError {
     fn description(&self) -> &str {
         "invalid data for C string: contains a NUL byte"
     }
-
-    fn detail(&self) -> Option<String> {
-        Some(format!("NUL at position {}", self.position))
-    }
 }
 
-impl fmt::Show for NulError {
+impl fmt::Display for NulError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "invalid data for C string: NUL at position {}",
                self.position)
@@ -135,15 +131,11 @@ impl Error for IntoGStrError {
     fn description(&self) -> &str {
         self.cause.description()
     }
-
-    fn detail(&self) -> Option<String> {
-        self.cause.detail()
-    }
 }
 
-impl fmt::Show for IntoGStrError {
+impl fmt::Display for IntoGStrError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.cause)
+        write!(f, "{}", self.cause)
     }
 }
 

@@ -23,6 +23,7 @@ use types::gint;
 
 use std::default::Default;
 use std::error::Error as ErrorTrait;
+use std::fmt;
 use std::mem;
 use std::ptr;
 use std::str;
@@ -127,15 +128,17 @@ impl ErrorTrait for Error {
             "[non-UTF-8 message]"
         }
     }
+}
 
-    fn detail(&self) -> Option<String> {
-        if !self.ptr.is_null() {
-            let msg = unsafe { (*self.ptr).message };
-            if !msg.is_null() {
-                let msg_bytes = unsafe { gstr::parse_as_bytes(msg, self) };
-                return Some(String::from_utf8_lossy(msg_bytes).into_owned());
-            }
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        if self.ptr.is_null() {
+            write!(f, "no error")
+        } else {
+            let msg = unsafe {
+                gstr::parse_as_bytes((*self.ptr).message, self)
+            };
+            write!(f, "{}", String::from_utf8_lossy(msg))
         }
-        None
     }
 }
