@@ -16,7 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use ffi;
+use glib as ffi;
 use gstr;
 use quark::Quark;
 use types::gint;
@@ -29,7 +29,7 @@ use std::ptr;
 use std::str;
 
 pub mod raw {
-    use ffi;
+    use glib as ffi;
 
     pub type GError = ffi::GError;
 }

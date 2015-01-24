@@ -1,0 +1,21 @@
+[package]
+
+name = "grust"
+version = "0.0.1-dev"
+authors = ["Mikhail Zabaluev <mikhail.zabaluev@gmail.com"]
+license = "LGPL-2.1+"
+readme = "README.md"
+keywords = ["GObjectIntrospection", "GLib", "GObject", "GNOME"]
+
+description = """GObjectIntrospection bindings for Rust.
+This is the core library providing basic functionality to all
+generated crates.
+"""
+
+repository = "https://github.com/gi-rust/grust.git"
+
+[dependencies.glib-2_0-sys]
+git = "https://github.com/gi-rust/glib-sys.git"
+
+[dependencies.gobject-2_0-sys]
+git = "https://github.com/gi-rust/gobject-sys.git"

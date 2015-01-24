@@ -16,19 +16,15 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use ffi;
+use gobject as ffi;
 use gstr;
 use object::ObjectType;
 use util::is_true;
 
 use std::fmt;
 
-pub mod raw {
-    pub type GType = ::ffi::GType;
-}
-
 #[derive(Copy, Eq, PartialEq)]
-pub struct GType(raw::GType);
+pub struct GType(ffi::GType);
 
 macro_rules! g_type_fundamental {
     ($num:expr) => (GType($num << 2));
@@ -60,12 +56,12 @@ pub const VARIANT   : GType = g_type_fundamental!(21);
 impl GType {
 
     #[inline]
-    pub unsafe fn new(type_id: raw::GType) -> GType {
+    pub unsafe fn new(type_id: ffi::GType) -> GType {
         GType(type_id)
     }
 
     #[inline]
-    pub fn to_raw(&self) -> raw::GType {
+    pub fn to_raw(&self) -> ffi::GType {
         let GType(type_id) = *self;
         type_id
     }

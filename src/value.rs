@@ -16,7 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use ffi;
+use gobject as ffi;
 use gstr::{GStr, OwnedGStr};
 use gtype::GType;
 use object;

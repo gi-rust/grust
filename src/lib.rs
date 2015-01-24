@@ -1,6 +1,6 @@
 // This file is part of Grust, GObject introspection bindings for Rust
 //
-// Copyright (C) 2013, 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+// Copyright (C) 2013-2015  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,8 @@
 #![feature(unsafe_destructor)]
 
 extern crate libc;
+extern crate "glib-2_0-sys" as glib;
+extern crate "gobject-2_0-sys" as gobject;
 
 pub mod error;
 pub mod gstr;
@@ -38,8 +40,6 @@ pub mod types;
 pub mod util;
 pub mod value;
 pub mod wrap;
-
-mod ffi;
 
 #[macro_use]
 mod macros;

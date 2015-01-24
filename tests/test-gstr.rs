@@ -16,15 +16,22 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#![allow(unstable)]
+
+#[macro_use]
+extern crate grust;
+
+extern crate "glib-2_0-sys" as glib;
+extern crate libc;
+
 use grust::gstr;
 use grust::gstr::{Utf8Buf, OwnedGStr};
 
 use grust::types::gchar;
 
-use glib::raw::g_strdup;
+use glib::g_strdup;
 
 use std::ptr;
-use libc;
 
 static TEST_CSTR: &'static str = "¡Hola, amigos!\0";
 static TEST_STR:  &'static str = "¡Hola, amigos!";
