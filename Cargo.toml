@@ -2,7 +2,7 @@
 
 name = "grust"
 version = "0.0.2"
-authors = ["Mikhail Zabaluev <mikhail.zabaluev@gmail.com"]
+authors = ["Mikhail Zabaluev <mikhail.zabaluev@gmail.com>"]
 license = "LGPL-2.1+"
 readme = "README.md"
 keywords = ["GObjectIntrospection", "GLib", "GObject", "GNOME"]
