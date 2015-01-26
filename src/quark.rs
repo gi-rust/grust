@@ -57,12 +57,24 @@ impl Quark {
         Quark::new(q)
     }
 
+    pub fn as_g_str(&self) -> &'static GStr {
+        let Quark(raw) = *self;
+        unsafe {
+            let s = ffi::g_quark_to_string(raw);
+            GStr::from_raw(s, "")
+        }
+    }
+
     pub fn as_bytes(&self) -> &'static [u8] {
         let Quark(raw) = *self;
         unsafe {
             let s = ffi::g_quark_to_string(raw);
             gstr::parse_as_bytes(s, "")
         }
+    }
+
+    pub fn to_raw(&self) -> ffi::Quark {
+        self.0
     }
 }
 
