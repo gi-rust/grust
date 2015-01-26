@@ -1,6 +1,6 @@
 // This file is part of Grust, GObject introspection bindings for Rust
 //
-// Copyright (C) 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+// Copyright (C) 2014, 2015  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -16,129 +16,249 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use glib as ffi;
 use gstr;
 use quark::Quark;
 use types::gint;
+use util::escape_bytestring;
 
-use std::default::Default;
+use glib as ffi;
+
 use std::error::Error as ErrorTrait;
+use std::error::FromError;
 use std::fmt;
-use std::mem;
-use std::ptr;
-use std::str;
-
-pub mod raw {
-    use glib as ffi;
-
-    pub type GError = ffi::GError;
-}
+use std::num;
 
 pub struct Error {
-    ptr: *mut raw::GError
+    ptr: *mut ffi::GError
 }
 
-pub fn none() -> Error {
-    Error { ptr: ptr::null_mut() }
+pub struct DomainError<T> {
+    inner: Error
 }
 
-#[derive(Show)]
-pub enum Match<T> {
-    NotInDomain,
+#[derive(Copy, Debug)]
+pub enum Code<T> {
     Known(T),
     Unknown(gint)
 }
 
-impl<T> PartialEq for Match<T> where T: PartialEq {
-    fn eq(&self, other: &Match<T>) -> bool {
-        match (self, other) {
-            (&Match::Known(ref a), &Match::Known(ref b)) => *a == *b,
-            (&Match::Unknown(a), &Match::Unknown(b)) => a == b,
-            _ => false
-        }
-    }
+pub trait Domain : num::FromPrimitive {
+    fn domain() -> Quark;
+    fn name(&self) -> &'static str;
+}
+
+pub fn domain<T>() -> Quark where T: Domain {
+    <T as Domain>::domain()
 }
 
 unsafe impl Send for Error { }
 
+unsafe impl<T> Send for DomainError<T> { }
+
 impl Drop for Error {
     fn drop(&mut self) {
-        if !self.ptr.is_null() {
-            unsafe { ffi::g_error_free(self.ptr); }
-        }
+        unsafe { ffi::g_error_free(self.ptr); }
     }
 }
 
 impl Clone for Error {
     fn clone(&self) -> Error {
-        if self.ptr.is_null() {
-            none()
-        } else {
-            Error {
-                ptr: unsafe {
-                    ffi::g_error_copy(self.ptr as *const raw::GError)
-                }
-            }
+        Error {
+            ptr: unsafe { ffi::g_error_copy(self.ptr) }
         }
     }
 }
 
-impl Default for Error {
-    #[inline]
-    fn default() -> Error { none() }
+impl<T> Clone for DomainError<T> {
+    fn clone(&self) -> DomainError<T> {
+        DomainError { inner: self.inner.clone() }
+    }
 }
 
 impl Error {
-    pub unsafe fn slot_ptr(&mut self) -> *mut *mut raw::GError {
-        &mut self.ptr as *mut *mut raw::GError
+
+    pub unsafe fn from_raw(ptr: *mut ffi::GError) -> Error {
+        assert!(!ptr.is_null(), "GError pointer is not set");
+        Error { ptr: ptr }
     }
 
-    pub fn is_set(&self) -> bool { !self.ptr.is_null() }
+    pub fn domain(&self) -> Quark {
+        unsafe { Quark::from_raw((*self.ptr).domain) }
+    }
+
+    pub fn matches<T>(&self, code: T) -> bool where T: Domain + PartialEq {
+        if self.domain() == domain::<T>() {
+            let own_code_raw = unsafe { (*self.ptr).code };
+            if let Some(own_code) = num::from_i32::<T>(own_code_raw as i32) {
+                return own_code == code;
+            }
+        }
+        false
+    }
 
     pub fn key(&self) -> (Quark, gint) {
-        if self.ptr.is_null() {
-            panic!("use of an unset GError pointer slot");
-        }
         unsafe {
             let raw = &*self.ptr;
             (Quark::from_raw(raw.domain), raw.code)
         }
     }
+
+    pub fn in_domain<T>(&self) -> bool where T: Domain {
+        self.domain() == domain::<T>()
+    }
+
+    pub fn into_domain<T>(self) -> Result<DomainError<T>, Error>
+        where T: Domain
+    {
+        if self.in_domain::<T>() {
+            Ok(DomainError { inner: self })
+        } else {
+            Err(self)
+        }
+    }
+
+    fn message(&self) -> Option<&str> {
+        let message = unsafe { (*self.ptr).message };
+        let utf8_res = unsafe { gstr::parse_as_utf8(message, self) };
+        utf8_res.ok()
+    }
+
+    fn message_bytes(&self) -> &[u8] {
+        let message = unsafe { (*self.ptr).message };
+        unsafe { gstr::parse_as_bytes(message, self) }
+    }
+}
+
+impl<T> DomainError<T> where T: num::FromPrimitive {
+    pub fn code(&self) -> Code<T> {
+        let code = unsafe { (*self.inner.ptr).code };
+        match num::from_i32(code as i32) {
+            Some(domain_code) => Code::Known(domain_code),
+            None              => Code::Unknown(code)
+        }
+    }
 }
 
 impl ErrorTrait for Error {
-    fn description<'a>(&'a self) -> &'a str {
-        if self.ptr.is_null() {
-            return "no error";
+    fn description(&self) -> &str {
+        if let Some(s) = self.message() {
+            return s;
         }
-        let mut os: Option<&'a str> = None;
-        let raw = unsafe { &*self.ptr };
-        if !raw.message.is_null() {
-            os = unsafe { gstr::parse_as_utf8(raw.message, self).ok() };
+        match self.domain().as_g_str().parse_as_utf8() {
+            Ok(s)  => s,
+            Err(_) => "GError (message and domain are not represented)"
         }
-        if os.is_none() {
-            let domain = unsafe { Quark::from_raw(raw.domain) };
-            os = str::from_utf8(domain.as_bytes()).ok().map(|s| {
-                unsafe { mem::copy_lifetime(self, s) }
-            });
+    }
+}
+
+impl<T> ErrorTrait for DomainError<T> where T: Domain {
+    fn description(&self) -> &str {
+        if let Some(s) = self.inner.message() {
+            return s;
         }
-        if let Some(s) = os {
-            s
-        } else {
-            "[non-UTF-8 message]"
+        if let Code::Known(code) = self.code() {
+            return code.name();
+        }
+        match self.inner.domain().as_g_str().parse_as_utf8() {
+            Ok(s)  => s,
+            Err(_) => "GError (message and domain are not represented; unknown code)"
         }
     }
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        if self.ptr.is_null() {
-            write!(f, "no error")
-        } else {
-            let msg = unsafe {
-                gstr::parse_as_bytes((*self.ptr).message, self)
-            };
-            write!(f, "{}", String::from_utf8_lossy(msg))
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let bytes = self.message_bytes();
+        write!(f, "{}", String::from_utf8_lossy(bytes))
+    }
+}
+
+impl<T> fmt::Display for DomainError<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let bytes = self.inner.message_bytes();
+        write!(f, "{}", String::from_utf8_lossy(bytes))
+    }
+}
+
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (domain, code) = self.key();
+        let message = escape_bytestring(self.message_bytes());
+        write!(f,
+               r#"GError{{domain={:?}, code={}, message="{}"}}"#,
+               domain, code, message)
+    }
+}
+
+impl<T> fmt::Debug for DomainError<T> where T: Domain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let domain = self.inner.domain();
+        let message = escape_bytestring(self.inner.message_bytes());
+        match self.code() {
+            Code::Known(code) => {
+                write!(f,
+                       r#"GError{{domain={:?}, code={}, message="{}"}}"#,
+                       domain, code.name(), message)
+            }
+            Code::Unknown(int_code) => {
+                write!(f,
+                       r#"GError{{domain={:?}, code={}, message="{}"}}"#,
+                       domain, int_code, message)
+            }
         }
+    }
+}
+
+impl<T> FromError<DomainError<T>> for Error {
+    fn from_error(err: DomainError<T>) -> Error {
+        err.inner
+    }
+}
+
+impl<T> Code<T> {
+
+    pub fn known(self) -> Option<T> {
+        match self {
+            Code::Known(code) => Some(code),
+            Code::Unknown(_) => None
+        }
+    }
+}
+
+impl<T> PartialEq for Code<T> where T: PartialEq {
+    fn eq(&self, other: &Code<T>) -> bool {
+        match (self, other) {
+            (&Code::Known(ref a), &Code::Known(ref b)) => *a == *b,
+            (&Code::Unknown(a), &Code::Unknown(b)) => a == b,
+            _ => false
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use glib as ffi;
+    use gstr::GStrBuf;
+    use quark::Quark;
+    use types::gint;
+
+    fn new_error(domain: Quark, code: gint, message: &[u8]) -> Error {
+        let msg_buf = GStrBuf::from_bytes(message).unwrap();
+        unsafe {
+            let raw = ffi::g_error_new_literal(
+                domain.to_raw(), code, msg_buf.as_ptr());
+            Error::from_raw(raw)
+        }
+    }
+
+    #[test]
+    fn message() {
+        let domain = Quark::from_static_str("foo\0");
+        let message = "test message";
+        let err = new_error(domain, 1, message.as_bytes());
+        assert_eq!(err.message().unwrap(), message);
+        let err = new_error(domain, 1, b"U can't parse this.\x9C Hammer time!");
+        assert!(err.message().is_none());
     }
 }
