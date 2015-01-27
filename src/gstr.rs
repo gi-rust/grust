@@ -110,6 +110,12 @@ impl fmt::Display for NulError {
     }
 }
 
+impl fmt::Debug for NulError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
 pub struct IntoGStrError {
     cause: NulError,
     bytes: Vec<u8>
@@ -136,6 +142,12 @@ impl Error for IntoGStrError {
 impl fmt::Display for IntoGStrError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.cause)
+    }
+}
+
+impl fmt::Debug for IntoGStrError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.cause)
     }
 }
 
