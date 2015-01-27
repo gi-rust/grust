@@ -16,11 +16,14 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use glib as ffi;
 use gstr;
+use gstr::GStr;
 use types::gchar;
 use util::escape_bytestring;
 
+use glib as ffi;
+
+use std::fmt;
 use std::sync::atomic;
 
 #[derive(Copy, Eq, PartialEq)]
@@ -31,7 +34,7 @@ pub struct StaticQuark(pub &'static [u8], pub atomic::AtomicUint);
 impl Quark {
 
     #[inline]
-    pub unsafe fn new(raw: ffi::GQuark) -> Quark {
+    pub unsafe fn from_raw(raw: ffi::GQuark) -> Quark {
         Quark(raw)
     }
 
@@ -54,7 +57,7 @@ impl Quark {
     unsafe fn from_static_internal(s: &'static [u8]) -> Quark {
         let p = s.as_ptr() as *const gchar;
         let q = ffi::g_quark_from_static_string(p);
-        Quark::new(q)
+        Quark(q)
     }
 
     pub fn as_g_str(&self) -> &'static GStr {
@@ -73,8 +76,20 @@ impl Quark {
         }
     }
 
-    pub fn to_raw(&self) -> ffi::Quark {
+    pub fn to_raw(&self) -> ffi::GQuark {
         self.0
+    }
+}
+
+impl fmt::Display for Quark {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", String::from_utf8_lossy(self.as_bytes()))
+    }
+}
+
+impl fmt::Debug for Quark {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "\"{}\"", escape_bytestring(self.as_bytes()))
     }
 }
 
@@ -90,6 +105,6 @@ impl StaticQuark {
             }
             cached.store(q as usize, atomic::Ordering::Relaxed);
         }
-        unsafe { Quark::new(q) }
+        Quark(q)
     }
 }

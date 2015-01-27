@@ -101,7 +101,7 @@ impl Error {
         }
         unsafe {
             let raw = &*self.ptr;
-            (Quark::new(raw.domain), raw.code)
+            (Quark::from_raw(raw.domain), raw.code)
         }
     }
 }
@@ -117,7 +117,7 @@ impl ErrorTrait for Error {
             os = unsafe { gstr::parse_as_utf8(raw.message, self).ok() };
         }
         if os.is_none() {
-            let domain = unsafe { Quark::new(raw.domain) };
+            let domain = unsafe { Quark::from_raw(raw.domain) };
             os = str::from_utf8(domain.as_bytes()).ok().map(|s| {
                 unsafe { mem::copy_lifetime(self, s) }
             });
