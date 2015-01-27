@@ -97,14 +97,13 @@ impl StaticQuark {
 
     pub fn get(&self) -> Quark {
         let StaticQuark(s, ref cached) = *self;
-        let mut q = cached.load(atomic::Ordering::Relaxed) as ffi::GQuark;
-        if q == 0 {
-            unsafe {
-                let p = s.as_ptr() as *const gchar;
-                q = ffi::g_quark_from_static_string(p);
-            }
-            cached.store(q as usize, atomic::Ordering::Relaxed);
+        let q = cached.load(atomic::Ordering::Relaxed) as ffi::GQuark;
+        if q != 0 {
+            Quark(q)
+        } else {
+            let quark = Quark::from_static_bytes(s);
+            cached.store(quark.to_raw() as usize, atomic::Ordering::Relaxed);
+            quark
         }
-        Quark(q)
     }
 }
