@@ -19,6 +19,10 @@
 use types::{gboolean,FALSE};
 
 use std::ascii;
+use std::ascii::AsciiExt;
+use std::borrow::IntoCow;
+use std::str;
+use std::string::CowString;
 
 #[inline]
 pub fn is_true(v: gboolean) -> bool { v != FALSE }
@@ -26,12 +30,17 @@ pub fn is_true(v: gboolean) -> bool { v != FALSE }
 #[inline]
 pub fn is_false(v: gboolean) -> bool { v == FALSE }
 
-pub fn escape_bytestring(s: &[u8]) -> String {
+pub fn escape_bytestring<'a>(s: &'a [u8]) -> CowString<'a> {
+    if s.is_ascii() {
+        let s = unsafe { str::from_utf8_unchecked(s) };
+        return s.into_cow();
+    }
     let mut acc = Vec::with_capacity(s.len());
     for c in s.iter() {
         ascii::escape_default(*c, |esc| {
             acc.push(esc);
         })
     }
-    unsafe { String::from_utf8_unchecked(acc) }
+    let string = unsafe { String::from_utf8_unchecked(acc) };
+    string.into_cow()
 }
