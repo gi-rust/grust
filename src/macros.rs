@@ -37,8 +37,7 @@ macro_rules! g_static_quark {
             use $crate::quark::StaticQuark;
 
             static QUARK: StaticQuark =
-                StaticQuark($lit,
-                            std::sync::atomic::ATOMIC_UINT_INIT);
+                StaticQuark($lit, std::sync::atomic::ATOMIC_UINT_INIT);
 
             QUARK.get()
         }
