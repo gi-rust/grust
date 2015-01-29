@@ -31,6 +31,42 @@ macro_rules! g_utf8 {
 }
 
 #[macro_export]
+macro_rules! g_error_match {
+    (
+        ($inp:expr) {
+            ($slot:ident : $errtype:ty) => $handler:expr,
+            $(($slot_tail:ident : $errtype_tail:ty) => $handler_tail:expr,)*
+            other $catchall_slot:ident => $catchall_handler:expr
+        }
+    ) => {
+        {
+            let err: $crate::error::Error = $inp;
+            let res: std::result::Result<$errtype, $crate::error::Error>
+                     = err.into_domain();
+            match res {
+                Ok($slot) => $handler,
+                Err(e) => g_error_match! {
+                    (e) {
+                        $(($slot_tail: $errtype_tail) => $handler_tail,)*
+                        other $catchall_slot => $catchall_handler
+                    }
+                }
+            }
+        }
+    };
+    (
+        ($inp:expr) {
+            other $catchall_slot:ident => $catchall_handler:expr
+        }
+    ) => {
+        {
+            let $catchall_slot: $crate::error::Error = $inp;
+            $catchall_handler
+        }
+    }
+}
+
+#[macro_export]
 macro_rules! g_static_quark {
     ($lit:expr) => {
         {

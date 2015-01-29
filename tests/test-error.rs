@@ -305,3 +305,26 @@ fn test_domain_error_clone() {
     let err2 = err.clone();
     assert_eq!(err2.description(), message);
 }
+
+#[test]
+fn test_error_match_macro() {
+    let err = new_error::<AError>(A_FOO, b"test error");
+    g_error_match! {
+        (err) {
+            other any_err => {
+                // Test that the error value can be moved
+                any_err.into_domain::<AError>().unwrap();
+            }
+        }
+    }
+    let err = new_error::<AError>(A_FOO, b"test error");
+    g_error_match! {
+        (err) {
+            (a_err: DomainError<AError>) => {
+                assert_eq!(a_err.code(), error::Code::Known(AError::Foo));
+            },
+            (_b_err: DomainError<BError>) => unreachable!(),
+            other _err => unreachable!()
+        }
+    }
+}
