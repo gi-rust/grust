@@ -19,9 +19,12 @@
 #![crate_name = "grust"]
 #![crate_type = "lib"]
 
-#![allow(unstable)]
 #![allow(unstable_features)]
 
+#![feature(collections)]
+#![feature(core)]
+#![feature(libc)]
+#![feature(std_misc)]
 #![feature(unsafe_destructor)]
 
 extern crate libc;

@@ -16,7 +16,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#![allow(unstable)]
+#![feature(collections)]
+#![feature(core)]
+#![feature(libc)]
 
 #[macro_use]
 extern crate grust;
@@ -96,7 +98,7 @@ fn test_owned_g_str_clone() {
     let str1 = owned_g_str(TEST_CSTR);
     let str2 = str1.clone();
     let s = str2.parse_as_utf8().unwrap();
-    assert_eq!(s, String::from_str(TEST_STR));
+    assert_eq!(s, TEST_STR.to_string());
 }
 
 #[test]
@@ -141,7 +143,7 @@ fn test_utf8_from_static_str() {
 #[test]
 fn test_utf8_buf_from_str() {
     let s = String::from_str(TEST_STR);
-    let buf = Utf8Buf::from_str(s.as_slice()).unwrap();
+    let buf = Utf8Buf::from_str(&s[]).unwrap();
     assert!(g_str_equal(buf.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
 
     let res = Utf8Buf::from_str("got\0nul");
