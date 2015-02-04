@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use gobject as ffi;
-use gstr;
+use gstr::GStr;
 use object::ObjectType;
 use util::is_true;
 
@@ -69,11 +69,10 @@ impl GType {
 
 impl fmt::Debug for GType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let name_bytes = unsafe {
-            let name = ffi::g_type_name(self.to_raw());
-            gstr::parse_as_bytes(name, "")
+        let name = unsafe {
+            GStr::from_ptr(ffi::g_type_name(self.to_raw()))
         };
-        write!(f, "{}", String::from_utf8_lossy(name_bytes))
+        write!(f, "{}", String::from_utf8_lossy(name.to_bytes()))
     }
 }
 

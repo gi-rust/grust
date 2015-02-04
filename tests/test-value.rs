@@ -26,6 +26,6 @@ use grust::value::Value;
 fn test_string() {
     let mut value = Value::new(gtype::STRING);
     value.set_string(g_str!("Hello"));
-    let s = value.get_string().unwrap().parse_as_bytes();
+    let s = value.get_string().unwrap().to_bytes();
     assert_eq!(s, b"Hello");
 }

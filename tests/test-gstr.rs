@@ -32,8 +32,6 @@ use grust::types::gchar;
 
 use glib::g_strdup;
 
-use std::ptr;
-
 static TEST_CSTR: &'static str = "¡Hola, amigos!\0";
 static TEST_STR:  &'static str = "¡Hola, amigos!";
 
@@ -41,7 +39,7 @@ fn owned_g_str(source: &str) -> OwnedGStr {
     assert!(source.ends_with("\0"));
     unsafe {
         let p = source.as_ptr();
-        OwnedGStr::from_raw(g_strdup(p as *const gchar))
+        OwnedGStr::from_ptr(g_strdup(p as *const gchar))
     }
 }
 
@@ -49,7 +47,7 @@ fn owned_g_str_from_bytes(source: &[u8]) -> OwnedGStr {
     assert!(source.last() == Some(&0u8));
     unsafe {
         let p = source.as_ptr();
-        OwnedGStr::from_raw(g_strdup(p as *const gchar))
+        OwnedGStr::from_ptr(g_strdup(p as *const gchar))
     }
 }
 
@@ -59,17 +57,17 @@ fn g_str_equal(p1: *const gchar, p2: *const gchar) -> bool {
 }
 
 #[test]
-fn test_owned_g_str_parse_as_utf8() {
+fn test_owned_g_str_to_utf8() {
     let str = owned_g_str(TEST_CSTR);
-    let res = str.parse_as_utf8();
+    let res = str.to_utf8();
     assert!(res.is_ok());
     assert_eq!(res.unwrap(), TEST_STR);
 }
 
 #[test]
-fn test_owned_g_str_parse_as_utf8_invalid() {
+fn test_owned_g_str_to_utf8_invalid() {
     let s = owned_g_str_from_bytes(b"a\x80\0");
-    let res = s.parse_as_utf8();
+    let res = s.to_utf8();
     assert!(res.is_err());
     match res {
         Err(_) => {}
@@ -78,25 +76,19 @@ fn test_owned_g_str_parse_as_utf8_invalid() {
 }
 
 #[test]
-fn test_owned_g_str_parse_as_bytes() {
+fn test_owned_g_str_to_bytes() {
     let str = owned_g_str_from_bytes(b"a\x80\0");
-    let bytes = str.parse_as_bytes();
+    let bytes = str.to_bytes();
     assert_eq!(bytes.len(), 2);
     assert_eq!(bytes[0], b'a');
     assert_eq!(bytes[1], b'\x80');
 }
 
 #[test]
-#[should_fail]
-fn test_owned_g_str_from_null() {
-    let _ = unsafe { OwnedGStr::from_raw(ptr::null_mut()) };
-}
-
-#[test]
 fn test_owned_g_str_clone() {
     let str1 = owned_g_str(TEST_CSTR);
     let str2 = str1.clone();
-    let s = str2.parse_as_utf8().unwrap();
+    let s = str2.to_utf8().unwrap();
     assert_eq!(s, TEST_STR.to_string());
 }
 

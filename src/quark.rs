@@ -16,7 +16,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use gstr;
 use gstr::GStr;
 use types::gchar;
 use util::escape_bytestring;
@@ -60,22 +59,20 @@ impl Quark {
         Quark(q)
     }
 
-    pub fn as_g_str(&self) -> &'static GStr {
+    pub fn to_g_str(&self) -> &'static GStr {
         let Quark(raw) = *self;
         unsafe {
             let s = ffi::g_quark_to_string(raw);
-            GStr::from_raw(s, "")
+            GStr::from_ptr(s)
         }
     }
 
-    pub fn as_bytes(&self) -> &'static [u8] {
-        let Quark(raw) = *self;
-        unsafe {
-            let s = ffi::g_quark_to_string(raw);
-            gstr::parse_as_bytes(s, "")
-        }
+    #[inline]
+    pub fn to_bytes(&self) -> &'static [u8] {
+        self.to_g_str().to_bytes()
     }
 
+    #[inline]
     pub fn to_raw(&self) -> ffi::GQuark {
         self.0
     }
@@ -83,13 +80,13 @@ impl Quark {
 
 impl fmt::Display for Quark {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", String::from_utf8_lossy(self.as_bytes()))
+        write!(f, "{}", String::from_utf8_lossy(self.to_bytes()))
     }
 }
 
 impl fmt::Debug for Quark {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "\"{}\"", escape_bytestring(self.as_bytes()))
+        write!(f, "\"{}\"", escape_bytestring(self.to_bytes()))
     }
 }
 

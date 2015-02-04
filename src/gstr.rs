@@ -1,6 +1,6 @@
 // This file is part of Grust, GObject introspection bindings for Rust
 //
-// Copyright (C) 2013, 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+// Copyright (C) 2013-2015  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -35,27 +35,9 @@ pub struct OwnedGStr {
     ptr: *const gchar,
 }
 
-pub unsafe fn parse_as_bytes<'a, T: ?Sized>(raw: *const gchar,
-                                            life_anchor: &'a T)
-                                           -> &'a [u8]
-{
-    assert!(!raw.is_null());
-    let r = mem::copy_lifetime(life_anchor, &(raw as *const u8));
-    slice::from_raw_buf(r, libc::strlen(raw) as usize)
-}
-
-#[inline]
-pub unsafe fn parse_as_utf8<'a, T: ?Sized>(raw: *const gchar,
-                                           life_anchor: &'a T)
-                                          -> Result<&'a str, str::Utf8Error>
-{
-    str::from_utf8(parse_as_bytes(raw, life_anchor))
-}
-
 impl OwnedGStr {
 
-    pub unsafe fn from_raw(ptr: *mut gchar) -> OwnedGStr {
-        assert!(!ptr.is_null());
+    pub unsafe fn from_ptr(ptr: *mut gchar) -> OwnedGStr {
         OwnedGStr { ptr: ptr as *const gchar }
     }
 }
@@ -65,7 +47,7 @@ impl Deref for OwnedGStr {
     type Target = GStr;
 
     fn deref(&self) -> &GStr {
-        unsafe { g_str_from_ptr_internal(self.ptr as *const u8, self) }
+        unsafe { GStr::from_ptr(self.ptr) }
     }
 }
 
@@ -78,7 +60,7 @@ impl Drop for OwnedGStr {
 impl Clone for OwnedGStr {
     fn clone(&self) -> OwnedGStr {
         unsafe {
-            OwnedGStr::from_raw(ffi::g_strdup(self.ptr))
+            OwnedGStr::from_ptr(ffi::g_strdup(self.ptr))
         }
     }
 }
@@ -163,12 +145,13 @@ pub struct Utf8 {
 }
 
 impl GStr {
+
     #[inline]
     pub fn as_ptr(&self) -> *const gchar {
         &self.head as *const gchar
     }
 
-    pub fn parse_as_bytes(&self) -> &[u8] {
+    pub fn to_bytes(&self) -> &[u8] {
         unsafe {
             let r = mem::copy_lifetime(self, &(self.as_ptr() as *const u8));
             slice::from_raw_buf(r, libc::strlen(self.as_ptr()) as usize)
@@ -176,28 +159,24 @@ impl GStr {
     }
 
     #[inline]
-    pub fn parse_as_utf8(&self) -> Result<&str, str::Utf8Error> {
-        str::from_utf8(self.parse_as_bytes())
+    pub fn to_utf8(&self) -> Result<&str, str::Utf8Error> {
+        str::from_utf8(self.to_bytes())
     }
 
     #[inline]
-    pub unsafe fn parse_as_utf8_unchecked(&self) -> &str {
-        str::from_utf8_unchecked(self.parse_as_bytes())
+    pub unsafe fn to_utf8_unchecked(&self) -> &str {
+        str::from_utf8_unchecked(self.to_bytes())
     }
 
     pub fn from_static_bytes(bytes: &'static [u8]) -> &'static GStr {
         assert!(bytes.last() == Some(&NUL),
                 "static byte string is not null-terminated: \"{}\"",
                 escape_bytestring(bytes));
-        unsafe { g_str_from_ptr_internal(bytes.as_ptr(), bytes) }
+        unsafe { GStr::from_ptr(bytes.as_ptr() as *const gchar) }
     }
 
-    pub unsafe fn from_raw<'a, T: ?Sized>(ptr: *const gchar,
-                                          life_anchor: &'a T)
-                                         -> &'a GStr
-    {
-        assert!(!ptr.is_null());
-        g_str_from_ptr_internal(ptr as *const u8, life_anchor)
+    pub unsafe fn from_ptr<'a>(ptr: *const gchar) -> &'a GStr {
+        mem::transmute(&*(ptr as *const GStr))
     }
 }
 
@@ -214,37 +193,19 @@ impl Utf8 {
     }
 
     #[inline]
-    pub fn parse_as_str(&self) -> &str {
-        unsafe { str::from_utf8_unchecked(self.gstr.parse_as_bytes()) }
+    pub fn to_str(&self) -> &str {
+        unsafe { str::from_utf8_unchecked(self.gstr.to_bytes()) }
     }
 
     pub fn from_static_str(s: &'static str) -> &'static Utf8 {
         assert!(s.ends_with("\0"),
                 "static string is not null-terminated: \"{}\"", s);
-        unsafe { utf8_from_ptr_internal(s.as_ptr(), s) }
+        unsafe { Utf8::from_ptr(s.as_ptr() as *const gchar) }
     }
 
-    pub unsafe fn from_raw<'a, T: ?Sized>(ptr: *const gchar,
-                                          life_anchor: &'a T)
-                                         -> &'a Utf8
-    {
-        assert!(!ptr.is_null());
-        utf8_from_ptr_internal(ptr as *const u8, life_anchor)
+    pub unsafe fn from_ptr<'a>(ptr: *const gchar) -> &'a Utf8 {
+        mem::transmute(&*(ptr as *const Utf8))
     }
-}
-
-unsafe fn g_str_from_ptr_internal<'a, T: ?Sized>(ptr: *const u8,
-                                                 life_anchor: &'a T)
-                                                -> &'a GStr
-{
-    mem::copy_lifetime(life_anchor, &*(ptr as *const GStr))
-}
-
-unsafe fn utf8_from_ptr_internal<'a, T: ?Sized>(ptr: *const u8,
-                                                life_anchor: &'a T)
-                                               -> &'a Utf8
-{
-    mem::copy_lifetime(life_anchor, &*(ptr as *const Utf8))
 }
 
 fn vec_into_g_str_buf(mut v: Vec<u8>) -> GStrBuf {
@@ -261,7 +222,7 @@ impl Deref for GStrBuf {
     type Target = GStr;
 
     fn deref(&self) -> &GStr {
-        unsafe { g_str_from_ptr_internal(self.data.as_ptr(), self) }
+        unsafe { GStr::from_ptr(self.data.as_ptr() as *const gchar) }
     }
 }
 

@@ -172,7 +172,7 @@ impl Value {
             if ptr.is_null() {
                 return None;
             }
-            Some(GStr::from_raw(ptr, self))
+            Some(GStr::from_ptr(ptr))
         }
     }
 

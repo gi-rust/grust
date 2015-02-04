@@ -100,10 +100,10 @@ fn new_domain_error<T>(code: gint, message: &[u8]) -> DomainError<T>
 fn test_domain() {
     let domain = error::domain::<AError>();
     assert_eq!(domain, <AError as Domain>::domain());
-    assert_eq!(domain.as_bytes(), b"a-error");
+    assert_eq!(domain.to_bytes(), b"a-error");
     let domain = error::domain::<BError>();
     assert_eq!(domain, <BError as Domain>::domain());
-    assert_eq!(domain.as_bytes(), b"b-error");
+    assert_eq!(domain.to_bytes(), b"b-error");
 }
 
 #[test]
@@ -229,7 +229,7 @@ fn test_error_debug() {
     let err = new_error::<AError>(A_FOO, message.as_bytes());
     let s = format!("{:?}", err);
     let (domain, code) = err.key();
-    let domain_str = domain.as_g_str().parse_as_utf8().unwrap();
+    let domain_str = domain.to_g_str().to_utf8().unwrap();
     assert_contains!(s, "GError");
     assert_contains!(s, "{}", domain_str);
     assert_contains!(s, "{}", code);
@@ -238,7 +238,7 @@ fn test_error_debug() {
     let err = new_error::<BError>(B_BAZ, NON_UTF8);
     let s = format!("{:?}", err);
     let (domain, code) = err.key();
-    let domain_str = domain.as_g_str().parse_as_utf8().unwrap();
+    let domain_str = domain.to_g_str().to_utf8().unwrap();
     assert_contains!(s, "GError");
     assert_contains!(s, "{}", domain_str);
     assert_contains!(s, "{}", code);
@@ -251,7 +251,7 @@ fn test_domain_error_debug() {
     let err = new_domain_error::<AError>(A_FOO, message.as_bytes());
     let s = format!("{:?}", err);
     let domain = error::domain::<AError>();
-    let domain_str = domain.as_g_str().parse_as_utf8().unwrap();
+    let domain_str = domain.to_g_str().to_utf8().unwrap();
     let code = err.code().known().unwrap();
     assert_contains!(s, "GError");
     assert_contains!(s, "{}", domain_str);
@@ -261,7 +261,7 @@ fn test_domain_error_debug() {
     let err = new_domain_error::<BError>(B_BAZ, NON_UTF8);
     let s = format!("{:?}", err);
     let domain = error::domain::<BError>();
-    let domain_str = domain.as_g_str().parse_as_utf8().unwrap();
+    let domain_str = domain.to_g_str().to_utf8().unwrap();
     let code = err.code().known().unwrap();
     assert_contains!(s, "GError");
     assert_contains!(s, "{}", domain_str);
@@ -271,7 +271,7 @@ fn test_domain_error_debug() {
     let err = new_domain_error::<AError>(UNKNOWN_CODE, b"unknown error");
     let s = format!("{:?}", err);
     let domain = error::domain::<AError>();
-    let domain_str = domain.as_g_str().parse_as_utf8().unwrap();
+    let domain_str = domain.to_g_str().to_utf8().unwrap();
     assert_contains!(s, "GError");
     assert_contains!(s, "{}", domain_str);
     assert_contains!(s, "{}", UNKNOWN_CODE);

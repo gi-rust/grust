@@ -16,7 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use gstr;
+use gstr::GStr;
 use quark::Quark;
 use types::gint;
 use util::escape_bytestring;
@@ -118,14 +118,13 @@ impl Error {
     }
 
     fn message(&self) -> Option<&str> {
-        let message = unsafe { (*self.ptr).message };
-        let utf8_res = unsafe { gstr::parse_as_utf8(message, self) };
-        utf8_res.ok()
+        let message = unsafe { GStr::from_ptr((*self.ptr).message) };
+        message.to_utf8().ok()
     }
 
     fn message_bytes(&self) -> &[u8] {
-        let message = unsafe { (*self.ptr).message };
-        unsafe { gstr::parse_as_bytes(message, self) }
+        let message = unsafe { GStr::from_ptr((*self.ptr).message) };
+        message.to_bytes()
     }
 }
 
@@ -144,7 +143,7 @@ impl ErrorTrait for Error {
         if let Some(s) = self.message() {
             return s;
         }
-        match self.domain().as_g_str().parse_as_utf8() {
+        match self.domain().to_g_str().to_utf8() {
             Ok(s)  => s,
             Err(_) => "GError (message and domain are not represented)"
         }
@@ -159,7 +158,7 @@ impl<T> ErrorTrait for DomainError<T> where T: Domain {
         if let Code::Known(code) = self.code() {
             return code.name();
         }
-        match self.inner.domain().as_g_str().parse_as_utf8() {
+        match self.inner.domain().to_g_str().to_utf8() {
             Ok(s)  => s,
             Err(_) => "GError (message and domain are not represented; unknown code)"
         }
