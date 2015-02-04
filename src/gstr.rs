@@ -299,11 +299,13 @@ impl Deref for Utf8Buf {
     type Target = Utf8;
 
     fn deref(&self) -> &Utf8 {
-        unsafe { utf8_from_ptr_internal(self.inner.data.as_ptr(), self) }
+        unsafe { Utf8::from_ptr(self.inner.data.as_ptr() as *const gchar) }
     }
 }
 
-fn utf8_wrap_g_str_result<E>(res: Result<GStrBuf, E>) -> Result<Utf8Buf, E> {
+unsafe fn utf8_wrap_g_str_result<E>(res: Result<GStrBuf, E>)
+                                   -> Result<Utf8Buf, E>
+{
     res.map(|buf| {
         Utf8Buf { inner: buf }
     })
@@ -312,10 +314,12 @@ fn utf8_wrap_g_str_result<E>(res: Result<GStrBuf, E>) -> Result<Utf8Buf, E> {
 impl Utf8Buf {
 
     pub fn from_str(s: &str) -> Result<Utf8Buf, NulError> {
-        utf8_wrap_g_str_result(GStrBuf::from_bytes(s.as_bytes()))
+        let g_str_res = GStrBuf::from_bytes(s.as_bytes());
+        unsafe { utf8_wrap_g_str_result(g_str_res) }
     }
 
     pub fn from_string(s: String) -> Result<Utf8Buf, IntoGStrError> {
-        utf8_wrap_g_str_result(GStrBuf::from_vec(s.into_bytes()))
+        let g_str_res = GStrBuf::from_vec(s.into_bytes());
+        unsafe { utf8_wrap_g_str_result(g_str_res) }
     }
 }
