@@ -53,3 +53,17 @@ fn test_boxed() {
         assert_eq!(*b, "Hello!");
     }
 }
+
+#[test]
+#[should_fail]
+fn test_deref_boxed_panic() {
+    let value = Value::new(boxed::type_of::<Box<i32>>());
+    let _ = value.deref_boxed::<Box<String>>();
+}
+
+#[test]
+#[should_fail]
+fn test_dup_boxed_panic() {
+    let value = Value::new(gtype::INT);
+    let _ = value.dup_boxed::<Box<i32>>();
+}
