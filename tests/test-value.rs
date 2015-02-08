@@ -29,9 +29,15 @@ use grust::value::Value;
 #[test]
 fn test_string() {
     let mut value = Value::new(gtype::STRING);
+    {
+        let os = value.get_string();
+        assert!(os.is_none());
+    }
     value.set_string(g_str!("Hello"));
-    let s = value.get_string().unwrap().to_bytes();
-    assert_eq!(s, b"Hello");
+    {
+        let s = value.get_string().unwrap().to_bytes();
+        assert_eq!(s, b"Hello");
+    }
 }
 
 #[derive(Clone)]
