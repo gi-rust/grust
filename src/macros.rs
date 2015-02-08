@@ -104,3 +104,26 @@ macro_rules! g_type_register_box {
         }
     }
 }
+
+#[macro_export]
+macro_rules! g_impl_boxed_type_for_ref {
+    ($t:ty, $get_type:path) => {
+        impl $crate::boxed::BoxedType for $crate::refcount::Ref<$t> {
+
+            fn get_type() -> $crate::gtype::GType {
+                unsafe { $crate::gtype::GType::from_raw($get_type()) }
+            }
+
+            #[inline]
+            unsafe fn from_ptr(ptr: $crate::types::gpointer) -> Self {
+                let ptr = ptr as *mut <$t as $crate::wrap::Wrapper>::Raw;
+                $crate::refcount::Ref::from_raw(ptr)
+            }
+
+            #[inline]
+            unsafe fn into_ptr(self) -> $crate::types::gpointer {
+                self.into_raw() as $crate::types::gpointer
+            }
+        }
+    }
+}

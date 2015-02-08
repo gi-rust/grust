@@ -19,9 +19,13 @@
 #[macro_use]
 extern crate grust;
 
+use grust::value::Value;
+
 use grust::boxed;
 use grust::gtype;
-use grust::value::Value;
+use grust::mainloop::MainContext;
+use grust::refcount::Ref;
+use grust::wrap::Wrapper;
 
 use std::fmt::Writer;
 
@@ -102,4 +106,13 @@ fn test_deref_boxed_panic() {
 fn test_dup_boxed_panic() {
     let value = Value::new(gtype::INT);
     let _ = value.dup_boxed::<Box<MyData>>();
+}
+
+#[test]
+fn test_boxed_ref() {
+    let mut value = Value::new(boxed::type_of::<Ref<MainContext>>());
+    value.take_boxed(Ref::new(MainContext::default()));
+    let value = value.clone();
+    let r = value.deref_boxed::<Ref<MainContext>>().unwrap();
+    assert!(r.as_ptr() == MainContext::default().as_ptr());
 }

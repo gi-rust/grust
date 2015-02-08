@@ -16,16 +16,20 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+use boxed::BoxedType;
 use gstr::GStr;
+use gtype::GType;
 use quark::Quark;
-use types::gint;
+use types::{gint, gpointer};
 use util::escape_bytestring;
 
 use glib as ffi;
+use gobject;
 
 use std::error::Error as ErrorTrait;
 use std::error::FromError;
 use std::fmt;
+use std::mem;
 use std::num;
 
 pub struct Error {
@@ -72,6 +76,23 @@ impl Clone for Error {
 impl<T> Clone for DomainError<T> {
     fn clone(&self) -> DomainError<T> {
         DomainError { inner: self.inner.clone() }
+    }
+}
+
+impl BoxedType for Error {
+
+    fn get_type() -> GType {
+        unsafe { GType::from_raw(gobject::g_error_get_type()) }
+    }
+
+    unsafe fn from_ptr(ptr: gpointer) -> Error {
+        Error { ptr: ptr as *mut ffi::GError }
+    }
+
+    unsafe fn into_ptr(self) -> gpointer {
+        let ptr = self.ptr;
+        mem::forget(self);
+        ptr as gpointer
     }
 }
 

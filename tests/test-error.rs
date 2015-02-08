@@ -25,9 +25,12 @@ extern crate "glib-2_0-sys" as glib;
 
 use grust::error;
 use grust::error::{Error, Domain, DomainError};
+
+use grust::boxed;
 use grust::gstr::GStrBuf;
 use grust::quark::Quark;
 use grust::types::gint;
+use grust::value::Value;
 
 use std::error::Error as ErrorTrait;
 use std::error::FromError;
@@ -322,6 +325,22 @@ fn test_error_match_macro() {
                 assert_eq!(a_err.code(), error::Code::Known(AError::Foo));
             },
             (_b_err: DomainError<BError>) => unreachable!(),
+            other _err => unreachable!()
+        }
+    }
+}
+
+#[test]
+fn test_boxed_error() {
+    let mut value = Value::new(boxed::type_of::<Error>());
+    value.take_boxed(new_error::<AError>(A_FOO, b"test error"));
+    let value = value.clone();
+    let err = value.dup_boxed().unwrap();
+    g_error_match! {
+        (err) {
+            (a_err: DomainError<AError>) => {
+                assert_eq!(a_err.code(), error::Code::Known(AError::Foo));
+            },
             other _err => unreachable!()
         }
     }

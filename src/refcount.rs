@@ -52,7 +52,7 @@ impl<T> Ref<T> where T: Refcount + Wrapper {
     pub unsafe fn into_raw(self) -> *mut <T as Wrapper>::Raw {
         let ptr = self.ptr;
         mem::forget(self);
-        ptr
+        ptr as *mut _
     }
 }
 

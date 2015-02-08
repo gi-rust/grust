@@ -16,12 +16,14 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use glib as ffi;
 use marker;
 use refcount::{Refcount, Ref};
 use types::FALSE;
 use wrap;
 use wrap::Wrapper;
+
+use glib as ffi;
+use gobject;
 
 #[repr(C)]
 pub struct MainContext {
@@ -53,6 +55,8 @@ impl Refcount for MainContext {
         ffi::g_main_context_unref(self.as_mut_ptr());
     }
 }
+
+g_impl_boxed_type_for_ref!(MainContext, gobject::g_main_context_get_type);
 
 #[repr(C)]
 pub struct MainLoop {
@@ -130,3 +134,5 @@ impl Refcount for MainLoop {
         ffi::g_main_loop_unref(self.as_mut_ptr());
     }
 }
+
+g_impl_boxed_type_for_ref!(MainLoop, gobject::g_main_loop_get_type);
