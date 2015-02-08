@@ -28,6 +28,7 @@ use util::is_true;
 
 use gobject as ffi;
 
+use std::fmt;
 use std::mem;
 use std::ops::Deref;
 
@@ -272,5 +273,15 @@ impl Value {
             let p = val.into_ptr();
             ffi::g_value_take_boxed(self.as_mut_raw(), p);
         }
+    }
+}
+
+impl fmt::Debug for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let contents = unsafe {
+            let ptr = ffi::g_strdup_value_contents(self.as_raw());
+            OwnedGStr::from_ptr(ptr)
+        };
+        write!(f, "GValue({})", String::from_utf8_lossy(contents.to_bytes()))
     }
 }

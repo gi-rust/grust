@@ -23,6 +23,8 @@ use grust::boxed;
 use grust::gtype;
 use grust::value::Value;
 
+use std::fmt::Writer;
+
 #[test]
 fn test_string() {
     let mut value = Value::new(gtype::STRING);
@@ -46,6 +48,16 @@ fn test_reset() {
         let os = value.get_string();
         assert!(os.is_none());
     }
+}
+
+#[test]
+fn test_debug() {
+    let mut value = Value::new(gtype::STRING);
+    value.set_string(g_str!("Hello"));
+
+    let mut dump = String::new();
+    write!(&mut dump, "{:?}", value).unwrap();
+    assert_eq!(&dump[], "GValue(\"Hello\")");
 }
 
 #[derive(Clone)]
