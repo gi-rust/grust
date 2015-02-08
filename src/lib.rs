@@ -32,6 +32,9 @@ extern crate libc;
 extern crate "glib-2_0-sys" as glib;
 extern crate "gobject-2_0-sys" as gobject;
 
+#[macro_use]
+mod macros;
+
 pub mod boxed;
 pub mod error;
 pub mod gstr;
@@ -45,6 +48,3 @@ pub mod types;
 pub mod util;
 pub mod value;
 pub mod wrap;
-
-#[macro_use]
-mod macros;
