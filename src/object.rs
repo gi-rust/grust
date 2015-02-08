@@ -65,7 +65,7 @@ fn assert_instance_of<T, U>(object: &T)
 {
     let dest_type = type_of::<U>();
     assert!(gtype::check_instance_is_a(object, dest_type),
-            "invalid cast to type {:?}", dest_type)
+            "invalid cast to type {}", dest_type.name())
 }
 
 pub fn cast<T, U>(source: &T) -> &U

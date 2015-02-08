@@ -65,14 +65,19 @@ impl GType {
         let GType(type_id) = *self;
         type_id
     }
+
+    pub fn name(&self) -> &str {
+        unsafe {
+            let name = GStr::from_ptr(ffi::g_type_name(self.to_raw()));
+            // A valid GType name is restricted to ASCII characters
+            name.to_utf8_unchecked()
+        }
+    }
 }
 
 impl fmt::Debug for GType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let name = unsafe {
-            GStr::from_ptr(ffi::g_type_name(self.to_raw()))
-        };
-        write!(f, "{}", String::from_utf8_lossy(name.to_bytes()))
+        write!(f, "GType {{ id: {}, name: \"{}\" }}", self.to_raw(), self.name())
     }
 }
 
