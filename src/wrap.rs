@@ -28,7 +28,7 @@ pub unsafe trait Wrapper {
     }
 
     #[inline]
-    fn as_mut_ptr(&self) -> *mut <Self as Wrapper>::Raw {
+    unsafe fn as_mut_ptr(&self) -> *mut <Self as Wrapper>::Raw {
         self as *const Self as *mut <Self as Wrapper>::Raw
     }
 }
