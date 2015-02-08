@@ -27,8 +27,8 @@ use std::mem;
 
 pub trait BoxedType {
     fn get_type() -> GType;
-    unsafe fn into_ptr(self) -> gpointer;
     unsafe fn from_ptr(ptr: gpointer) -> Self;
+    unsafe fn into_ptr(self) -> gpointer;
 }
 
 pub fn type_of<T>() -> GType where T: BoxedType
@@ -74,11 +74,11 @@ impl<T> BoxedType for Box<T> where T: BoxRegistered {
         <T as BoxRegistered>::box_type()
     }
 
-    unsafe fn into_ptr(self) -> gpointer {
-        box_into_raw(self) as gpointer
-    }
-
     unsafe fn from_ptr(raw: gpointer) -> Box<T> {
         Box::from_raw(raw as *mut T)
+    }
+
+    unsafe fn into_ptr(self) -> gpointer {
+        box_into_raw(self) as gpointer
     }
 }
