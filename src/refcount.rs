@@ -48,6 +48,12 @@ impl<T> Ref<T> where T: Refcount + Wrapper {
     pub unsafe fn from_raw(ptr: *mut <T as Wrapper>::Raw) -> Ref<T> {
         Ref { ptr: ptr as *const T }
     }
+
+    pub unsafe fn into_raw(self) -> *mut <T as Wrapper>::Raw {
+        let ptr = self.ptr;
+        mem::forget(self);
+        ptr
+    }
 }
 
 #[unsafe_destructor]
