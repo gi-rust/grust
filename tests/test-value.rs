@@ -19,11 +19,8 @@
 #[macro_use]
 extern crate grust;
 
-extern crate "gobject-2_0-sys" as gobject;
-
 use grust::boxed;
 use grust::gtype;
-use grust::gtype::GType;
 use grust::value::Value;
 
 #[test]
@@ -54,23 +51,7 @@ fn test_reset() {
 #[derive(Clone)]
 struct MyData(String);
 
-unsafe impl boxed::BoxRegistered for MyData {
-    fn box_type() -> GType {
-        use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
-        use std::sync::{Once, ONCE_INIT};
-
-        static REGISTERED: AtomicUsize = ATOMIC_USIZE_INIT;
-        static INIT: Once = ONCE_INIT;
-
-        INIT.call_once(|| {
-            let gtype = boxed::register_box_type::<MyData>("GrustTestMyData");
-            REGISTERED.store(gtype.to_raw() as usize, Ordering::Release);
-        });
-
-        let raw = REGISTERED.load(Ordering::Acquire) as gobject::GType;
-        unsafe { GType::from_raw(raw) }
-    }
-}
+g_type_register_box!(MyData, "GrustTestMyData");
 
 #[test]
 fn test_boxed() {

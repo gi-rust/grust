@@ -23,6 +23,13 @@ use util::is_true;
 
 use std::fmt;
 
+pub mod raw {
+    use gobject;
+
+    // Support macro g_type_register_box! by reexporting GType in this crate
+    pub type GType = gobject::GType;
+}
+
 #[derive(Copy, Eq, PartialEq)]
 pub struct GType(ffi::GType);
 

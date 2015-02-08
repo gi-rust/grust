@@ -79,3 +79,28 @@ macro_rules! g_static_quark {
         }
     }
 }
+
+#[macro_export]
+macro_rules! g_type_register_box {
+    ($t:ty, $name:expr) => {
+        unsafe impl $crate::boxed::BoxRegistered for $t {
+            fn box_type() -> $crate::gtype::GType {
+                use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT};
+                use std::sync::atomic::Ordering::{Acquire,Release};
+                use std::sync::{Once, ONCE_INIT};
+
+                static REGISTERED: AtomicUsize = ATOMIC_USIZE_INIT;
+                static INIT: Once = ONCE_INIT;
+
+                INIT.call_once(|| {
+                    let gtype = $crate::boxed::register_box_type::<$t>($name);
+                    REGISTERED.store(gtype.to_raw() as usize, Release);
+                });
+
+                let raw = REGISTERED.load(Acquire)
+                          as $crate::gtype::raw::GType;
+                unsafe { $crate::gtype::GType::from_raw(raw) }
+            }
+        }
+    }
+}
