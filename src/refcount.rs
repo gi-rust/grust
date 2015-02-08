@@ -30,8 +30,8 @@ pub struct Ref<T> where T: Refcount {
     ptr: *const T
 }
 
-unsafe impl<T> Send for Ref<T> where T: Refcount + Send + Sync { }
-unsafe impl<T> Sync for Ref<T> where T: Refcount + Send + Sync { }
+unsafe impl<T> Send for Ref<T> where T: Refcount + Send { }
+unsafe impl<T> Sync for Ref<T> where T: Refcount + Sync { }
 
 impl<T> Ref<T> where T: Refcount {
 
