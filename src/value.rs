@@ -74,6 +74,12 @@ impl Value {
         unsafe { GType::from_raw(self.as_raw().g_type) }
     }
 
+    pub fn reset(&mut self) {
+        unsafe {
+            ffi::g_value_reset(self.as_mut_raw());
+        }
+    }
+
     pub fn get_boolean(&self) -> bool {
         is_true(unsafe { ffi::g_value_get_boolean(self.as_raw()) })
     }

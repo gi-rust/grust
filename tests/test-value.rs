@@ -40,6 +40,17 @@ fn test_string() {
     }
 }
 
+#[test]
+fn test_reset() {
+    let mut value = Value::new(gtype::STRING);
+    value.set_string(g_str!("Hello"));
+    value.reset();
+    {
+        let os = value.get_string();
+        assert!(os.is_none());
+    }
+}
+
 #[derive(Clone)]
 struct MyData(String);
 
