@@ -40,7 +40,7 @@ unsafe impl Wrapper for MainContext {
 impl MainContext {
     pub fn default() -> &'static MainContext {
         unsafe {
-            wrap::from_raw(ffi::g_main_context_default(), wrap::STATIC)
+            wrap::from_raw(ffi::g_main_context_default())
         }
     }
 }
@@ -85,13 +85,12 @@ impl LoopRunner {
         }
     }
 
-    pub fn run_after<F>(&self, setup: F) where F: FnOnce(Ref<MainLoop>)
-    {
+    pub fn run_after<F>(&self, setup: F) where F: FnOnce(Ref<MainLoop>) {
         unsafe {
             let ctx = ffi::g_main_loop_get_context(self.mainloop);
             ffi::g_main_context_push_thread_default(ctx);
 
-            setup(Ref::new(wrap::from_raw(self.mainloop, self)));
+            setup(Ref::new(wrap::from_raw(self.mainloop)));
 
             ffi::g_main_loop_run(self.mainloop);
 
@@ -113,7 +112,7 @@ impl MainLoop {
     pub fn get_context(&self) -> &MainContext {
         unsafe {
             let ctx = ffi::g_main_loop_get_context(self.as_mut_ptr());
-            wrap::from_raw(ctx, self)
+            wrap::from_raw(ctx)
         }
     }
 

@@ -16,8 +16,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use std::mem;
-
 pub unsafe trait Wrapper {
 
     type Raw: Sized;
@@ -34,12 +32,8 @@ pub unsafe trait Wrapper {
 }
 
 #[inline]
-pub unsafe fn from_raw<'a, T, U: ?Sized>(ptr: *const <T as Wrapper>::Raw,
-                                         life_anchor: &'a U)
-                                        -> &'a T
+pub unsafe fn from_raw<'a, T>(ptr: *const <T as Wrapper>::Raw) -> &'a T
     where T: Wrapper
 {
-    mem::copy_lifetime(life_anchor, &*(ptr as *const T))
+    &*(ptr as *const T)
 }
-
-pub const STATIC: &'static () = &();
