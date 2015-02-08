@@ -22,11 +22,7 @@ use types::gpointer;
 
 use gobject as ffi;
 
-use std::any::TypeId;
 use std::boxed::into_raw as box_into_raw;
-use std::cell::RefCell;
-use std::collections::hash_map::{HashMap,Entry};
-use std::intrinsics::{get_tydesc, type_id};
 use std::mem;
 
 pub trait BoxedType {
@@ -57,69 +53,25 @@ extern "C" fn box_free<T>(raw: gpointer) {
     mem::drop(boxed);
 }
 
-type TypeMap = HashMap<TypeId, GType>;
-
-thread_local! {
-    static BOX_TYPE_REGISTRY: RefCell<TypeMap> = RefCell::new(HashMap::new())
-}
-
-// Get the uniformly generated unique name for a static Rust type,
-// suitable for GType registration
-fn box_type_name<T>() -> Vec<u8> where T: 'static {
-    let rust_name = unsafe {
-        let tydesc = get_tydesc::<T>();
-        (*tydesc).name
+pub fn register_box_type<T>(name: &str) -> GType where T: Clone + Send {
+    let c_name = GStrBuf::from_str(name).unwrap();
+    let raw = unsafe {
+        ffi::g_boxed_type_register_static(c_name.as_ptr(),
+                                          box_copy::<T>,
+                                          box_free::<T>)
     };
-
-    // Prefix and escape the Rust name to get the human-readable part of
-    // the GType name.
-    // GType names can contain alphanumerics or any of '_-+'.
-    let mut name = String::from_str("Grust-Box-").into_bytes();
-    name.reserve(rust_name.len() + 17);
-    name.extend(rust_name.bytes().map(|c| {
-        match c {
-            b'A' ... b'Z' |
-            b'a' ... b'z' |
-            b'0' ... b'9' |
-            b'_' | b'-' | b'+' => c,
-            _ => b'-'
-        }
-    }));
-    // To ensure uniqueness, append the type ID hash
-    write!(&mut name, "-{:x}", unsafe { type_id::<T>() }).unwrap();
-
-    name
+    assert!(raw != 0, "failed to register type \"{}\"", name);
+    unsafe { GType::from_raw(raw) }
 }
 
-fn register_box_type<T>() -> GType where T: Clone, T: 'static {
-    let name = GStrBuf::from_vec(box_type_name::<T>()).unwrap();
-    unsafe {
-        // The type could have been registered by another thread
-        let mut raw = ffi::g_type_from_name(name.as_ptr());
-        if raw == 0 {
-            raw = ffi::g_boxed_type_register_static(name.as_ptr(),
-                                                    box_copy::<T>,
-                                                    box_free::<T>);
-        }
-        GType::from_raw(raw)
-    }
+pub unsafe trait BoxRegistered : Clone + Send {
+    fn box_type() -> GType;
 }
 
-impl<T> BoxedType for Box<T> where T: Clone + Send {
+impl<T> BoxedType for Box<T> where T: BoxRegistered {
 
     fn get_type() -> GType {
-        let rust_type = TypeId::of::<T>();
-        BOX_TYPE_REGISTRY.with(|cell| {
-            let mut map = cell.borrow_mut();
-            match map.entry(rust_type) {
-                Entry::Occupied(existing) => { *existing.get() }
-                Entry::Vacant(slot) => {
-                    let gtype = register_box_type::<T>();
-                    slot.insert(gtype);
-                    gtype
-                }
-            }
-        })
+        <T as BoxRegistered>::box_type()
     }
 
     unsafe fn into_ptr(self) -> gpointer {

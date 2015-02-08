@@ -24,7 +24,6 @@
 #![feature(alloc)]
 #![feature(collections)]
 #![feature(core)]
-#![feature(io)]
 #![feature(libc)]
 #![feature(std_misc)]
 #![feature(unsafe_destructor)]

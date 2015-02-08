@@ -19,8 +19,11 @@
 #[macro_use]
 extern crate grust;
 
+extern crate "gobject-2_0-sys" as gobject;
+
 use grust::boxed;
 use grust::gtype;
+use grust::gtype::GType;
 use grust::value::Value;
 
 #[test]
@@ -31,39 +34,62 @@ fn test_string() {
     assert_eq!(s, b"Hello");
 }
 
+#[derive(Clone)]
+struct MyData(String);
+
+unsafe impl boxed::BoxRegistered for MyData {
+    fn box_type() -> GType {
+        use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
+        use std::sync::{Once, ONCE_INIT};
+
+        static REGISTERED: AtomicUsize = ATOMIC_USIZE_INIT;
+        static INIT: Once = ONCE_INIT;
+
+        INIT.call_once(|| {
+            let gtype = boxed::register_box_type::<MyData>("GrustTestMyData");
+            REGISTERED.store(gtype.to_raw() as usize, Ordering::Release);
+        });
+
+        let raw = REGISTERED.load(Ordering::Acquire) as gobject::GType;
+        unsafe { GType::from_raw(raw) }
+    }
+}
+
 #[test]
 fn test_boxed() {
-    let mut value = Value::new(boxed::type_of::<Box<String>>());
+    let mut value = Value::new(boxed::type_of::<Box<MyData>>());
     {
-        let os = value.deref_boxed::<Box<String>>();
-        assert_eq!(os, None);
+        let os = value.deref_boxed::<Box<MyData>>();
+        assert!(os.is_none());
     }
     {
-        let ob = value.dup_boxed::<Box<String>>();
-        assert_eq!(ob, None);
+        let ob = value.dup_boxed::<Box<MyData>>();
+        assert!(ob.is_none());
     }
-    value.take_boxed(Box::new("Hello!".to_string()));
+    value.take_boxed(Box::new(MyData("Hello!".to_string())));
     let value = value.clone();
     {
-        let s = value.deref_boxed::<Box<String>>().unwrap();
+        let d = value.deref_boxed::<Box<MyData>>().unwrap();
+        let MyData(ref s) = *d;
         assert_eq!(&s[], "Hello!");
     }
     {
-        let b = value.dup_boxed::<Box<String>>().unwrap();
-        assert_eq!(*b, "Hello!");
+        let b = value.dup_boxed::<Box<MyData>>().unwrap();
+        let MyData(ref s) = *b;
+        assert_eq!(&s[], "Hello!");
     }
 }
 
 #[test]
 #[should_fail]
 fn test_deref_boxed_panic() {
-    let value = Value::new(boxed::type_of::<Box<i32>>());
-    let _ = value.deref_boxed::<Box<String>>();
+    let value = Value::new(gtype::INT);
+    let _ = value.deref_boxed::<Box<MyData>>();
 }
 
 #[test]
 #[should_fail]
 fn test_dup_boxed_panic() {
     let value = Value::new(gtype::INT);
-    let _ = value.dup_boxed::<Box<i32>>();
+    let _ = value.dup_boxed::<Box<MyData>>();
 }
