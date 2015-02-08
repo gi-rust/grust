@@ -152,9 +152,9 @@ impl GStr {
     }
 
     pub fn to_bytes(&self) -> &[u8] {
+        let ptr = self.as_ptr();
         unsafe {
-            let r = mem::copy_lifetime(self, &(self.as_ptr() as *const u8));
-            slice::from_raw_buf(r, libc::strlen(self.as_ptr()) as usize)
+            slice::from_raw_parts(ptr as *const u8, libc::strlen(ptr) as usize)
         }
     }
 
