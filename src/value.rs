@@ -72,7 +72,7 @@ impl Value {
     }
 
     #[inline]
-    fn as_mut_raw(&mut self) -> &mut ffi::GValue {
+    unsafe fn as_mut_raw(&mut self) -> &mut ffi::GValue {
         &mut self.0
     }
 
