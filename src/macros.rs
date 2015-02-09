@@ -122,7 +122,7 @@ macro_rules! g_impl_boxed_type_for_ref {
 
             #[inline]
             unsafe fn into_ptr(self) -> $crate::types::gpointer {
-                self.into_raw() as $crate::types::gpointer
+                $crate::refcount::ref_into_raw(self) as $crate::types::gpointer
             }
         }
     }
