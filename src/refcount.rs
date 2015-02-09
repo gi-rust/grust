@@ -85,6 +85,6 @@ impl<T> Deref for Ref<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
-        unsafe { mem::copy_lifetime(self, &*self.ptr) }
+        unsafe { &*self.ptr }
     }
 }
