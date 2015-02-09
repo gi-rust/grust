@@ -1,6 +1,6 @@
 // This file is part of Grust, GObject introspection bindings for Rust
 //
-// Copyright (C) 2014  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
+// Copyright (C) 2014, 2015  Mikhail Zabaluev <mikhail.zabaluev@gmail.com>
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -32,11 +32,17 @@ use std::fmt;
 use std::mem;
 use std::ops::Deref;
 
+#[unsafe_no_drop_flag]
 pub struct Value(ffi::GValue);
 
 impl Drop for Value {
     fn drop(&mut self) {
-        unsafe { ffi::g_value_unset(self.as_mut_raw()) };
+        if self.as_raw().g_type == 0 {
+            return;
+        }
+        unsafe {
+            ffi::g_value_unset(self.as_mut_raw());
+        }
     }
 }
 
