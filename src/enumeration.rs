@@ -19,8 +19,16 @@
 use gtype::GType;
 use types::gint;
 
-pub trait EnumType {
-    fn get_type() -> GType;
+pub trait IntrospectedEnum {
     fn from_int(v: gint) -> Option<Self>;
     fn to_int(&self) -> gint;
+    fn name(&self) -> &'static str;
+}
+
+pub trait EnumType : IntrospectedEnum {
+    fn get_type() -> GType;
+}
+
+pub fn from_int<E>(v: gint) -> Option<E> where E: IntrospectedEnum {
+    IntrospectedEnum::from_int(v)
 }

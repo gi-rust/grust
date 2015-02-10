@@ -36,6 +36,7 @@ extern crate "gobject-2_0-sys" as gobject;
 mod macros;
 
 pub mod boxed;
+pub mod enumeration;
 pub mod error;
 pub mod gstr;
 pub mod gtype;
