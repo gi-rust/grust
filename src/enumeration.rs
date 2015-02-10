@@ -19,8 +19,11 @@
 use gtype::GType;
 use types::gint;
 
+use std::error::Error as ErrorTrait;
+use std::fmt;
+
 pub trait IntrospectedEnum {
-    fn from_int(v: gint) -> Option<Self>;
+    fn from_int(v: gint) -> Result<Self, UnknownValue>;
     fn to_int(&self) -> gint;
     fn name(&self) -> &'static str;
 }
@@ -29,7 +32,30 @@ pub trait EnumType : IntrospectedEnum {
     fn get_type() -> GType;
 }
 
-pub fn from_int<E>(v: gint) -> Option<E> where E: IntrospectedEnum {
+#[derive(Copy, Debug, Eq, PartialEq)]
+pub struct UnknownValue(gint);
+
+impl UnknownValue {
+    pub fn new(v: gint) -> UnknownValue {
+        UnknownValue(v)
+    }
+}
+
+impl ErrorTrait for UnknownValue {
+    fn description(&self) -> &str {
+        "unknown enumeration value"
+    }
+}
+
+impl fmt::Display for UnknownValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "unknown enumeration value {}", self.0)
+    }
+}
+
+pub fn from_int<E>(v: gint) -> Result<E, UnknownValue>
+    where E: IntrospectedEnum
+{
     IntrospectedEnum::from_int(v)
 }
 

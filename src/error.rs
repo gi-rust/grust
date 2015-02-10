@@ -110,7 +110,7 @@ impl Error {
     pub fn matches<T>(&self, code: T) -> bool where T: Domain + PartialEq {
         if self.domain() == domain::<T>() {
             let own_code_raw = unsafe { (*self.ptr).code };
-            if let Some(own_code) = enumeration::from_int(own_code_raw) {
+            if let Ok(own_code) = enumeration::from_int(own_code_raw) {
                 return own_code == code;
             }
         }
@@ -153,8 +153,8 @@ impl<T> DomainError<T> where T: IntrospectedEnum {
     pub fn code(&self) -> Code<T> {
         let code = unsafe { (*self.inner.ptr).code };
         match enumeration::from_int(code) {
-            Some(domain_code) => Code::Known(domain_code),
-            None              => Code::Unknown(code)
+            Ok(domain_code) => Code::Known(domain_code),
+            Err(_)          => Code::Unknown(code)
         }
     }
 }

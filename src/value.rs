@@ -20,6 +20,7 @@ use boxed;
 use boxed::BoxedType;
 use enumeration;
 use enumeration::{EnumType, IntrospectedEnum};
+use enumeration::UnknownValue as UnknownEnumValue;
 use gstr::{GStr, OwnedGStr};
 use gtype::GType;
 use object;
@@ -191,11 +192,13 @@ impl Value {
                       enumeration::type_of::<T>().name());
     }
 
-    pub fn get_enum<T>(&self) -> Result<T, gint> where T: EnumType {
+    pub fn get_enum<T>(&self) -> Result<T, UnknownEnumValue>
+        where T: EnumType
+    {
         self.assert_enum_type::<T>();
         unsafe {
             let v = ffi::g_value_get_enum(self.as_raw());
-            IntrospectedEnum::from_int(v).ok_or(v)
+            IntrospectedEnum::from_int(v)
         }
     }
 

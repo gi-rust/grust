@@ -24,6 +24,7 @@ extern crate grust;
 extern crate "glib-2_0-sys" as glib;
 
 use grust::enumeration::IntrospectedEnum;
+use grust::enumeration::UnknownValue as UnknownEnumValue;
 use grust::error;
 use grust::error::{Error, Domain, DomainError};
 
@@ -55,8 +56,8 @@ enum AError {
 
 impl IntrospectedEnum for AError {
 
-    fn from_int(v: gint) -> Option<Self> {
-        from_i32(v as i32)
+    fn from_int(v: gint) -> Result<Self, UnknownEnumValue> {
+        from_i32(v as i32).ok_or(UnknownEnumValue::new(v))
     }
 
     fn to_int(&self) -> gint {
@@ -84,8 +85,8 @@ enum BError {
 
 impl IntrospectedEnum for BError {
 
-    fn from_int(v: gint) -> Option<Self> {
-        from_i32(v as i32)
+    fn from_int(v: gint) -> Result<Self, UnknownEnumValue> {
+        from_i32(v as i32).ok_or(UnknownEnumValue::new(v))
     }
 
     fn to_int(&self) -> gint {
