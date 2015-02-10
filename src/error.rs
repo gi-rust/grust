@@ -17,6 +17,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use boxed::BoxedType;
+use enumeration;
+use enumeration::IntrospectedEnum;
 use gstr::GStr;
 use gtype::GType;
 use quark::Quark;
@@ -30,7 +32,6 @@ use std::error::Error as ErrorTrait;
 use std::error::FromError;
 use std::fmt;
 use std::mem;
-use std::num;
 
 pub struct Error {
     ptr: *mut ffi::GError
@@ -46,9 +47,8 @@ pub enum Code<T> {
     Unknown(gint)
 }
 
-pub trait Domain : num::FromPrimitive {
+pub trait Domain : IntrospectedEnum {
     fn domain() -> Quark;
-    fn name(&self) -> &'static str;
 }
 
 pub fn domain<T>() -> Quark where T: Domain {
@@ -110,7 +110,7 @@ impl Error {
     pub fn matches<T>(&self, code: T) -> bool where T: Domain + PartialEq {
         if self.domain() == domain::<T>() {
             let own_code_raw = unsafe { (*self.ptr).code };
-            if let Some(own_code) = num::from_i32::<T>(own_code_raw as i32) {
+            if let Some(own_code) = enumeration::from_int(own_code_raw) {
                 return own_code == code;
             }
         }
@@ -149,10 +149,10 @@ impl Error {
     }
 }
 
-impl<T> DomainError<T> where T: num::FromPrimitive {
+impl<T> DomainError<T> where T: IntrospectedEnum {
     pub fn code(&self) -> Code<T> {
         let code = unsafe { (*self.inner.ptr).code };
-        match num::from_i32(code as i32) {
+        match enumeration::from_int(code) {
             Some(domain_code) => Code::Known(domain_code),
             None              => Code::Unknown(code)
         }

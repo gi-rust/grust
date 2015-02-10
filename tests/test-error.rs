@@ -23,6 +23,7 @@ extern crate grust;
 
 extern crate "glib-2_0-sys" as glib;
 
+use grust::enumeration::IntrospectedEnum;
 use grust::error;
 use grust::error::{Error, Domain, DomainError};
 
@@ -34,6 +35,7 @@ use grust::value::Value;
 
 use std::error::Error as ErrorTrait;
 use std::error::FromError;
+use std::num::from_i32;
 
 const NON_UTF8: &'static [u8] = b"U can't parse this.\x9c Hammer time!";
 const NON_UTF8_LOSSY: &'static str = "U can't parse this.\u{FFFD} Hammer time!";
@@ -51,15 +53,14 @@ enum AError {
     Bar = A_BAR as isize,
 }
 
-#[derive(Copy, Debug, Eq, PartialEq, FromPrimitive)]
-enum BError {
-    Baz = B_BAZ as isize
-}
+impl IntrospectedEnum for AError {
 
-impl Domain for AError {
+    fn from_int(v: gint) -> Option<Self> {
+        from_i32(v as i32)
+    }
 
-    fn domain() -> Quark {
-        g_static_quark!(b"a-error\0")
+    fn to_int(&self) -> gint {
+        *self as gint
     }
 
     fn name(&self) -> &'static str {
@@ -70,16 +71,37 @@ impl Domain for AError {
     }
 }
 
-impl Domain for BError {
-
+impl Domain for AError {
     fn domain() -> Quark {
-        g_static_quark!(b"b-error\0")
+        g_static_quark!(b"a-error\0")
+    }
+}
+
+#[derive(Copy, Debug, Eq, PartialEq, FromPrimitive)]
+enum BError {
+    Baz = B_BAZ as isize
+}
+
+impl IntrospectedEnum for BError {
+
+    fn from_int(v: gint) -> Option<Self> {
+        from_i32(v as i32)
+    }
+
+    fn to_int(&self) -> gint {
+        *self as gint
     }
 
     fn name(&self) -> &'static str {
         match *self {
             BError::Baz => "baz"
         }
+    }
+}
+
+impl Domain for BError {
+    fn domain() -> Quark {
+        g_static_quark!(b"b-error\0")
     }
 }
 
