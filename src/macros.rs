@@ -41,7 +41,7 @@ macro_rules! g_error_match {
     ) => {
         {
             let err: $crate::error::Error = $inp;
-            let res: std::result::Result<$errtype, $crate::error::Error>
+            let res: ::std::result::Result<$errtype, $crate::error::Error>
                      = err.into_domain();
             match res {
                 Ok($slot) => $handler,
@@ -73,7 +73,7 @@ macro_rules! g_static_quark {
             use $crate::quark::StaticQuark;
 
             static QUARK: StaticQuark =
-                StaticQuark($lit, std::sync::atomic::ATOMIC_UINT_INIT);
+                StaticQuark($lit, ::std::sync::atomic::ATOMIC_UINT_INIT);
 
             QUARK.get()
         }
@@ -85,9 +85,9 @@ macro_rules! g_type_register_box {
     ($t:ty, $name:expr) => {
         unsafe impl $crate::boxed::BoxRegistered for $t {
             fn box_type() -> $crate::gtype::GType {
-                use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT};
-                use std::sync::atomic::Ordering::{Acquire,Release};
-                use std::sync::{Once, ONCE_INIT};
+                use ::std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT};
+                use ::std::sync::atomic::Ordering::{Acquire,Release};
+                use ::std::sync::{Once, ONCE_INIT};
 
                 static REGISTERED: AtomicUsize = ATOMIC_USIZE_INIT;
                 static INIT: Once = ONCE_INIT;
