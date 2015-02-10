@@ -191,11 +191,11 @@ impl Value {
                       enumeration::type_of::<T>().name());
     }
 
-    pub fn get_enum<T>(&self) -> Option<T> where T: EnumType {
+    pub fn get_enum<T>(&self) -> Result<T, gint> where T: EnumType {
         self.assert_enum_type::<T>();
         unsafe {
             let v = ffi::g_value_get_enum(self.as_raw());
-            IntrospectedEnum::from_int(v)
+            IntrospectedEnum::from_int(v).ok_or(v)
         }
     }
 
