@@ -205,7 +205,7 @@ impl fmt::Debug for Error {
         let (domain, code) = self.key();
         let message = escape_bytestring(self.message_bytes());
         write!(f,
-               r#"GError{{domain={:?}, code={}, message="{}"}}"#,
+               r#"GError {{ domain: {:?}, code: {}, message: "{}" }}"#,
                domain, code, message)
     }
 }
@@ -217,12 +217,12 @@ impl<T> fmt::Debug for DomainError<T> where T: Domain {
         match self.code() {
             Code::Known(code) => {
                 write!(f,
-                       r#"GError{{domain={:?}, code={}, message="{}"}}"#,
+                       r#"GError {{ domain: {:?}, code: {:?}, message: "{}" }}"#,
                        domain, code.name(), message)
             }
             Code::Unknown(int_code) => {
                 write!(f,
-                       r#"GError{{domain={:?}, code={}, message="{}"}}"#,
+                       r#"GError {{ domain: {:?}, code: {}, message: "{}" }}"#,
                        domain, int_code, message)
             }
         }
