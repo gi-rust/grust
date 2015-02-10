@@ -18,6 +18,8 @@
 
 use boxed;
 use boxed::BoxedType;
+use enumeration;
+use enumeration::{EnumType, IntrospectedEnum};
 use gstr::{GStr, OwnedGStr};
 use gtype::GType;
 use object;
@@ -181,6 +183,27 @@ impl Value {
 
     pub fn set_double(&mut self, val: gdouble) {
         unsafe { ffi::g_value_set_double(self.as_mut_raw(), val) };
+    }
+
+    fn assert_enum_type<T>(&self) where T: EnumType {
+        debug_assert!(self.value_type() == enumeration::type_of::<T>(),
+                      "GValue does not have the enumeration type {}",
+                      enumeration::type_of::<T>().name());
+    }
+
+    pub fn get_enum<T>(&self) -> Option<T> where T: EnumType {
+        self.assert_enum_type::<T>();
+        unsafe {
+            let v = ffi::g_value_get_enum(self.as_raw());
+            IntrospectedEnum::from_int(v)
+        }
+    }
+
+    pub fn set_enum<T>(&mut self, val: T) where T: EnumType {
+        self.assert_enum_type::<T>();
+        unsafe {
+            ffi::g_value_set_enum(self.as_mut_raw(), val.to_int());
+        }
     }
 
     pub fn get_string(&self) -> Option<&GStr> {

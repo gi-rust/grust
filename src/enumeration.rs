@@ -32,3 +32,7 @@ pub trait EnumType : IntrospectedEnum {
 pub fn from_int<E>(v: gint) -> Option<E> where E: IntrospectedEnum {
     IntrospectedEnum::from_int(v)
 }
+
+pub fn type_of<E>() -> GType where E: EnumType {
+    <E as EnumType>::get_type()
+}
