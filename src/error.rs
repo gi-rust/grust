@@ -281,4 +281,12 @@ mod test {
         let err = new_error(domain, 1, b"U can't parse this.\x9C Hammer time!");
         assert!(err.message().is_none());
     }
+
+    #[test]
+    fn message_bytes() {
+        let domain = Quark::from_static_str("foo\0");
+        let message = b"U can't parse this.\x9C Hammer time!";
+        let err = new_error(domain, 1, message);
+        assert_eq!(err.message_bytes(), message);
+    }
 }
