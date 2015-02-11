@@ -17,8 +17,6 @@ check:
 	$(MAKE) test
 
 test:
-# work around https://github.com/rust-lang/cargo/issues/1289
-	rm -f target/test-*
 	$(CARGO) $(CARGO_OPTS) test
 
 bench:
