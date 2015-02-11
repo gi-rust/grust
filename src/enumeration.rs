@@ -33,13 +33,7 @@ pub trait EnumType : IntrospectedEnum {
 }
 
 #[derive(Copy, Debug, Eq, PartialEq)]
-pub struct UnknownValue(gint);
-
-impl UnknownValue {
-    pub fn new(v: gint) -> UnknownValue {
-        UnknownValue(v)
-    }
-}
+pub struct UnknownValue(pub gint);
 
 impl ErrorTrait for UnknownValue {
     fn description(&self) -> &str {

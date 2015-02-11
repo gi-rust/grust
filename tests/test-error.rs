@@ -57,7 +57,7 @@ enum AError {
 impl IntrospectedEnum for AError {
 
     fn from_int(v: gint) -> Result<Self, UnknownEnumValue> {
-        from_i32(v as i32).ok_or(UnknownEnumValue::new(v))
+        from_i32(v as i32).ok_or(UnknownEnumValue(v))
     }
 
     fn to_int(&self) -> gint {
@@ -86,7 +86,7 @@ enum BError {
 impl IntrospectedEnum for BError {
 
     fn from_int(v: gint) -> Result<Self, UnknownEnumValue> {
-        from_i32(v as i32).ok_or(UnknownEnumValue::new(v))
+        from_i32(v as i32).ok_or(UnknownEnumValue(v))
     }
 
     fn to_int(&self) -> gint {
