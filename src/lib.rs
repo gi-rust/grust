@@ -38,6 +38,7 @@ mod macros;
 pub mod boxed;
 pub mod enumeration;
 pub mod error;
+pub mod flags;
 pub mod gstr;
 pub mod gtype;
 pub mod mainloop;
