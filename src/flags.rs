@@ -47,6 +47,12 @@ impl UnknownFlags {
     pub fn known(&self) -> guint { self.actual & self.known_mask }
 }
 
+pub mod prelude {
+    pub use super::{IntrospectedFlags, FlagsType, UnknownFlags};
+    pub use gtype::GType;
+    pub use types::guint;
+}
+
 impl ErrorTrait for UnknownFlags {
     fn description(&self) -> &str {
         "unknown bit flags encountered"
