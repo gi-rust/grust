@@ -16,4 +16,4 @@ repository = "https://github.com/gi-rust/grust.git"
 
 [dependencies]
 glib-2_0-sys    = "0.0.2"
-gobject-2_0-sys = "0.0.3"
+gobject-2_0-sys = "0.0.4"
