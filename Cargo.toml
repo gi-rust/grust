@@ -1,7 +1,7 @@
 [package]
 
 name = "grust"
-version = "0.0.4"
+version = "0.0.5-dev"
 authors = ["Mikhail Zabaluev <mikhail.zabaluev@gmail.com>"]
 license = "LGPL-2.1+"
 readme = "README.md"
@@ -15,5 +15,5 @@ generated crates.
 repository = "https://github.com/gi-rust/grust.git"
 
 [dependencies]
-glib-2_0-sys    = "0.0.2"
-gobject-2_0-sys = "0.0.4"
+glib-2_0-sys    = "0.0.3"
+gobject-2_0-sys = "0.0.5"
