@@ -21,6 +21,8 @@ use boxed::BoxedType;
 use enumeration;
 use enumeration::{EnumType, IntrospectedEnum};
 use enumeration::UnknownValue as UnknownEnumValue;
+use flags;
+use flags::{FlagsType, IntrospectedFlags, UnknownFlags};
 use gstr::{GStr, OwnedGStr};
 use gtype::GType;
 use object;
@@ -206,6 +208,29 @@ impl Value {
         self.assert_enum_type::<T>();
         unsafe {
             ffi::g_value_set_enum(self.as_mut_raw(), val.to_int());
+        }
+    }
+
+    fn assert_flags_type<T>(&self) where T: FlagsType {
+        debug_assert!(self.value_type() == flags::type_of::<T>(),
+                      "GValue does not have the flags type {}",
+                      flags::type_of::<T>().name());
+    }
+
+    pub fn get_flags<T>(&self) -> Result<T, UnknownFlags>
+        where T: FlagsType
+    {
+        self.assert_flags_type::<T>();
+        unsafe {
+            let v = ffi::g_value_get_flags(self.as_raw());
+            IntrospectedFlags::from_uint(v)
+        }
+    }
+
+    pub fn set_flags<T>(&mut self, val: T) where T: FlagsType {
+        self.assert_flags_type::<T>();
+        unsafe {
+            ffi::g_value_set_flags(self.as_mut_raw(), val.to_uint());
         }
     }
 
