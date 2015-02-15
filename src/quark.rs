@@ -28,7 +28,7 @@ use std::sync::atomic;
 #[derive(Copy, Eq, PartialEq)]
 pub struct Quark(ffi::GQuark);
 
-pub struct StaticQuark(pub &'static [u8], pub atomic::AtomicUint);
+pub struct StaticQuark(pub &'static [u8], pub atomic::AtomicUsize);
 
 impl Quark {
 
