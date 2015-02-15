@@ -27,6 +27,7 @@
 #![feature(libc)]
 #![feature(std_misc)]
 #![feature(unsafe_destructor)]
+#![feature(unsafe_no_drop_flag)]
 
 extern crate libc;
 extern crate "glib-2_0-sys" as glib;
