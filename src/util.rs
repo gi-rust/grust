@@ -36,11 +36,7 @@ pub fn escape_bytestring<'a>(s: &'a [u8]) -> CowString<'a> {
         return s.into_cow();
     }
     let mut acc = Vec::with_capacity(s.len());
-    for c in s.iter() {
-        ascii::escape_default(*c, |esc| {
-            acc.push(esc);
-        })
-    }
+    acc.extend(s.iter().cloned().flat_map(ascii::escape_default));
     let string = unsafe { String::from_utf8_unchecked(acc) };
     string.into_cow()
 }
