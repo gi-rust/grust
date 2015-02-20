@@ -20,9 +20,8 @@ use types::{gboolean,FALSE};
 
 use std::ascii;
 use std::ascii::AsciiExt;
-use std::borrow::IntoCow;
+use std::borrow::{Cow, IntoCow};
 use std::str;
-use std::string::CowString;
 
 #[inline]
 pub fn is_true(v: gboolean) -> bool { v != FALSE }
@@ -30,7 +29,7 @@ pub fn is_true(v: gboolean) -> bool { v != FALSE }
 #[inline]
 pub fn is_false(v: gboolean) -> bool { v == FALSE }
 
-pub fn escape_bytestring<'a>(s: &'a [u8]) -> CowString<'a> {
+pub fn escape_bytestring<'a>(s: &'a [u8]) -> Cow<'a, str> {
     if s.is_ascii() {
         let s = unsafe { str::from_utf8_unchecked(s) };
         return s.into_cow();

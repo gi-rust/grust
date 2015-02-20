@@ -81,7 +81,7 @@ impl<T> Clone for Ref<T> where T: Refcount {
     }
 }
 
-impl<T> Deref for Ref<T> {
+impl<T> Deref for Ref<T> where T: Refcount {
 
     type Target = T;
 

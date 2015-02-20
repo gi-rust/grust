@@ -27,7 +27,7 @@ use grust::mainloop::MainContext;
 use grust::refcount::Ref;
 use grust::wrap::Wrapper;
 
-use std::fmt::Writer;
+use std::fmt::Write;
 
 #[test]
 fn test_string() {
@@ -61,7 +61,7 @@ fn test_debug() {
 
     let mut dump = String::new();
     write!(&mut dump, "{:?}", value).unwrap();
-    assert_eq!(&dump[], "GValue(\"Hello\")");
+    assert_eq!(&dump[..], "GValue(\"Hello\")");
 }
 
 #[derive(Clone)]
@@ -85,12 +85,12 @@ fn test_boxed() {
     {
         let d = value.deref_boxed::<Box<MyData>>().unwrap();
         let MyData(ref s) = *d;
-        assert_eq!(&s[], "Hello!");
+        assert_eq!(&s[..], "Hello!");
     }
     {
         let b = value.dup_boxed::<Box<MyData>>().unwrap();
         let MyData(ref s) = *b;
-        assert_eq!(&s[], "Hello!");
+        assert_eq!(&s[..], "Hello!");
     }
 }
 

@@ -31,6 +31,7 @@ use gobject;
 use std::error::Error as ErrorTrait;
 use std::error::FromError;
 use std::fmt;
+use std::marker::PhantomData;
 use std::mem;
 
 pub struct Error {
@@ -38,7 +39,8 @@ pub struct Error {
 }
 
 pub struct DomainError<T> {
-    inner: Error
+    inner: Error,
+    marker: PhantomData<T>
 }
 
 #[derive(Copy, Debug)]
@@ -75,7 +77,7 @@ impl Clone for Error {
 
 impl<T> Clone for DomainError<T> {
     fn clone(&self) -> DomainError<T> {
-        DomainError { inner: self.inner.clone() }
+        DomainError { inner: self.inner.clone(), marker: PhantomData }
     }
 }
 
@@ -132,7 +134,7 @@ impl Error {
         where T: Domain
     {
         if self.in_domain::<T>() {
-            Ok(DomainError { inner: self })
+            Ok(DomainError { inner: self, marker: PhantomData })
         } else {
             Err(self)
         }
