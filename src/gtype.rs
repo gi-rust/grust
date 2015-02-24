@@ -17,11 +17,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 use gobject as ffi;
-use gstr::GStr;
 use object::ObjectType;
 use util::is_true;
 
+use std::ffi::CStr;
 use std::fmt;
+use std::str;
 
 pub mod raw {
     use gobject;
@@ -75,9 +76,9 @@ impl GType {
 
     pub fn name(&self) -> &str {
         unsafe {
-            let name = GStr::from_ptr(ffi::g_type_name(self.to_raw()));
+            let name = CStr::from_ptr(ffi::g_type_name(self.to_raw()));
             // A valid GType name is restricted to ASCII characters
-            name.to_utf8_unchecked()
+            str::from_utf8_unchecked(name.to_bytes())
         }
     }
 }

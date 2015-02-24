@@ -19,7 +19,6 @@
 use boxed::BoxedType;
 use enumeration;
 use enumeration::IntrospectedEnum;
-use gstr::GStr;
 use gtype::GType;
 use quark::Quark;
 use types::{gint, gpointer};
@@ -30,9 +29,11 @@ use gobject;
 
 use std::error::Error as ErrorTrait;
 use std::error::FromError;
+use std::ffi::CStr;
 use std::fmt;
 use std::marker::PhantomData;
 use std::mem;
+use std::str;
 
 pub struct Error {
     ptr: *mut ffi::GError
@@ -141,12 +142,12 @@ impl Error {
     }
 
     fn message(&self) -> Option<&str> {
-        let message = unsafe { GStr::from_ptr((*self.ptr).message) };
-        message.to_utf8().ok()
+        let message = unsafe { CStr::from_ptr((*self.ptr).message) };
+        str::from_utf8(message.to_bytes()).ok()
     }
 
     fn message_bytes(&self) -> &[u8] {
-        let message = unsafe { GStr::from_ptr((*self.ptr).message) };
+        let message = unsafe { CStr::from_ptr((*self.ptr).message) };
         message.to_bytes()
     }
 }
@@ -166,7 +167,7 @@ impl ErrorTrait for Error {
         if let Some(s) = self.message() {
             return s;
         }
-        match self.domain().to_g_str().to_utf8() {
+        match str::from_utf8(self.domain().to_bytes()) {
             Ok(s)  => s,
             Err(_) => "GError (message and domain are not represented)"
         }
@@ -181,7 +182,7 @@ impl<T> ErrorTrait for DomainError<T> where T: Domain {
         if let Code::Known(code) = self.code() {
             return code.name();
         }
-        match self.inner.domain().to_g_str().to_utf8() {
+        match str::from_utf8(self.inner.domain().to_bytes()) {
             Ok(s)  => s,
             Err(_) => "GError (message and domain are not represented; unknown code)"
         }
@@ -261,12 +262,12 @@ impl<T> PartialEq for Code<T> where T: PartialEq {
 mod test {
     use super::*;
     use glib as ffi;
-    use gstr::GStrBuf;
     use quark::Quark;
     use types::gint;
+    use std::ffi::CString;
 
     fn new_error(domain: Quark, code: gint, message: &[u8]) -> Error {
-        let msg_buf = GStrBuf::from_bytes(message).unwrap();
+        let msg_buf = CString::new(message).unwrap();
         unsafe {
             let raw = ffi::g_error_new_literal(
                 domain.to_raw(), code, msg_buf.as_ptr());

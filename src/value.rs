@@ -23,7 +23,7 @@ use enumeration::{EnumType, IntrospectedEnum};
 use enumeration::UnknownValue as UnknownEnumValue;
 use flags;
 use flags::{FlagsType, IntrospectedFlags, UnknownFlags};
-use gstr::{GStr, OwnedGStr};
+use gstr::OwnedGStr;
 use gtype::GType;
 use object;
 use object::ObjectType;
@@ -33,6 +33,7 @@ use util::is_true;
 
 use gobject as ffi;
 
+use std::ffi::CStr;
 use std::fmt;
 use std::mem;
 use std::ops::Deref;
@@ -234,21 +235,21 @@ impl Value {
         }
     }
 
-    pub fn get_string(&self) -> Option<&GStr> {
+    pub fn get_string(&self) -> Option<&CStr> {
         unsafe {
             let ptr = ffi::g_value_get_string(self.as_raw());
             if ptr.is_null() {
                 return None;
             }
-            Some(GStr::from_ptr(ptr))
+            Some(CStr::from_ptr(ptr))
         }
     }
 
-    pub fn set_string(&mut self, val: &GStr) {
+    pub fn set_string(&mut self, val: &CStr) {
         unsafe { ffi::g_value_set_string(self.as_mut_raw(), val.as_ptr()) }
     }
 
-    pub fn set_static_string(&mut self, val: &'static GStr) {
+    pub fn set_static_string(&mut self, val: &'static CStr) {
         unsafe {
             ffi::g_value_set_static_string(self.as_mut_raw(), val.as_ptr())
         }

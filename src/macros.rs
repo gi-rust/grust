@@ -19,7 +19,8 @@
 #[macro_export]
 macro_rules! g_str {
     ($lit:expr) => {
-        $crate::gstr::GStr::from_static_bytes(concat!($lit, "\0").as_bytes())
+        std::ffi::CStr::from_ptr(concat!($lit, "\0").as_ptr()
+                                    as *const $crate::types::gchar)
     }
 }
 

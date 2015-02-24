@@ -18,18 +18,12 @@
 
 use glib as ffi;
 use types::{gchar,gpointer};
-use util::escape_bytestring;
 
 use libc;
-use std::error::Error;
-use std::fmt;
-use std::marker;
+use std::ffi::{CStr, CString, NulError};
 use std::mem;
 use std::ops::Deref;
-use std::slice;
 use std::str;
-
-const NUL: u8 = 0;
 
 pub struct OwnedGStr {
     ptr: *const gchar,
@@ -44,10 +38,10 @@ impl OwnedGStr {
 
 impl Deref for OwnedGStr {
 
-    type Target = GStr;
+    type Target = CStr;
 
-    fn deref(&self) -> &GStr {
-        unsafe { GStr::from_ptr(self.ptr) }
+    fn deref(&self) -> &CStr {
+        unsafe { CStr::from_ptr(self.ptr) }
     }
 }
 
@@ -73,128 +67,25 @@ impl PartialEq for OwnedGStr {
 
 impl Eq for OwnedGStr { }
 
-#[derive(Copy)]
-pub struct NulError {
-    pub position: usize
-}
-
-impl Error for NulError {
-
-    fn description(&self) -> &str {
-        "invalid data for C string: contains a NUL byte"
-    }
-}
-
-impl fmt::Display for NulError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "invalid data for C string: NUL at position {}",
-               self.position)
-    }
-}
-
-impl fmt::Debug for NulError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)
-    }
-}
-
-pub struct IntoGStrError {
-    cause: NulError,
-    bytes: Vec<u8>
-}
-
-impl IntoGStrError {
-
-    pub fn nul_error(&self) -> &NulError {
-        &self.cause
-    }
-
-    pub fn into_bytes(self) -> Vec<u8> {
-        self.bytes
-    }
-}
-
-impl Error for IntoGStrError {
-
-    fn description(&self) -> &str {
-        self.cause.description()
-    }
-}
-
-impl fmt::Display for IntoGStrError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.cause)
-    }
-}
-
-impl fmt::Debug for IntoGStrError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.cause)
-    }
-}
-
-#[repr(C)]
-pub struct GStr {
-    head: gchar,
-    marker: marker::NoCopy
-}
-
-#[repr(C)]
 pub struct Utf8 {
-    gstr: GStr
-}
-
-impl GStr {
-
-    #[inline]
-    pub fn as_ptr(&self) -> *const gchar {
-        &self.head as *const gchar
-    }
-
-    pub fn to_bytes(&self) -> &[u8] {
-        let ptr = self.as_ptr();
-        unsafe {
-            slice::from_raw_parts(ptr as *const u8, libc::strlen(ptr) as usize)
-        }
-    }
-
-    #[inline]
-    pub fn to_utf8(&self) -> Result<&str, str::Utf8Error> {
-        str::from_utf8(self.to_bytes())
-    }
-
-    #[inline]
-    pub unsafe fn to_utf8_unchecked(&self) -> &str {
-        str::from_utf8_unchecked(self.to_bytes())
-    }
-
-    pub fn from_static_bytes(bytes: &'static [u8]) -> &'static GStr {
-        assert!(bytes.last() == Some(&NUL),
-                "static byte string is not null-terminated: \"{}\"",
-                escape_bytestring(bytes));
-        unsafe { GStr::from_ptr(bytes.as_ptr() as *const gchar) }
-    }
-
-    pub unsafe fn from_ptr<'a>(ptr: *const gchar) -> &'a GStr {
-        mem::transmute(&*(ptr as *const GStr))
-    }
+    inner: CStr
 }
 
 impl Utf8 {
 
     #[inline]
     pub fn as_ptr(&self) -> *const gchar {
-        self.gstr.as_ptr()
+        self.inner.as_ptr()
     }
 
     #[inline]
-    pub fn as_g_str(&self) -> &GStr {
-        &self.gstr
+    pub fn as_c_str(&self) -> &CStr {
+        &self.inner
     }
 
     #[inline]
     pub fn to_str(&self) -> &str {
-        unsafe { str::from_utf8_unchecked(self.gstr.to_bytes()) }
+        unsafe { str::from_utf8_unchecked(self.inner.to_bytes()) }
     }
 
     pub fn from_static_str(s: &'static str) -> &'static Utf8 {
@@ -204,83 +95,40 @@ impl Utf8 {
     }
 
     pub unsafe fn from_ptr<'a>(ptr: *const gchar) -> &'a Utf8 {
-        mem::transmute(&*(ptr as *const Utf8))
+        mem::transmute(CStr::from_ptr(ptr))
     }
 }
 
-fn vec_into_g_str_buf(mut v: Vec<u8>) -> GStrBuf {
-    v.push(NUL);
-    GStrBuf { data: v }
+pub struct Utf8String {
+    inner: CString
 }
 
-pub struct GStrBuf {
-    data: Vec<u8>
-}
-
-impl Deref for GStrBuf {
-
-    type Target = GStr;
-
-    fn deref(&self) -> &GStr {
-        unsafe { GStr::from_ptr(self.data.as_ptr() as *const gchar) }
-    }
-}
-
-impl GStrBuf {
-
-    #[inline]
-    pub fn from_str(s: &str) -> Result<GStrBuf, NulError> {
-        GStrBuf::from_bytes(s.as_bytes())
-    }
-
-    pub fn from_bytes(bytes: &[u8]) -> Result<GStrBuf, NulError> {
-        if let Some(pos) = bytes.position_elem(&NUL) {
-            return Err(NulError { position: pos });
-        }
-        Ok(vec_into_g_str_buf(bytes.to_vec()))
-    }
-
-    pub fn from_vec(vec: Vec<u8>) -> Result<GStrBuf, IntoGStrError> {
-        if let Some(pos) = vec.position_elem(&NUL) {
-            return Err(IntoGStrError {
-                cause: NulError { position: pos },
-                bytes: vec
-            });
-        }
-        Ok(vec_into_g_str_buf(vec))
-    }
-}
-
-pub struct Utf8Buf {
-    inner: GStrBuf
-}
-
-impl Deref for Utf8Buf {
+impl Deref for Utf8String {
 
     type Target = Utf8;
 
     fn deref(&self) -> &Utf8 {
-        unsafe { Utf8::from_ptr(self.inner.data.as_ptr() as *const gchar) }
+        unsafe { Utf8::from_ptr(self.inner.as_ptr() as *const gchar) }
     }
 }
 
-unsafe fn utf8_wrap_g_str_result<E>(res: Result<GStrBuf, E>)
-                                   -> Result<Utf8Buf, E>
+unsafe fn utf8_wrap_c_str_result<E>(res: Result<CString, E>)
+                                   -> Result<Utf8String, E>
 {
     res.map(|buf| {
-        Utf8Buf { inner: buf }
+        Utf8String { inner: buf }
     })
 }
 
-impl Utf8Buf {
+impl Utf8String {
 
-    pub fn from_str(s: &str) -> Result<Utf8Buf, NulError> {
-        let g_str_res = GStrBuf::from_bytes(s.as_bytes());
-        unsafe { utf8_wrap_g_str_result(g_str_res) }
+    pub fn from_str(s: &str) -> Result<Utf8String, NulError> {
+        let c_str_res = CString::new(s);
+        unsafe { utf8_wrap_c_str_result(c_str_res) }
     }
 
-    pub fn from_string(s: String) -> Result<Utf8Buf, IntoGStrError> {
-        let g_str_res = GStrBuf::from_vec(s.into_bytes());
-        unsafe { utf8_wrap_g_str_result(g_str_res) }
+    pub fn from_string(s: String) -> Result<Utf8String, NulError> {
+        let g_str_res = CString::new(s);
+        unsafe { utf8_wrap_c_str_result(g_str_res) }
     }
 }

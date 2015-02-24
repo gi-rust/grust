@@ -16,12 +16,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use gstr::GStr;
 use types::gchar;
 use util::escape_bytestring;
 
 use glib as ffi;
 
+use std::ffi::CStr;
 use std::fmt;
 use std::sync::atomic;
 
@@ -59,17 +59,17 @@ impl Quark {
         Quark(q)
     }
 
-    pub fn to_g_str(&self) -> &'static GStr {
+    pub fn to_c_str(&self) -> &'static CStr {
         let Quark(raw) = *self;
         unsafe {
             let s = ffi::g_quark_to_string(raw);
-            GStr::from_ptr(s)
+            CStr::from_ptr(s)
         }
     }
 
     #[inline]
     pub fn to_bytes(&self) -> &'static [u8] {
-        self.to_g_str().to_bytes()
+        self.to_c_str().to_bytes()
     }
 
     #[inline]

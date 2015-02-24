@@ -16,13 +16,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use gstr::GStrBuf;
 use gtype::GType;
 use types::gpointer;
 
 use gobject as ffi;
 
 use std::boxed::into_raw as box_into_raw;
+use std::ffi::CString;
 use std::mem;
 
 pub trait BoxedType {
@@ -54,7 +54,7 @@ extern "C" fn box_free<T>(raw: gpointer) {
 }
 
 pub fn register_box_type<T>(name: &str) -> GType where T: Clone + Send {
-    let c_name = GStrBuf::from_str(name).unwrap();
+    let c_name = CString::new(name).unwrap();
     let raw = unsafe {
         ffi::g_boxed_type_register_static(c_name.as_ptr(),
                                           box_copy::<T>,
