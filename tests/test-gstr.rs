@@ -134,7 +134,7 @@ fn test_utf8_from_static_str() {
 #[test]
 fn test_utf8_buf_from_str() {
     let s = String::from_str(TEST_STR);
-    let buf = Utf8Buf::from_str(&s[]).unwrap();
+    let buf = Utf8Buf::from_str(&s[..]).unwrap();
     assert!(g_str_equal(buf.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
 
     let res = Utf8Buf::from_str("got\0nul");
