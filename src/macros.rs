@@ -19,8 +19,10 @@
 #[macro_export]
 macro_rules! g_str {
     ($lit:expr) => {
-        std::ffi::CStr::from_ptr(concat!($lit, "\0").as_ptr()
-                                    as *const $crate::types::gchar)
+        unsafe {
+            std::ffi::CStr::from_ptr(concat!($lit, "\0").as_ptr()
+                                        as *const $crate::types::gchar)
+        }
     }
 }
 

@@ -20,6 +20,7 @@
 
 #![feature(collections)]
 #![feature(libc)]
+#![feature(std_misc)]
 
 #[macro_use]
 extern crate grust;
@@ -28,11 +29,13 @@ extern crate "glib-2_0-sys" as glib;
 extern crate libc;
 
 use grust::gstr;
-use grust::gstr::{Utf8Buf, OwnedGStr};
+use grust::gstr::{Utf8String, OwnedGStr};
 
 use grust::types::gchar;
 
 use glib::g_strdup;
+
+use std::str;
 
 static TEST_CSTR: &'static str = "¡Hola, amigos!\0";
 static TEST_STR:  &'static str = "¡Hola, amigos!";
@@ -59,25 +62,6 @@ fn g_str_equal(p1: *const gchar, p2: *const gchar) -> bool {
 }
 
 #[test]
-fn test_owned_g_str_to_utf8() {
-    let str = owned_g_str(TEST_CSTR);
-    let res = str.to_utf8();
-    assert!(res.is_ok());
-    assert_eq!(res.unwrap(), TEST_STR);
-}
-
-#[test]
-fn test_owned_g_str_to_utf8_invalid() {
-    let s = owned_g_str_from_bytes(b"a\x80\0");
-    let res = s.to_utf8();
-    assert!(res.is_err());
-    match res {
-        Err(_) => {}
-        _ => unreachable!()
-    }
-}
-
-#[test]
 fn test_owned_g_str_to_bytes() {
     let str = owned_g_str_from_bytes(b"a\x80\0");
     let bytes = str.to_bytes();
@@ -90,7 +74,7 @@ fn test_owned_g_str_to_bytes() {
 fn test_owned_g_str_clone() {
     let str1 = owned_g_str(TEST_CSTR);
     let str2 = str1.clone();
-    let s = str2.to_utf8().unwrap();
+    let s = str::from_utf8(str2.to_bytes()).unwrap();
     assert_eq!(s, TEST_STR.to_string());
 }
 
@@ -134,24 +118,24 @@ fn test_utf8_from_static_str() {
 }
 
 #[test]
-fn test_utf8_buf_from_str() {
+fn test_utf8_string_from_str() {
     let s = String::from_str(TEST_STR);
-    let buf = Utf8Buf::from_str(&s[..]).unwrap();
+    let buf = Utf8String::from_str(&s[..]).unwrap();
     assert!(g_str_equal(buf.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
 
-    let res = Utf8Buf::from_str("got\0nul");
+    let res = Utf8String::from_str("got\0nul");
     let err = res.err().unwrap();
-    assert_eq!(err.position, 3);
+    assert_eq!(err.nul_position(), 3);
 }
 
 #[test]
-fn test_utf8_buf_from_string() {
+fn test_utf8_string_from_string() {
     let s = String::from_str(TEST_STR);
-    let buf = Utf8Buf::from_string(s).unwrap();
+    let buf = Utf8String::from_string(s).unwrap();
     assert!(g_str_equal(buf.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
 
     let s = String::from_str("got\0nul");
-    let res = Utf8Buf::from_string(s);
+    let res = Utf8String::from_string(s);
     let err = res.err().unwrap();
-    assert_eq!(err.nul_error().position, 3);
+    assert_eq!(err.nul_position(), 3);
 }

@@ -19,6 +19,7 @@
 #![allow(unstable_features)]
 
 #![feature(core)]
+#![feature(std_misc)]
 
 #[macro_use]
 extern crate grust;
@@ -31,14 +32,15 @@ use grust::error;
 use grust::error::{Error, Domain, DomainError};
 
 use grust::boxed;
-use grust::gstr::GStrBuf;
 use grust::quark::Quark;
 use grust::types::gint;
 use grust::value::Value;
 
 use std::error::Error as ErrorTrait;
 use std::error::FromError;
+use std::ffi::CString;
 use std::num::from_i32;
+use std::str;
 
 const NON_UTF8: &'static [u8] = b"U can't parse this.\x9c Hammer time!";
 const NON_UTF8_LOSSY: &'static str = "U can't parse this.\u{FFFD} Hammer time!";
@@ -110,7 +112,7 @@ impl Domain for BError {
 
 fn new_error<T>(code: gint, message: &[u8]) -> Error where T: Domain {
     let domain = error::domain::<T>();
-    let msg_buf = GStrBuf::from_bytes(message).unwrap();
+    let msg_buf = CString::new(message).unwrap();
     unsafe {
         let raw = glib::g_error_new_literal(
             domain.to_raw(), code, msg_buf.as_ptr());
@@ -257,7 +259,7 @@ fn test_error_debug() {
     let err = new_error::<AError>(A_FOO, message.as_bytes());
     let s = format!("{:?}", err);
     let (domain, code) = err.key();
-    let domain_str = domain.to_g_str().to_utf8().unwrap();
+    let domain_str = str::from_utf8(domain.to_bytes()).unwrap();
     assert_contains!(s, "GError");
     assert_contains!(s, "{}", domain_str);
     assert_contains!(s, "{}", code);
@@ -266,7 +268,7 @@ fn test_error_debug() {
     let err = new_error::<BError>(B_BAZ, NON_UTF8);
     let s = format!("{:?}", err);
     let (domain, code) = err.key();
-    let domain_str = domain.to_g_str().to_utf8().unwrap();
+    let domain_str = str::from_utf8(domain.to_bytes()).unwrap();
     assert_contains!(s, "GError");
     assert_contains!(s, "{}", domain_str);
     assert_contains!(s, "{}", code);
@@ -279,7 +281,7 @@ fn test_domain_error_debug() {
     let err = new_domain_error::<AError>(A_FOO, message.as_bytes());
     let s = format!("{:?}", err);
     let domain = error::domain::<AError>();
-    let domain_str = domain.to_g_str().to_utf8().unwrap();
+    let domain_str = str::from_utf8(domain.to_bytes()).unwrap();
     let code = err.code().known().unwrap();
     assert_contains!(s, "GError");
     assert_contains!(s, "{}", domain_str);
@@ -289,7 +291,7 @@ fn test_domain_error_debug() {
     let err = new_domain_error::<BError>(B_BAZ, NON_UTF8);
     let s = format!("{:?}", err);
     let domain = error::domain::<BError>();
-    let domain_str = domain.to_g_str().to_utf8().unwrap();
+    let domain_str = str::from_utf8(domain.to_bytes()).unwrap();
     let code = err.code().known().unwrap();
     assert_contains!(s, "GError");
     assert_contains!(s, "{}", domain_str);
@@ -299,7 +301,7 @@ fn test_domain_error_debug() {
     let err = new_domain_error::<AError>(UNKNOWN_CODE, b"unknown error");
     let s = format!("{:?}", err);
     let domain = error::domain::<AError>();
-    let domain_str = domain.to_g_str().to_utf8().unwrap();
+    let domain_str = str::from_utf8(domain.to_bytes()).unwrap();
     assert_contains!(s, "GError");
     assert_contains!(s, "{}", domain_str);
     assert_contains!(s, "{}", UNKNOWN_CODE);
