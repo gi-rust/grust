@@ -19,7 +19,6 @@
 #![allow(unstable_features)]
 
 #![feature(core)]
-#![feature(std_misc)]
 
 #[macro_use]
 extern crate grust;

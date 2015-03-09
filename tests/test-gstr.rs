@@ -20,7 +20,6 @@
 
 #![feature(collections)]
 #![feature(libc)]
-#![feature(std_misc)]
 
 #[macro_use]
 extern crate grust;
