@@ -95,14 +95,14 @@ fn test_boxed() {
 }
 
 #[test]
-#[should_fail]
+#[should_panic]
 fn test_deref_boxed_panic() {
     let value = Value::new(gtype::INT);
     let _ = value.deref_boxed::<Box<MyData>>();
 }
 
 #[test]
-#[should_fail]
+#[should_panic]
 fn test_dup_boxed_panic() {
     let value = Value::new(gtype::INT);
     let _ = value.dup_boxed::<Box<MyData>>();
