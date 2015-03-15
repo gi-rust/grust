@@ -13,8 +13,6 @@ clean:
 	$(CARGO) $(CARGO_OPTS) clean
 
 check:
-# work around https://github.com/rust-lang/cargo/issues/1289
-	rm -f target/test-*
 	$(MAKE) build
 	$(MAKE) test
 
