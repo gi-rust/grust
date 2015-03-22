@@ -290,6 +290,6 @@ mod test {
         let domain = Quark::from_static_str("foo\0");
         let message = b"U can't parse this.\x9C Hammer time!";
         let err = new_error(domain, 1, message);
-        assert_eq!(err.message_bytes(), message);
+        assert_eq!(err.message_bytes(), &message[..]);
     }
 }
