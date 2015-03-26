@@ -32,7 +32,7 @@ pub struct OwnedGStr {
 impl OwnedGStr {
 
     pub unsafe fn from_ptr(ptr: *mut gchar) -> OwnedGStr {
-        OwnedGStr { ptr: ptr as *const gchar }
+        OwnedGStr { ptr: ptr }
     }
 }
 
@@ -108,7 +108,7 @@ impl Deref for Utf8String {
     type Target = Utf8;
 
     fn deref(&self) -> &Utf8 {
-        unsafe { Utf8::from_ptr(self.inner.as_ptr() as *const gchar) }
+        unsafe { Utf8::from_ptr(self.inner.as_ptr()) }
     }
 }
 

@@ -279,7 +279,7 @@ impl Value {
     pub fn set_object<T>(&mut self, val: &T)
         where T: ObjectType
     {
-        let p = val as *const T;
+        let p = val as *const _;
         unsafe { ffi::g_value_set_object(self.as_mut_raw(), p as gpointer) }
     }
 

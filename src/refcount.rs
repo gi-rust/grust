@@ -39,7 +39,7 @@ impl<T> Ref<T> where T: Refcount {
         unsafe {
             source.inc_ref();
         }
-        Ref { ptr: source as *const T }
+        Ref { ptr: source }
     }
 }
 

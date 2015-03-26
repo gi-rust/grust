@@ -16,6 +16,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#![allow(trivial_numeric_casts)]
 #![allow(unstable_features)]
 
 #![feature(core)]
@@ -23,7 +24,7 @@
 #[macro_use]
 extern crate grust;
 
-extern crate "glib-2_0-sys" as glib;
+extern crate glib_2_0_sys as glib;
 
 use grust::enumeration::IntrospectedEnum;
 use grust::enumeration::UnknownValue as UnknownEnumValue;
@@ -219,10 +220,10 @@ fn test_error_display() {
     let message = "test error";
     let err = new_error::<AError>(A_FOO, message.as_bytes());
     let s = format!("{}", err);
-    assert_eq!(s.as_slice(), message);
+    assert_eq!(&s[..], message);
     let err = new_error::<AError>(A_FOO, NON_UTF8);
     let s = format!("{}", err);
-    assert_eq!(s.as_slice(), NON_UTF8_LOSSY)
+    assert_eq!(&s[..], NON_UTF8_LOSSY)
 }
 
 #[test]
@@ -230,10 +231,10 @@ fn test_domain_error_display() {
     let message = "test error";
     let err = new_domain_error::<AError>(A_FOO, message.as_bytes());
     let s = format!("{}", err);
-    assert_eq!(s.as_slice(), message);
+    assert_eq!(&s[..], message);
     let err = new_domain_error::<AError>(A_FOO, NON_UTF8);
     let s = format!("{}", err);
-    assert_eq!(s.as_slice(), NON_UTF8_LOSSY)
+    assert_eq!(&s[..], NON_UTF8_LOSSY)
 }
 
 macro_rules! assert_contains_or_dump {
@@ -248,7 +249,7 @@ macro_rules! assert_contains {
         assert_contains_or_dump!($inp, $str)
     );
     ($inp:expr, $fmt:expr, $($arg:expr),*) => (
-        assert_contains_or_dump!($inp, format!($fmt, $($arg),*).as_slice())
+        assert_contains_or_dump!($inp, &format!($fmt, $($arg),*)[..])
     )
 }
 

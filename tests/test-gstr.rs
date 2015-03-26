@@ -24,7 +24,7 @@
 #[macro_use]
 extern crate grust;
 
-extern crate "glib-2_0-sys" as glib;
+extern crate glib_2_0_sys as glib;
 extern crate libc;
 
 use grust::gstr;
