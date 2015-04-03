@@ -55,9 +55,9 @@ impl IntrospectedEnum for MyEnum {
 
 #[test]
 fn test_enum_from_int() {
-    let v = enumeration::from_int(1).unwrap();
+    let v: MyEnum = enumeration::from_int(1).unwrap();
     assert_eq!(v, MyEnum::Foo);
-    let v = enumeration::from_int(2).unwrap();
+    let v: MyEnum = enumeration::from_int(2).unwrap();
     assert_eq!(v, MyEnum::Bar);
 }
 

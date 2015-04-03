@@ -27,8 +27,8 @@ use util::escape_bytestring;
 use glib as ffi;
 use gobject;
 
+use std::convert;
 use std::error::Error as ErrorTrait;
-use std::error::FromError;
 use std::ffi::CStr;
 use std::fmt;
 use std::marker::PhantomData;
@@ -113,7 +113,7 @@ impl Error {
     pub fn matches<T>(&self, code: T) -> bool where T: Domain + PartialEq {
         if self.domain() == domain::<T>() {
             let own_code_raw = unsafe { (*self.ptr).code };
-            if let Ok(own_code) = enumeration::from_int(own_code_raw) {
+            if let Ok(own_code) = enumeration::from_int::<T>(own_code_raw) {
                 return own_code == code;
             }
         }
@@ -232,10 +232,8 @@ impl<T> fmt::Debug for DomainError<T> where T: Domain {
     }
 }
 
-impl<T> FromError<DomainError<T>> for Error {
-    fn from_error(err: DomainError<T>) -> Error {
-        err.inner
-    }
+impl<T> convert::From<DomainError<T>> for Error {
+    fn from(err: DomainError<T>) -> Error { err.inner }
 }
 
 impl<T> Code<T> {
