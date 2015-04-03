@@ -36,7 +36,6 @@ use grust::quark::Quark;
 use grust::types::gint;
 use grust::value::Value;
 
-use std::convert;
 use std::error::Error as ErrorTrait;
 use std::ffi::CString;
 use std::num::from_i32;
@@ -311,7 +310,7 @@ fn test_domain_error_debug() {
 fn test_error_from_domain_error() {
     let message = "test error";
     let domain_err = new_domain_error::<AError>(A_FOO, message.as_bytes());
-    let err: Error = convert::From::from(domain_err);
+    let err = Error::from(domain_err);
     let (domain, code) = err.key();
     assert_eq!(domain, error::domain::<AError>());
     assert_eq!(code, A_FOO);
