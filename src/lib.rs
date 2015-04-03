@@ -24,7 +24,6 @@
 #![feature(alloc)]
 #![feature(core)]
 #![feature(into_cow)]
-#![feature(libc)]
 #![feature(unsafe_destructor)]
 #![feature(unsafe_no_drop_flag)]
 
