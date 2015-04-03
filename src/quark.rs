@@ -25,7 +25,7 @@ use std::ffi::CStr;
 use std::fmt;
 use std::sync::atomic;
 
-#[derive(Copy, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Quark(ffi::GQuark);
 
 pub struct StaticQuark(pub &'static [u8], pub atomic::AtomicUsize);

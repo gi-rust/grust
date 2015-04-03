@@ -29,7 +29,7 @@ use grust::enumeration::{IntrospectedEnum, UnknownValue};
 use grust::types::gint;
 use std::num::from_i32;
 
-#[derive(Copy, Debug, Eq, PartialEq, FromPrimitive)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive)]
 enum MyEnum {
     Foo = 1,
     Bar = 2,

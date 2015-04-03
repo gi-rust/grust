@@ -31,7 +31,7 @@ pub trait FlagsType : IntrospectedFlags {
     fn get_type() -> GType;
 }
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct UnknownFlags {
     actual: guint,
     known_mask: guint

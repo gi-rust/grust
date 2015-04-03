@@ -20,7 +20,7 @@ use types::{gboolean,FALSE};
 
 use std::ascii;
 use std::ascii::AsciiExt;
-use std::borrow::{Cow, IntoCow};
+use std::borrow::Cow;
 use std::str;
 
 #[inline]
@@ -32,10 +32,10 @@ pub fn is_false(v: gboolean) -> bool { v == FALSE }
 pub fn escape_bytestring<'a>(s: &'a [u8]) -> Cow<'a, str> {
     if s.is_ascii() {
         let s = unsafe { str::from_utf8_unchecked(s) };
-        return s.into_cow();
+        return s.into();
     }
     let mut acc = Vec::with_capacity(s.len());
     acc.extend(s.iter().cloned().flat_map(ascii::escape_default));
     let string = unsafe { String::from_utf8_unchecked(acc) };
-    string.into_cow()
+    string.into()
 }

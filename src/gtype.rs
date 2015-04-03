@@ -31,7 +31,7 @@ pub mod raw {
     pub type GType = gobject::GType;
 }
 
-#[derive(Copy, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct GType(ffi::GType);
 
 macro_rules! g_type_fundamental {

@@ -44,7 +44,7 @@ pub struct DomainError<T> {
     marker: PhantomData<T>
 }
 
-#[derive(Copy, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum Code<T> {
     Known(T),
     Unknown(gint)

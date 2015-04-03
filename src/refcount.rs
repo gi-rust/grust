@@ -57,7 +57,6 @@ pub unsafe fn ref_into_raw<T>(r: Ref<T>) -> *mut <T as Wrapper>::Raw
     ptr as *mut _
 }
 
-#[unsafe_destructor]
 impl<T> Drop for Ref<T> where T: Refcount {
     fn drop(&mut self) {
         unsafe {

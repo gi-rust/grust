@@ -32,7 +32,7 @@ pub trait EnumType : IntrospectedEnum {
     fn get_type() -> GType;
 }
 
-#[derive(Copy, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct UnknownValue(pub gint);
 
 impl ErrorTrait for UnknownValue {

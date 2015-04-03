@@ -23,8 +23,6 @@
 
 #![feature(alloc)]
 #![feature(core)]
-#![feature(into_cow)]
-#![feature(unsafe_destructor)]
 #![feature(unsafe_no_drop_flag)]
 
 extern crate libc;
