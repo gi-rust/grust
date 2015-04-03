@@ -20,7 +20,6 @@ use glib as ffi;
 use types::{gchar,gpointer};
 
 use libc;
-use std::convert::AsRef;
 use std::ffi::{CStr, CString, NulError};
 use std::mem;
 use std::ops::Deref;

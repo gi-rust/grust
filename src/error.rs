@@ -27,7 +27,6 @@ use util::escape_bytestring;
 use glib as ffi;
 use gobject;
 
-use std::convert;
 use std::error::Error as ErrorTrait;
 use std::ffi::CStr;
 use std::fmt;
@@ -232,7 +231,7 @@ impl<T> fmt::Debug for DomainError<T> where T: Domain {
     }
 }
 
-impl<T> convert::From<DomainError<T>> for Error {
+impl<T> From<DomainError<T>> for Error {
     fn from(err: DomainError<T>) -> Error { err.inner }
 }
 
