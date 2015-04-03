@@ -118,10 +118,10 @@ fn test_utf8_from_static_str() {
 #[test]
 fn test_utf8_string_from_str() {
     let s = String::from_str(TEST_STR);
-    let buf = Utf8String::from_str(&s[..]).unwrap();
+    let buf = Utf8String::new(&s[..]).unwrap();
     assert!(g_str_equal(buf.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
 
-    let res = Utf8String::from_str("got\0nul");
+    let res = Utf8String::new("got\0nul");
     let err = res.err().unwrap();
     assert_eq!(err.nul_position(), 3);
 }
@@ -129,11 +129,11 @@ fn test_utf8_string_from_str() {
 #[test]
 fn test_utf8_string_from_string() {
     let s = String::from_str(TEST_STR);
-    let buf = Utf8String::from_string(s).unwrap();
+    let buf = Utf8String::new(s).unwrap();
     assert!(g_str_equal(buf.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
 
     let s = String::from_str("got\0nul");
-    let res = Utf8String::from_string(s);
+    let res = Utf8String::new(s);
     let err = res.err().unwrap();
     assert_eq!(err.nul_position(), 3);
 }

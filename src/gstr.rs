@@ -20,6 +20,7 @@ use glib as ffi;
 use types::{gchar,gpointer};
 
 use libc;
+use std::convert::AsRef;
 use std::ffi::{CStr, CString, NulError};
 use std::mem;
 use std::ops::Deref;
@@ -79,11 +80,6 @@ impl Utf8 {
     }
 
     #[inline]
-    pub fn as_c_str(&self) -> &CStr {
-        &self.inner
-    }
-
-    #[inline]
     pub fn to_str(&self) -> &str {
         unsafe { str::from_utf8_unchecked(self.inner.to_bytes()) }
     }
@@ -99,6 +95,11 @@ impl Utf8 {
     }
 }
 
+impl AsRef<CStr> for Utf8 {
+    #[inline]
+    fn as_ref(&self) -> &CStr { &self.inner }
+}
+
 pub struct Utf8String {
     inner: CString
 }
@@ -112,23 +113,11 @@ impl Deref for Utf8String {
     }
 }
 
-unsafe fn utf8_wrap_c_str_result<E>(res: Result<CString, E>)
-                                   -> Result<Utf8String, E>
-{
-    res.map(|buf| {
-        Utf8String { inner: buf }
-    })
-}
-
 impl Utf8String {
-
-    pub fn from_str(s: &str) -> Result<Utf8String, NulError> {
-        let c_str_res = CString::new(s);
-        unsafe { utf8_wrap_c_str_result(c_str_res) }
-    }
-
-    pub fn from_string(s: String) -> Result<Utf8String, NulError> {
-        let g_str_res = CString::new(s);
-        unsafe { utf8_wrap_c_str_result(g_str_res) }
+    pub fn new<T>(t: T) -> Result<Utf8String, NulError>
+        where T: Into<String>
+    {
+        let c_str = try!(CString::new(t.into()));
+        Ok(Utf8String { inner: c_str })
     }
 }
