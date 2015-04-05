@@ -16,10 +16,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#![allow(unstable_features)]
-
-#![feature(collections)]
-
 #[macro_use]
 extern crate grust;
 
@@ -117,7 +113,7 @@ fn test_utf8_from_static_str() {
 
 #[test]
 fn test_utf8_string_from_str() {
-    let s = String::from_str(TEST_STR);
+    let s = TEST_STR.to_string();
     let buf = Utf8String::new(&s[..]).unwrap();
     assert!(g_str_equal(buf.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
 
@@ -128,11 +124,11 @@ fn test_utf8_string_from_str() {
 
 #[test]
 fn test_utf8_string_from_string() {
-    let s = String::from_str(TEST_STR);
+    let s = TEST_STR.to_string();
     let buf = Utf8String::new(s).unwrap();
     assert!(g_str_equal(buf.as_ptr(), TEST_CSTR.as_ptr() as *const gchar));
 
-    let s = String::from_str("got\0nul");
+    let s = "got\0nul".to_string();
     let res = Utf8String::new(s);
     let err = res.err().unwrap();
     assert_eq!(err.nul_position(), 3);
