@@ -38,7 +38,6 @@ use std::fmt;
 use std::mem;
 use std::ops::Deref;
 
-#[unsafe_no_drop_flag]
 pub struct Value(ffi::GValue);
 
 impl Drop for Value {
