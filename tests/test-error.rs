@@ -17,9 +17,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #![allow(trivial_numeric_casts)]
-#![allow(unstable_features)]
-
-#![feature(core)]
 
 #[macro_use]
 extern crate grust;
@@ -38,7 +35,6 @@ use grust::value::Value;
 
 use std::error::Error as ErrorTrait;
 use std::ffi::CString;
-use std::num::from_i32;
 use std::str;
 
 const NON_UTF8: &'static [u8] = b"U can't parse this.\x9c Hammer time!";
@@ -60,7 +56,11 @@ enum AError {
 impl IntrospectedEnum for AError {
 
     fn from_int(v: gint) -> Result<Self, UnknownEnumValue> {
-        from_i32(v as i32).ok_or(UnknownEnumValue(v))
+        match v {
+            A_FOO => Ok(AError::Foo),
+            A_BAR => Ok(AError::Bar),
+            _ => Err(UnknownEnumValue(v))
+        }
     }
 
     fn to_int(&self) -> gint {
@@ -89,7 +89,10 @@ enum BError {
 impl IntrospectedEnum for BError {
 
     fn from_int(v: gint) -> Result<Self, UnknownEnumValue> {
-        from_i32(v as i32).ok_or(UnknownEnumValue(v))
+        match v {
+            B_BAZ => Ok(BError::Baz),
+            _ => Err(UnknownEnumValue(v))
+        }
     }
 
     fn to_int(&self) -> gint {

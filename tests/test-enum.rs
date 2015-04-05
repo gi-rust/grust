@@ -17,9 +17,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #![allow(trivial_numeric_casts)]
-#![allow(unstable_features)]
-
-#![feature(core)]
 
 extern crate grust;
 
@@ -27,7 +24,6 @@ use grust::enumeration;
 use grust::enumeration::{IntrospectedEnum, UnknownValue};
 
 use grust::types::gint;
-use std::num::from_i32;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive)]
 enum MyEnum {
@@ -38,7 +34,11 @@ enum MyEnum {
 impl IntrospectedEnum for MyEnum {
 
     fn from_int(v: gint) -> Result<Self, UnknownValue> {
-        from_i32(v as i32).ok_or(UnknownValue(v))
+        match v {
+            1 => Ok(MyEnum::Foo),
+            2 => Ok(MyEnum::Bar),
+            _ => Err(UnknownValue(v))
+        }
     }
 
     fn to_int(&self) -> gint {
