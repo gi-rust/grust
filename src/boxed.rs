@@ -21,7 +21,6 @@ use types::gpointer;
 
 use gobject as ffi;
 
-use std::boxed::into_raw as box_into_raw;
 use std::ffi::CString;
 use std::mem;
 
@@ -36,10 +35,18 @@ pub fn type_of<T>() -> GType where T: BoxedType
     <T as BoxedType>::get_type()
 }
 
+unsafe fn box_from_raw<T>(ptr: gpointer) -> Box<T> {
+    mem::transmute(ptr)
+}
+
+unsafe fn box_into_raw<T>(b: Box<T>) -> gpointer {
+    mem::transmute(b)
+}
+
 extern "C" fn box_copy<T>(raw: gpointer) -> gpointer
     where T: Clone
 {
-    let boxed: Box<T> = unsafe { Box::from_raw(raw as *mut T) };
+    let boxed: Box<T> = unsafe { box_from_raw(raw) };
     let copy: Box<T> = boxed.clone();
     unsafe {
         // Prevent the original value from being dropped
@@ -49,7 +56,7 @@ extern "C" fn box_copy<T>(raw: gpointer) -> gpointer
 }
 
 extern "C" fn box_free<T>(raw: gpointer) {
-    let boxed: Box<T> = unsafe { Box::from_raw(raw as *mut T) };
+    let boxed: Box<T> = unsafe { box_from_raw(raw) };
     mem::drop(boxed);
 }
 
@@ -75,7 +82,7 @@ impl<T> BoxedType for Box<T> where T: BoxRegistered {
     }
 
     unsafe fn from_ptr(raw: gpointer) -> Box<T> {
-        Box::from_raw(raw as *mut T)
+        box_from_raw(raw)
     }
 
     unsafe fn into_ptr(self) -> gpointer {
