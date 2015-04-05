@@ -273,7 +273,7 @@ impl Value {
         if p.is_null() {
             return None;
         }
-        Some(unsafe { mem::copy_lifetime(self, &*p) })
+        Some(unsafe { mem::transmute(&*p) })
     }
 
     pub fn set_object<T>(&mut self, val: &T)
@@ -315,7 +315,7 @@ impl Value {
         }
         unsafe {
             let boxed: T = BoxedType::from_ptr(p);
-            let ret = Some(mem::copy_lifetime(self, &*boxed));
+            let ret = Some(mem::transmute(&*boxed));
 
             // Lose the box by "subliming" it back into the raw pointer
             let q = boxed.into_ptr();
