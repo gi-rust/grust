@@ -66,17 +66,8 @@ impl<T> Drop for Ref<T> where T: Refcount {
 }
 
 impl<T> Clone for Ref<T> where T: Refcount {
-
     fn clone(&self) -> Ref<T> {
         Ref::new(self.deref())
-    }
-
-    fn clone_from(&mut self, source: &Ref<T>) {
-        unsafe {
-            source.inc_ref();
-            self.dec_ref();
-        }
-        self.ptr = source.ptr;
     }
 }
 
