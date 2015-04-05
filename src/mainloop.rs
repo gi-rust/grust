@@ -16,7 +16,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use marker;
 use refcount::{Refcount, Ref};
 use types::FALSE;
 use wrap;
@@ -27,8 +26,7 @@ use gobject;
 
 #[repr(C)]
 pub struct MainContext {
-    raw: ffi::GMainContext,
-    marker: marker::ObjectMarker
+    raw: ffi::GMainContext
 }
 
 unsafe impl Send for MainContext { }
@@ -60,8 +58,7 @@ g_impl_boxed_type_for_ref!(MainContext, gobject::g_main_context_get_type);
 
 #[repr(C)]
 pub struct MainLoop {
-    raw: ffi::GMainLoop,
-    marker: marker::ObjectMarker
+    raw: ffi::GMainLoop
 }
 
 unsafe impl Send for MainLoop { }

@@ -39,7 +39,6 @@ pub mod flags;
 pub mod gstr;
 pub mod gtype;
 pub mod mainloop;
-pub mod marker;
 pub mod object;
 pub mod quark;
 pub mod refcount;
