@@ -23,10 +23,9 @@ use refcount::Refcount;
 use types::gpointer;
 use wrap::Wrapper;
 
-use std::marker::MarkerTrait;
 use std::mem::transmute;
 
-pub unsafe trait ObjectType : MarkerTrait {
+pub unsafe trait ObjectType {
     fn get_type() -> GType;
 }
 
