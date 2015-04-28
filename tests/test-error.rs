@@ -47,7 +47,7 @@ const B_BAZ: gint = 1;
 
 const UNKNOWN_CODE: gint = 1337;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum AError {
     Foo = A_FOO as isize,
     Bar = A_BAR as isize,
@@ -81,7 +81,7 @@ impl Domain for AError {
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum BError {
     Baz = B_BAZ as isize
 }

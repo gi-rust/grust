@@ -25,7 +25,7 @@ use grust::enumeration::{IntrospectedEnum, UnknownValue};
 
 use grust::types::gint;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum MyEnum {
     Foo = 1,
     Bar = 2,
