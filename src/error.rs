@@ -27,6 +27,7 @@ use util::escape_bytestring;
 use glib as ffi;
 use gobject;
 
+use std::any::Any;
 use std::error::Error as ErrorTrait;
 use std::ffi::CStr;
 use std::fmt;
@@ -49,7 +50,7 @@ pub enum Code<T> {
     Unknown(gint)
 }
 
-pub trait Domain : IntrospectedEnum {
+pub trait Domain : IntrospectedEnum + Any {
     fn domain() -> Quark;
 }
 
