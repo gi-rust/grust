@@ -41,11 +41,9 @@ extern "C" fn box_copy<T>(raw: gpointer) -> gpointer
 {
     let boxed: Box<T> = unsafe { Box::from_raw(raw as *mut T) };
     let copy: Box<T> = boxed.clone();
-    unsafe {
-        // Prevent the original value from being dropped
-        box_into_raw(boxed);
-        box_into_raw(copy) as gpointer
-    }
+    // Prevent the original value from being dropped
+    box_into_raw(boxed);
+    box_into_raw(copy) as gpointer
 }
 
 extern "C" fn box_free<T>(raw: gpointer) {
