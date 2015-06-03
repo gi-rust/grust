@@ -51,7 +51,9 @@ extern "C" fn box_free<T>(raw: gpointer) {
     mem::drop(boxed);
 }
 
-pub fn register_box_type<T>(name: &str) -> GType where T: Clone + Send {
+pub fn register_box_type<T>(name: &str) -> GType
+    where T: Clone + Send + 'static
+{
     let c_name = CString::new(name).unwrap();
     let raw = unsafe {
         ffi::g_boxed_type_register_static(c_name.as_ptr(),
