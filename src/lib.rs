@@ -21,8 +21,6 @@
 
 #![allow(unstable_features)]
 
-#![feature(alloc)]
-#![feature(core)]
 #![feature(unsafe_no_drop_flag)]
 
 extern crate libc;
