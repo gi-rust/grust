@@ -18,6 +18,7 @@
 
 use gtype::GType;
 use types::gpointer;
+use util::{box_free, box_from_pointer, box_into_pointer};
 
 use gobject as ffi;
 
@@ -35,37 +36,36 @@ pub fn type_of<T>() -> GType where T: BoxedType
     <T as BoxedType>::get_type()
 }
 
-unsafe fn box_from_raw<T>(ptr: gpointer) -> Box<T> {
-    mem::transmute(ptr)
-}
-
-unsafe fn box_into_raw<T>(b: Box<T>) -> gpointer {
-    mem::transmute(b)
-}
-
-extern "C" fn box_copy<T>(raw: gpointer) -> gpointer
+unsafe extern "C" fn box_copy<T>(raw: gpointer) -> gpointer
     where T: Clone
 {
-    let boxed: Box<T> = unsafe { box_from_raw(raw) };
+    let boxed: Box<T> = box_from_pointer(raw);
     let copy: Box<T> = boxed.clone();
-    unsafe {
-        // Prevent the original value from being dropped
-        box_into_raw(boxed);
-        box_into_raw(copy) as gpointer
-    }
+    // Prevent the original value from being dropped
+    mem::forget(boxed);
+    box_into_pointer(copy)
 }
 
-extern "C" fn box_free<T>(raw: gpointer) {
-    let boxed: Box<T> = unsafe { box_from_raw(raw) };
-    mem::drop(boxed);
+unsafe fn into_boxed_copy_func(callback: unsafe extern "C" fn(gpointer) -> gpointer)
+                              -> ffi::GBoxedCopyFunc
+{
+    mem::transmute(callback)
 }
 
-pub fn register_box_type<T>(name: &str) -> GType where T: Clone + Send {
+unsafe fn into_boxed_free_func(callback: unsafe extern "C" fn(gpointer))
+                              -> ffi::GBoxedFreeFunc
+{
+    mem::transmute(callback)
+}
+
+pub fn register_box_type<T>(name: &str) -> GType
+    where T: Clone + Send + 'static
+{
     let c_name = CString::new(name).unwrap();
     let raw = unsafe {
         ffi::g_boxed_type_register_static(c_name.as_ptr(),
-                                          box_copy::<T>,
-                                          box_free::<T>)
+                into_boxed_copy_func(box_copy::<T>),
+                into_boxed_free_func(box_free::<T>))
     };
     assert!(raw != 0, "failed to register type \"{}\"", name);
     unsafe { GType::from_raw(raw) }
@@ -82,10 +82,10 @@ impl<T> BoxedType for Box<T> where T: BoxRegistered {
     }
 
     unsafe fn from_ptr(raw: gpointer) -> Box<T> {
-        box_from_raw(raw)
+        box_from_pointer(raw)
     }
 
     unsafe fn into_ptr(self) -> gpointer {
-        box_into_raw(self) as gpointer
+        box_into_pointer(self)
     }
 }
