@@ -132,6 +132,19 @@ impl MainContext {
             wrap::from_raw(ffi::g_main_context_default())
         }
     }
+
+    pub fn invoke(&self, callback: SourceCallback) {
+        self.invoke_full(PRIORITY_DEFAULT, callback)
+    }
+
+    pub fn invoke_full(&self, priority: gint, callback: SourceCallback) {
+        let raw: RawCallback = callback.into();
+        unsafe {
+            ffi::g_main_context_invoke_full(self.as_mut_ptr(),
+                    priority, raw.func, raw.data, Some(raw.destroy));
+        }
+        mem::forget(raw);
+    }
 }
 
 impl Refcount for MainContext {
