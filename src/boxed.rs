@@ -18,10 +18,10 @@
 
 use gtype::GType;
 use types::gpointer;
+use util::{box_free, box_from_pointer, box_into_pointer};
 
 use gobject as ffi;
 
-use std::boxed::into_raw as box_into_raw;
 use std::ffi::CString;
 use std::mem;
 
@@ -36,19 +36,26 @@ pub fn type_of<T>() -> GType where T: BoxedType
     <T as BoxedType>::get_type()
 }
 
-extern "C" fn box_copy<T>(raw: gpointer) -> gpointer
+unsafe extern "C" fn box_copy<T>(raw: gpointer) -> gpointer
     where T: Clone
 {
-    let boxed: Box<T> = unsafe { Box::from_raw(raw as *mut T) };
+    let boxed: Box<T> = box_from_pointer(raw);
     let copy: Box<T> = boxed.clone();
     // Prevent the original value from being dropped
-    box_into_raw(boxed);
-    box_into_raw(copy) as gpointer
+    mem::forget(boxed);
+    box_into_pointer(copy)
 }
 
-extern "C" fn box_free<T>(raw: gpointer) {
-    let boxed: Box<T> = unsafe { Box::from_raw(raw as *mut T) };
-    mem::drop(boxed);
+unsafe fn into_boxed_copy_func(callback: unsafe extern "C" fn(gpointer) -> gpointer)
+                              -> ffi::GBoxedCopyFunc
+{
+    mem::transmute(callback)
+}
+
+unsafe fn into_boxed_free_func(callback: unsafe extern "C" fn(gpointer))
+                              -> ffi::GBoxedFreeFunc
+{
+    mem::transmute(callback)
 }
 
 pub fn register_box_type<T>(name: &str) -> GType
@@ -57,8 +64,8 @@ pub fn register_box_type<T>(name: &str) -> GType
     let c_name = CString::new(name).unwrap();
     let raw = unsafe {
         ffi::g_boxed_type_register_static(c_name.as_ptr(),
-                                          box_copy::<T>,
-                                          box_free::<T>)
+                into_boxed_copy_func(box_copy::<T>),
+                into_boxed_free_func(box_free::<T>))
     };
     assert!(raw != 0, "failed to register type \"{}\"", name);
     unsafe { GType::from_raw(raw) }
@@ -75,10 +82,10 @@ impl<T> BoxedType for Box<T> where T: BoxRegistered {
     }
 
     unsafe fn from_ptr(raw: gpointer) -> Box<T> {
-        Box::from_raw(raw as *mut T)
+        box_from_pointer(raw)
     }
 
     unsafe fn into_ptr(self) -> gpointer {
-        box_into_raw(self) as gpointer
+        box_into_pointer(self)
     }
 }

@@ -16,11 +16,14 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use types::{gboolean,FALSE};
+use types::{gboolean, gpointer, FALSE};
+
+use glib;
 
 use std::ascii;
 use std::ascii::AsciiExt;
 use std::borrow::Cow;
+use std::mem;
 use std::str;
 
 #[inline]
@@ -38,4 +41,23 @@ pub fn escape_bytestring<'a>(s: &'a [u8]) -> Cow<'a, str> {
     acc.extend(s.iter().cloned().flat_map(ascii::escape_default));
     let string = unsafe { String::from_utf8_unchecked(acc) };
     string.into()
+}
+
+pub unsafe extern "C" fn box_free<T>(raw: gpointer) {
+    let b: Box<T> = mem::transmute(raw);
+    mem::drop(b);
+}
+
+pub unsafe fn into_destroy_notify(func: unsafe extern "C" fn(gpointer))
+                                 -> glib::GDestroyNotify
+{
+    mem::transmute(func)
+}
+
+pub unsafe fn box_from_pointer<T>(p: gpointer) -> Box<T> {
+    mem::transmute(p)
+}
+
+pub fn box_into_pointer<T>(b: Box<T>) -> gpointer {
+    unsafe { mem::transmute(b) }
 }
