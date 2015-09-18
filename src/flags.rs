@@ -22,7 +22,7 @@ use types::guint;
 use std::error::Error as ErrorTrait;
 use std::fmt;
 
-pub trait IntrospectedFlags {
+pub trait IntrospectedFlags : Sized {
     fn from_uint(v: guint) -> Result<Self, UnknownFlags>;
     fn to_uint(&self) -> guint;
 }

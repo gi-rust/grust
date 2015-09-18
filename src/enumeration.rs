@@ -22,7 +22,7 @@ use types::gint;
 use std::error::Error as ErrorTrait;
 use std::fmt;
 
-pub trait IntrospectedEnum {
+pub trait IntrospectedEnum : Sized {
     fn from_int(v: gint) -> Result<Self, UnknownValue>;
     fn to_int(&self) -> gint;
     fn name(&self) -> &'static str;
