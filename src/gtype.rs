@@ -25,14 +25,12 @@ use std::fmt;
 use std::str;
 
 pub mod raw {
-    use gobject;
-
     // Support macro g_type_register_box! by reexporting GType in this crate
-    pub type GType = gobject::GType;
+    pub type GType = ::gtypes::GType;
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub struct GType(ffi::GType);
+pub struct GType(raw::GType);
 
 macro_rules! g_type_fundamental {
     ($num:expr) => (GType($num << 2));
@@ -64,12 +62,12 @@ pub const VARIANT   : GType = g_type_fundamental!(21);
 impl GType {
 
     #[inline]
-    pub unsafe fn from_raw(type_id: ffi::GType) -> GType {
+    pub unsafe fn from_raw(type_id: raw::GType) -> GType {
         GType(type_id)
     }
 
     #[inline]
-    pub fn to_raw(&self) -> ffi::GType {
+    pub fn to_raw(&self) -> raw::GType {
         let GType(type_id) = *self;
         type_id
     }

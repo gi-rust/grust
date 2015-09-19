@@ -24,6 +24,7 @@
 #![feature(unsafe_no_drop_flag)]
 
 extern crate libc;
+extern crate gtypes;
 extern crate glib_2_0_sys as glib;
 extern crate gobject_2_0_sys as gobject;
 

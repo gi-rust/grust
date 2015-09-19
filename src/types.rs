@@ -17,22 +17,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-// This module provides types that are intrinsic in GIR, so they do not
-// get defined through other types. It should ultimately have a name defined
-// for every basic type listed in the documentation:
-// https://wiki.gnome.org/Projects/GObjectIntrospection/Annotations#Default_Basic_Types
-//
-// Exceptions are:
-// 1. Fixed-size integer types. These have straightforward machine-independent
-//    counterparts in Rust.
-// 2. Strings annotated as "utf8" or "filename". These types are not named
-//    as such in the C API, being only aliases for gchar*.
-//    Their representation in Rust is quite intricate and involves multiple
-//    types, so they each get their own module.
-//
-// Rust aliases are needed for machine-dependent basic types used in GIR,
-// since the GLib types are not necessarily identical to their Rust namesakes
-// (the issue similarly addressed by libc::c_int and the like).
-// GIR uses the GLib names for these types as well.
+//! This module imports the fundamental type definitions provided by the
+//! crate `gtypes`.
 
-pub use glib::types::*;
+pub use gtypes::primitive::*;

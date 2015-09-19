@@ -15,6 +15,7 @@ generated crates.
 repository = "https://github.com/gi-rust/grust.git"
 
 [dependencies]
-glib-2_0-sys    = "0.1.1"
-gobject-2_0-sys = "0.1.0"
+gtypes = "0.1"
+glib-2_0-sys    = "0.2"
+gobject-2_0-sys = "0.2"
 libc = "0.1"
