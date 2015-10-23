@@ -90,7 +90,10 @@ impl fmt::Debug for GType {
 pub fn check_instance_is_a<T>(inst: &T, type_id: GType) -> bool
     where T: ObjectType
 {
-    let raw_inst = inst as *const _ as *const ffi::GTypeInstance;
+    let raw_inst = inst as *const T;
     let raw_type = type_id.to_raw();
-    is_true(unsafe { ffi::g_type_check_instance_is_a(raw_inst, raw_type) })
+    is_true(unsafe {
+        ffi::g_type_check_instance_is_a(raw_inst as *mut ffi::GTypeInstance,
+                                        raw_type)
+    })
 }
